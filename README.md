@@ -9,7 +9,7 @@ ChatHaven, a chat application designed to provide a platform for users to connec
 ## Team Members and Roles
 
 - Fares Alromhin - 40246354 - **Role**
-- Kassem Chahrour - - **Role**
+- Kassem Chahrour - 40073432 - **Role**
 - Brian Hariri - 40190861 - **Role**
 - Omar Khlaiwi - 40227312 - **Role**
 - Mohamad Ali Taha - 40200580 - **Role**
