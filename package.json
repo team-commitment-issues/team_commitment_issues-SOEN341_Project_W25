@@ -1,5 +1,5 @@
 {
-  "name": "soen_341_project",
+  "name": "test",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -31,5 +31,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3"
   }
 }
