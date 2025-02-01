@@ -1,4 +1,4 @@
-# 📝 Sprint Planning - Meeting 1   
+# 📝 Sprint Planning - Meeting 1 Minutes
 
 **Date**: Monday, January 27, 2025  
 **Time**: 5:00 PM - 5:30 PM  
