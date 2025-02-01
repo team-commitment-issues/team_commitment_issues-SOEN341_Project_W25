@@ -29,6 +29,7 @@ We had our first sprint planning meeting where we aligned on the **project visio
   - 🔑 **GitHub access management**  
 - 🗣️ **Communication setup:** **Kassem** set up the **Discord communication channels** for team collaboration.  
 - 📝 **Omar was designated to take all meeting notes for Sprint 1.**  
+- 🤝 **Team Connection Time:** Each member shared for **2 minutes** what they worked on at home. This helps us get to know each other and build a **family-like team environment**.  
 
 ---
 
@@ -42,6 +43,7 @@ This meeting focused on finalizing the **features** for the platform.
 - 📝 **Brian** handled **story descriptions** and additional **task breakdown**.  
 - 📄 **Sam** compiled the **README file**.  
 - 📝 **Omar documented the meeting notes for Sprint 1.**  
+- 🤝 **Team Connection Time:** Each member shared for **2 minutes** what they worked on at home.  
 
 ---
 
@@ -54,6 +56,8 @@ This session was all about work distribution, technical setup, and communication
 - ⚙️ **Mohamad Ali Taha** set up the **React framework**.  
 - 🗣️ **Kassem** refined and organized the **Discord communication channels** for better team coordination.  
 - 📝 **Omar documented the meeting notes for Sprint 1.**  
+- 🤝 **Team Connection Time:** Each member shared for **2 minutes** what they worked on at home to strengthen team bonds.  
+- 🔍 As a team called **Commitment Issues**, we made sure expectations and accountability were clear.  
 
 ---
 
@@ -69,6 +73,6 @@ This session was all about work distribution, technical setup, and communication
 - **Sam & Fares** - Assigning user stories & story points  
 - **Kassem** - Communication setup (Discord), dividing stories into subtasks & task breakdown  
 - **Brian** - Story descriptions & task breakdown  
-- 📝 **Omar documented the meeting notes for Sprint 1.**  
+- **Omar** - **Sprint 1 meeting minutes recorder**  
 
 📌 **Stay committed, team Commitment Issues!** 😆  
