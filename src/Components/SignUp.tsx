@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
@@ -16,7 +15,6 @@ const SignUp: React.FC = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Simulate a signup request (replace with your backend API call) will be sent to MongoDB later
       const response = await axios.post('http://localhost:5000/api/signup', {
         email,
         password,
@@ -34,78 +32,89 @@ const SignUp: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.heading}>Sign Up for ChatHaven</h2>
-      {error && <p style={styles.error}>{error}</p>}
-      <form onSubmit={handleSignUp} style={styles.form}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-            required
-          />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
-            required
-          />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>First Name:</label>
-          <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            style={styles.input}
-            required
-          />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Last Name:</label>
-          <input
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            style={styles.input}
-            required
-          />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>User ID (Visible to Others):</label>
-          <input
-            type="text"
-            value={userID}
-            onChange={(e) => setUserID(e.target.value)}
-            style={styles.input}
-            required
-          />
-        </div>
-        <button type="submit" style={styles.button}>Sign Up</button>
-      </form>
-      <p style={styles.loginText}>
-        Already have an account? <Link to="/login" style={styles.loginLink}>Login</Link>
-      </p>
+      <div style={styles.formContainer}>
+        <h2 style={styles.heading}>Sign Up for ChatHaven</h2>
+        {error && <p style={styles.error}>{error}</p>}
+        <form onSubmit={handleSignUp} style={styles.form}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Email:</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={styles.input}
+              required
+            />
+          </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Password:</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={styles.input}
+              required
+            />
+          </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>First Name:</label>
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              style={styles.input}
+              required
+            />
+          </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Last Name:</label>
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              style={styles.input}
+              required
+            />
+          </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>User ID (Visible to Others):</label>
+            <input
+              type="text"
+              value={userID}
+              onChange={(e) => setUserID(e.target.value)}
+              style={styles.input}
+              required
+            />
+          </div>
+          <button type="submit" style={styles.button}>Sign Up</button>
+        </form>
+        <p style={styles.loginText}>
+          Already have an account? <Link to="/login" style={styles.loginLink}>Login</Link>
+        </p>
+      </div>
     </div>
   );
 };
 
-
-
 const styles: { [key: string]: CSSProperties } = {
   container: {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     height: '100vh',
     backgroundColor: '#f0f2f5',
+  },
+  formContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: '25px',
+    borderRadius: '8px',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+    maxWidth: '400px',  // Increased width for better layout
+    width: '100%',
+    textAlign: 'center',
   },
   heading: {
     fontSize: '24px',
@@ -113,14 +122,12 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#333',
   },
   form: {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-    width: '300px',
+    width: '100%',
   },
   formGroup: {
     marginBottom: '15px',
+    width: '100%',
+    textAlign: 'left',
   },
   label: {
     display: 'block',
@@ -130,10 +137,11 @@ const styles: { [key: string]: CSSProperties } = {
   },
   input: {
     width: '100%',
-    padding: '8px',
+    padding: '10px',
     fontSize: '14px',
     border: '1px solid #ccc',
     borderRadius: '4px',
+    boxSizing: 'border-box', // Ensures width stays within the form
   },
   button: {
     width: '100%',
