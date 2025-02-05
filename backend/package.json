@@ -1,9 +1,11 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build and start": "tsc && node dist/server.js",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -13,10 +15,13 @@
     "backend": "file:",
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "mongodb": "^6.13.0",
     "mongoose": "^8.10.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^22.13.1",
+    "typescript": "^5.7.3"
   }
 }
