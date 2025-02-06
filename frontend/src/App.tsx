@@ -1,18 +1,11 @@
-// src/App.tsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './Components/Login';
-import SignUp from './Components/SignUp';
+import { BrowserRouter as Router } from 'react-router-dom';
+import AppRoutes from './Routes/routes';
 
 const App: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
+      <AppRoutes />
     </Router>
   );
 };
