@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Lazy-loaded components
 const Login = lazy(() => import('../Pages/Login'));
 const SignUp = lazy(() => import('../Pages/SignUp'));
+const Dashboard = lazy(() => import('../Pages/AdminDashboard'));
 const LandingPage = lazy(() => import('../Pages/LandingPage'));
 
 const AppRoutes: React.FC = () => {
@@ -12,6 +13,7 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/login" element={React.createElement(Login)} />
         <Route path="/signup" element={React.createElement(SignUp)} />
+        <Route path="/dashboard" element={React.createElement(Dashboard)} />
         <Route path="/" element={React.createElement(LandingPage)} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
