@@ -20,10 +20,10 @@ class UserController {
                 message: 'User registered successfully',
                 user: userResponse,
             });
-        } catch (err: any) {
-            if (err.message === 'Email already exists') {
+        } catch (err) {
+            if ((err as any).message === 'Email already exists') {
                 res.status(400).json({ error: 'Email already exists' });
-            } else if (err.message === 'UserID already exists') {
+            } else if ((err as any).message === 'UserID already exists') {
                 res.status(400).json({ error: 'UserID already exists' });
             } else {
                 res.status(500).json({ error: 'Internal server error' });
@@ -38,10 +38,10 @@ class UserController {
             const token = await UserService.userAuth(userID, password); // Returns JWT token
 
             res.status(200).json({ message: 'User logged in successfully', token });
-        } catch (err: any) {
-            if (err.message === 'User not found') {
+        } catch (err) {
+            if ((err as any).message === 'User not found') {
                 res.status(404).json({ error: 'User not found' });
-            } else if (err.message === 'Incorrect password') {
+            } else if ((err as any).message === 'Incorrect password') {
                 res.status(400).json({ error: 'Incorrect password' });
             } else {
                 res.status(500).json({ error: 'Internal server error' });
