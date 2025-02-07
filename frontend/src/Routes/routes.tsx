@@ -1,5 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import Dashboard from '../Pages/Dashboard';
+import SettingsDashboard from '../Pages/SettingsDashboard';
 
 // Lazy-loaded components
 const Login = lazy(() => import('../Pages/Login'));
@@ -11,6 +13,8 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/login" element={React.createElement(Login)} />
         <Route path="/signup" element={React.createElement(SignUp)} />
+        <Route path="/Dashboard" element={React.createElement(Dashboard)} />
+        <Route path="/SettingsDashboard" element={React.createElement(SettingsDashboard)} />
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
