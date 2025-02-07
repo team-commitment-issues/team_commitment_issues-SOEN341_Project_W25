@@ -6,17 +6,18 @@ const app = express();
 app.use(express.json());
 app.use('/user', userRoutes);
 
-describe('POST /user/register', () => {
+describe('POST /user/login', () => {
     it('should register a new user successfully', async () => {
         const newUser = {
-            username: 'testuser',
             email: 'test@user.com',
             password: 'testpassword',
-            date: Date.now(),
+            firstName: 'Test',
+            lastName: 'User',
+            userID: 'testuser',
         };
 
         const response = await request(app)
-            .post('/user/register')
+            .post('/user/signUp')
             .send(newUser)
             .expect(201);
 
@@ -24,32 +25,66 @@ describe('POST /user/register', () => {
     });
 
     it('should return an error if the email is already taken', async () => {
-        const existingUser = {
-            username: 'existinguser',
-            email: 'existing@user.com',
-            password: 'existingpassword',
-            date: Date.now(),
+        const Test2User1 = {
+            email: 'john@doe.com',
+            password: 'testpassword',
+            firstName: 'John',
+            lastName: 'Doe',
+            userID: 'johndoe',
         };
 
-        const newUser = {
-            username: 'testuser2',
-            email: 'existing@user.com',
+        const Test2User2 = {
+            email: 'john@doe.com',
             password: 'testpassword',
-            date: Date.now(),
+            firstName: 'Jane',
+            lastName: 'Doe',
+            userID: 'janedoe',
         };
     
         await request(app)
-            .post('/user/register')
-            .send(existingUser)
+            .post('/user/signUp')
+            .send(Test2User1)
             .expect(201);
 
         await new Promise((resolve) => setTimeout(resolve, 100));
         
         const response = await request(app)
-            .post('/user/register')
-            .send(newUser)
+            .post('/user/SignUp')
+            .send(Test2User2)
             .expect(400);
 
         expect(response.body.error).toBe('Email already exists');
+    });
+
+    it('should return an error if the username is already taken', async () => {
+        const Test3User1 = {
+            email: 'john@doe.com',
+            password: 'testpassword',
+            firstName: 'John',
+            lastName: 'Doe',
+            userID: 'johndoe',
+        };
+
+        const Test3User2 = {
+            email: 'jane@doe.com',
+            password: 'testpassword',
+            firstName: 'Jane',
+            lastName: 'Doe',
+            userID: 'johndoe',
+        };
+    
+        await request(app)
+            .post('/user/signUp')
+            .send(Test3User1)
+            .expect(201);
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const response = await request(app)
+            .post('/user/signUp')
+            .send(Test3User2)
+            .expect(400);
+
+        expect(response.body.error).toBe('userID already exists');
     });
 });

@@ -13,3 +13,11 @@ afterAll(async () => {
   await mongoose.disconnect();
   await mongoServer.stop();
 });
+
+beforeEach(async () => {
+  const collections = await mongoose.connection.db?.collections();
+  for (const collection of collections??[]) {
+    await collection.deleteMany({});
+  }
+});
+

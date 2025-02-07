@@ -8,9 +8,10 @@ class UserController {
             const newUser = await UserService.createUser(email, password, firstName, lastName, userID);
 
             const userResponse = {
-                username: newUser.username,
                 email: newUser.email,
-                password: newUser.password,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                userID: newUser.userID,
             };
 
             res.status(201).json({
@@ -20,15 +21,15 @@ class UserController {
         } catch (err) {
             if ((err as any).code === 11000) {
                 const field = Object.keys((err as any).keyValue)[0];
-                if (field === 'username') {
-                    res.status(400).json({error: 'Username already exists'});
+                if (field === 'userID') {
+                    res.status(400).json({error: 'userID already exists'});
                 } else if (field === 'email') {
                     res.status(400).json({error: 'Email already exists'});
                 } else {
-                    res.status(500).json({error: 'An error occurred'});
+                    res.status(500).json({error: 'Bad request'});
                 }
             } else {
-                res.status(500).json({error: 'An error occurred'});
+                res.status(500).json({error: 'Internal server error'});
             }
         }
     }
@@ -44,7 +45,7 @@ class UserController {
             });
             
         } catch (err) {
-            res.status(500).json({error: 'An error occurred'});
+            res.status(500).json({error: 'Internal server error'});
         }
     }
 }
