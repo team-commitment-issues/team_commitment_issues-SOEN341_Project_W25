@@ -5,6 +5,7 @@ import Input from './UI/Input';
 import Button from './UI/Button';
 import FormGroup from './UI/FormGroup';
 import styles from '../Styles/signUpStyles';
+import TextLink from './UI/TextLink';
 
 const SignUpForm: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -47,6 +48,11 @@ const SignUpForm: React.FC = () => {
         </FormGroup>
         <Button text="Sign Up" type="submit" />
       </form>
+      <TextLink
+        text="Already have an account?"
+        linkText="Login"
+        to="/login"
+      />
     </div>
   );
 };
