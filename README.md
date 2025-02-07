@@ -27,12 +27,12 @@ The project scope includes:
 
 ## Team Members
 
-- **Fares Alromhin - 40246354** - _Role_
-- **Kassem Chahrour - 40073432** - _Role_
-- **Brian Hariri - 40190861** - _Role_
-- **Omar Khlaiwi - 40227312** - _Role_
-- **Mohamad Ali Taha - 40200580** - _Role_
-- **Samuel Blanchette - 40280883** - _Role_
+- **Fares Alromhin - 40246354** - _FrontEnd_
+- **Kassem Chahrour - 40073432** - _FrontEnd_
+- **Brian Hariri - 40190861** - _BackEnd_
+- **Omar Khlaiwi - 40227312** - _FrontEnd_
+- **Mohamad Ali Taha - 40200580** - _FullStack_
+- **Samuel Blanchette - 40280883** - _FullStack_
 
 
 ---
