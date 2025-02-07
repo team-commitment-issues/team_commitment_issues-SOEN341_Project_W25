@@ -5,13 +5,19 @@ import Input from './UI/Input';
 import Button from './UI/Button';
 import FormGroup from './UI/FormGroup';
 import styles from '../Styles/loginStyles';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import TextLink from './UI/TextLink';
 
 const LoginForm: React.FC = () => {
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [error, setError] = useState<string>('');
+    const [showPassword, setShowPassword] = useState<boolean>(false);
     const navigate = useNavigate();
+
+    const toggleShowPassword = () => {
+        setShowPassword((prevState) => !prevState);
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,7 +41,22 @@ const LoginForm: React.FC = () => {
             <Input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
           </FormGroup>
           <FormGroup label="Password:">
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <div style={{ position: 'relative' }}>
+              <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <span
+                onClick={toggleShowPassword}
+                style={{
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  cursor: 'pointer',
+                  color: '#555'
+                }}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
+            </div>
           </FormGroup>
           <Button text="Login" type="submit" />
         </form>
