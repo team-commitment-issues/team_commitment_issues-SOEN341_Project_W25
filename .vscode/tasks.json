@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build and start",
+			"path": "backend",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build and start - backend",
+			"detail": "tsc && node dist/server.js"
+		}
+	]
+}

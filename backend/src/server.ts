@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes';
+import channelRoutes from './routes/channelRoutes';
 
 mongoose.connect('mongodb://localhost:27017/', {
     dbName: 'chathavendb',
@@ -17,6 +18,7 @@ backend.use(express.json());
 backend.use(cors());
 
 backend.use('/user', userRoutes);
+backend.use('/channel', channelRoutes);
 
 backend.listen(5000, () => {
     console.log('Backend is listening on port 5000');
