@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Lazy-loaded components
 const Login = lazy(() => import('../Pages/Login'));
 const SignUp = lazy(() => import('../Pages/SignUp'));
+const ChannelPage = lazy(() => import('../Pages/ChannelPages'));
 
 const AppRoutes: React.FC = () => {
   return (
@@ -11,6 +12,7 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/login" element={React.createElement(Login)} />
         <Route path="/signup" element={React.createElement(SignUp)} />
+        <Route path="/channel" element={React.createElement(ChannelPage)} />
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
