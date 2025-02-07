@@ -5,6 +5,8 @@ import Input from './UI/Input';
 import Button from './UI/Button';
 import FormGroup from './UI/FormGroup';
 import styles from '../Styles/signUpStyles';
+import TextLink from './UI/TextLink';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const SignUpForm: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -13,7 +15,12 @@ const SignUpForm: React.FC = () => {
   const [lastName, setLastName] = useState<string>('');
   const [userID, setUserID] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const navigate = useNavigate();
+
+  const toggleShowPassword = () => {
+    setShowPassword((prevState) => !prevState);
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +41,23 @@ const SignUpForm: React.FC = () => {
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </FormGroup>
         <FormGroup label="Password:">
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          {/* <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /> */}
+          <div style={{ position: 'relative' }}>
+            <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <span
+              onClick={toggleShowPassword}
+              style={{
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+                color: '#555'
+              }}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
         </FormGroup>
         <FormGroup label="First Name:">
           <Input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
@@ -47,6 +70,11 @@ const SignUpForm: React.FC = () => {
         </FormGroup>
         <Button text="Sign Up" type="submit" />
       </form>
+      <TextLink
+        text="Already have an account?"
+        linkText="Login"
+        to="/login"
+      />
     </div>
   );
 };

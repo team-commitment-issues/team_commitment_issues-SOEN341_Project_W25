@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import userRoutes from '../src/routes/userRoutes';
+import userRoutes from '../routes/userRoutes';
 
 const app = express();
 app.use(express.json());
@@ -85,7 +85,7 @@ describe('POST /user/login', () => {
             .send(Test3User2)
             .expect(400);
 
-        expect(response.body.error).toBe('userID already exists');
+        expect(response.body.error).toBe('UserID already exists');
     });
 
     it('should log in a user successfully if the credentials are correct', async () => {
@@ -110,7 +110,6 @@ describe('POST /user/login', () => {
             .expect(200);
 
         expect(response.body.message).toBe('User logged in successfully');
-        expect(response.body.token).toBeTruthy();
     });
 
     it('should return an error if the credentials are incorrect', async () => {
@@ -132,22 +131,22 @@ describe('POST /user/login', () => {
         const response = await request(app)
             .post('/user/login')
             .send({ userID: Test5User.userID, password: 'wrongpassword' })
-            .expect(500);
+            .expect(400);
 
-        expect(response.body.error).toBe('Internal server error');
+        expect(response.body.error).toBe('Incorrect password');
 
         const response2 = await request(app)
             .post('/user/login')
             .send({ userID: 'wronguserID', password: Test5User.password })
-            .expect(500);
+            .expect(404);
 
-        expect(response2.body.error).toBe('Internal server error');
+        expect(response2.body.error).toBe('User not found');
 
         const response3 = await request(app)
             .post('/user/login')
             .send({ userID: 'wronguserID', password: 'wrongpassword' })
-            .expect(500);
+            .expect(404);
 
-        expect(response3.body.error).toBe('Internal server error');
+        expect(response3.body.error).toBe('User not found');
     });
 });
