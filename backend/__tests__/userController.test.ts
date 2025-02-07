@@ -56,7 +56,7 @@ describe('POST /user/login', () => {
         expect(response.body.error).toBe('Email already exists');
     });
 
-    it('should return an error if the username is already taken', async () => {
+    it('should return an error if the userID is already taken', async () => {
         const Test3User1 = {
             email: 'john@doe.com',
             password: 'testpassword',
@@ -86,5 +86,68 @@ describe('POST /user/login', () => {
             .expect(400);
 
         expect(response.body.error).toBe('userID already exists');
+    });
+
+    it('should log in a user successfully if the credentials are correct', async () => {
+        const Test4User = {
+            email: 'george@doe.com',
+            password: 'testpassword',
+            firstName: 'George',
+            lastName: 'Doe',
+            userID: 'georgedoe',
+        };
+
+        await request(app)
+            .post('/user/signUp')
+            .send(Test4User)
+            .expect(201);
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const response = await request(app)
+            .post('/user/login')
+            .send({ userID: Test4User.userID, password: Test4User.password })
+            .expect(200);
+
+        expect(response.body.message).toBe('User logged in successfully');
+        expect(response.body.token).toBeTruthy();
+    });
+
+    it('should return an error if the credentials are incorrect', async () => {
+        const Test5User = {
+            email: 'may@doe.com',
+            password: 'testpassword',
+            firstName: 'May',
+            lastName: 'Doe',
+            userID: 'maydoe',
+        };
+
+        await request(app)
+            .post('/user/signUp')
+            .send(Test5User)
+            .expect(201);
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        const response = await request(app)
+            .post('/user/login')
+            .send({ userID: Test5User.userID, password: 'wrongpassword' })
+            .expect(500);
+
+        expect(response.body.error).toBe('Internal server error');
+
+        const response2 = await request(app)
+            .post('/user/login')
+            .send({ userID: 'wronguserID', password: Test5User.password })
+            .expect(500);
+
+        expect(response2.body.error).toBe('Internal server error');
+
+        const response3 = await request(app)
+            .post('/user/login')
+            .send({ userID: 'wronguserID', password: 'wrongpassword' })
+            .expect(500);
+
+        expect(response3.body.error).toBe('Internal server error');
     });
 });
