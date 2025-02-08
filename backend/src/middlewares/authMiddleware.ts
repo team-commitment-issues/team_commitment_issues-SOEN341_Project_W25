@@ -26,7 +26,7 @@ async function authenticate(req: Request, res: Response, next: NextFunction): Pr
         req.user = user;
         next();
     } catch (err) {
-        res.status(401).json({ error: 'Unauthorized: Invalid token' });
+        res.status(403).json({ error: 'Unauthorized: Invalid token' });
         return;
     }
 }

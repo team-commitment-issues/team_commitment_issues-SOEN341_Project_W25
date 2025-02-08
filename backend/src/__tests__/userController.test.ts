@@ -109,7 +109,11 @@ describe('POST /user/login', () => {
             .send({ userID: Test4User.userID, password: Test4User.password })
             .expect(200);
 
+        console.log(response.body);
+
+
         expect(response.body.message).toBe('User logged in successfully');
+        expect(response.body.token).toBeDefined();
     });
 
     it('should return an error if the credentials are incorrect', async () => {
