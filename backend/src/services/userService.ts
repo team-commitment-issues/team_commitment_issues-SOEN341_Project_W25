@@ -28,8 +28,12 @@ class UserService {
             throw new Error('Incorrect password');
         }
 
-        const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
-        return token;
+        try {
+            const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+            return token;
+        } catch (err) {
+            throw err;
+        }
     }
 
     static async grantPermission(userID: string, channelID: string, permission: Permission): Promise<any> {

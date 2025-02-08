@@ -34,7 +34,7 @@ class UserController {
         try {
             const { userID, password } = req.body;
             const token = await UserService.userAuth(userID, password);
-
+            
             res.status(200).json({ message: 'User logged in successfully', token });
         } catch (err) {
             if ((err as any).message === 'User not found') {
