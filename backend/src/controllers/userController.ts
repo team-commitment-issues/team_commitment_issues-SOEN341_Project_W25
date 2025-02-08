@@ -1,14 +1,13 @@
 import { Request, Response } from 'express';
 import UserService from '../services/userService';
+import { Role } from '../enums';
 
 class UserController {
-    // **User Signup**
     static async signUp(req: Request, res: Response): Promise<void> {
         try {
             const { email, password, firstName, lastName, userID } = req.body;
-            const newUser = await UserService.createUser(email, password, firstName, lastName, userID);
+            const newUser = await UserService.createUser(email, password, firstName, lastName, userID, Role.USER);
 
-            // Response with user details (excluding password)
             const userResponse = {
                 email: newUser.email,
                 firstName: newUser.firstName,
@@ -31,11 +30,10 @@ class UserController {
         }
     }
 
-    // **User Login**
     static async login(req: Request, res: Response): Promise<void> {
         try {
             const { userID, password } = req.body;
-            const token = await UserService.userAuth(userID, password); // Returns JWT token
+            const token = await UserService.userAuth(userID, password);
 
             res.status(200).json({ message: 'User logged in successfully', token });
         } catch (err) {

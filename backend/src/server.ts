@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes';
+import channelRoutes from './routes/channelRoutes';
 import path from 'path';
 
 mongoose.connect('mongodb://127.0.0.1:27017/', {
@@ -19,6 +20,7 @@ backend.use(cors());
 backend.use(express.static(path.join(__dirname, '../', '../', './frontend', './build')));
 
 backend.use('/user', userRoutes);
+backend.use('/channel', channelRoutes);
 
 backend.listen(5000, () => {
     console.log('Backend is listening on port 5000');
