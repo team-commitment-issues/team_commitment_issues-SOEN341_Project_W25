@@ -1,4 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
+import { Role, Permission } from '../enums';
 
 interface IUser extends Document{
     email: string;
@@ -6,6 +7,8 @@ interface IUser extends Document{
     firstName: string;
     lastName: string;
     userID: string;
+    role: Role;
+    permissions: Map<string, Permission[]>;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -31,6 +34,17 @@ const UserSchema = new Schema<IUser>({
         required: true,
         unique: true,
     },
+    role: {
+        type: String,
+        enum: Object.values(Role),
+        default: Role.USER,
+        required: true,
+    },
+    permissions: {
+        type: Map,
+        of: [String],
+        default: new Map(),
+    }
 });
 const User = model<IUser>('User', UserSchema);
 User.createIndexes();
