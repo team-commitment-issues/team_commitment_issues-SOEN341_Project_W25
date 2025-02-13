@@ -42,6 +42,12 @@ interface IUser extends Document {
      * @type {Role}
      */
     role: Role;
+
+    /**
+     * List of team memberships for the user.
+     * @type {Schema.Types.ObjectId[]}
+     */
+    teamMemberships: Schema.Types.ObjectId[];
 }
 
 /**
@@ -76,6 +82,11 @@ const UserSchema = new Schema<IUser>({
         enum: Object.values(Role),
         default: Role.USER,
         required: true,
+    },
+    teamMemberships: {
+        type: [Schema.Types.ObjectId],
+        ref: 'TeamMember',
+        default: [],
     }
 });
 

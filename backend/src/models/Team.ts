@@ -15,8 +15,23 @@ interface ITeam extends Document {
     /**
      * The ID of the user who created the team.
      * @type {Schema.Types.ObjectId}
+     * @see {@link User}
      */
     createdBy: Schema.Types.ObjectId;
+
+    /**
+     * The members of the team.
+     * @type {Schema.Types.ObjectId[]}
+     * @see {@link TeamMember}
+     */
+    teamMembers: Schema.Types.ObjectId[];
+
+    /**
+     * Channels that belong to the team.
+     * @type {Schema.Types.ObjectId[]}
+     * @see {@link Channel}
+     */
+    channels: Schema.Types.ObjectId[];
 }
 
 /**
@@ -34,6 +49,16 @@ const TeamSchema = new Schema<ITeam>({
         ref: 'User',
         required: true,
     },
+    teamMembers: [{
+        type: Schema.Types.ObjectId,
+        ref: 'TeamMember',
+        required: true,
+    }],
+    channels: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Channel',
+        default: [],
+    }],
 });
 
 /**

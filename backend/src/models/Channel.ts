@@ -23,6 +23,12 @@ interface IChannel extends Document {
      * @see {@link User}
      */
     createdBy: Schema.Types.ObjectId;
+    /**
+     * The members of the channel.
+     * @type {Schema.Types.ObjectId[]}
+     * @see {@link ChannelMember}
+     */
+    channelMembers: Schema.Types.ObjectId[];
 }
 
 /**
@@ -44,6 +50,11 @@ const ChannelSchema = new Schema<IChannel>({
         ref: 'User',
         required: true,
     },
+    channelMembers: [{
+        type: Schema.Types.ObjectId,
+        ref: 'ChannelMember',
+        required: true,
+    }],
 });
 
 /**

@@ -20,6 +20,7 @@ export enum Permission {
   Write = 'WRITE',
   ManageChannel = 'MANAGE_CHANNEL',
   ManageUsers = 'MANAGE_USERS',
+  ManageTeam = 'MANAGE_TEAM',
 }
 
 /**
