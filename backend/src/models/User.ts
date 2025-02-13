@@ -1,16 +1,53 @@
 import { Schema, model, Document } from 'mongoose';
-import { Role, Permission } from '../enums';
+import { Role } from '../enums';
 
-interface IUser extends Document{
+/**
+ * Interface representing a User document in MongoDB.
+ * @interface IUser
+ * @extends {Document}
+ */
+interface IUser extends Document {
+    /**
+     * The email of the user.
+     * @type {string}
+     */
     email: string;
+
+    /**
+     * The password of the user.
+     * @type {string}
+     */
     password: string;
+
+    /**
+     * The first name of the user.
+     * @type {string}
+     */
     firstName: string;
+
+    /**
+     * The last name of the user.
+     * @type {string}
+     */
     lastName: string;
+
+    /**
+     * The unique username of the user.
+     * @type {string}
+     */
     userID: string;
+
+    /**
+     * The role of the user.
+     * @type {Role}
+     */
     role: Role;
-    permissions: Map<string, Permission[]>;
 }
 
+/**
+ * Mongoose schema for the User model.
+ * @const {Schema<IUser>}
+ */
 const UserSchema = new Schema<IUser>({
     email: {
         type: String,
@@ -39,13 +76,14 @@ const UserSchema = new Schema<IUser>({
         enum: Object.values(Role),
         default: Role.USER,
         required: true,
-    },
-    permissions: {
-        type: Map,
-        of: [String],
-        default: new Map(),
     }
 });
+
+/**
+ * Mongoose model for the User schema.
+ * @const {Model<IUser>}
+ * @see {@link IUser}
+ */
 const User = model<IUser>('User', UserSchema);
 User.createIndexes();
 

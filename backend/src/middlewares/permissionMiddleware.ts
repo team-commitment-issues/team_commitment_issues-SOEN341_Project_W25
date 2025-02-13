@@ -10,7 +10,7 @@ function checkPermission(permission: Permission) {
         const user = req.user;
         const channelID = req.params.channelID;
 
-        if (user.role === 'ADMIN') {
+        if (user.role === 'SUPER_ADMIN') {
             return next();
         }
 
