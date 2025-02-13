@@ -14,11 +14,11 @@ interface IChannelMember extends Document {
      */
     channel: Schema.Types.ObjectId;
     /**
-     * The user that is a member of the channel.
+     * The team member that is a member of the channel.
      * @type {Schema.Types.ObjectId}
-     * @see {@link User}
+     * @see {@link TeamMember}
      */
-    user: Schema.Types.ObjectId;
+    teamMember: Schema.Types.ObjectId;
     /**
      * The permissions of the user within the channel.
      * @type {Permission[]}
@@ -38,9 +38,9 @@ const ChannelMemberSchema = new Schema<IChannelMember>({
         ref: 'Channel',
         required: true,
     },
-    user: {
+    teamMember: {
         type: Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'TeanMember',
         required: true,
     },
     permissions: {

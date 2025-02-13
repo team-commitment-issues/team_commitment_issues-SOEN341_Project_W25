@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes';
 import channelRoutes from './routes/channelRoutes';
+import superAdminRoutes from './routes/superAdminRoutes';
 import path from 'path';
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chathavendb';
@@ -24,6 +25,7 @@ backend.use(express.static(path.join(__dirname, '../', '../', './frontend', './b
 
 backend.use('/user', userRoutes);
 backend.use('/channel', channelRoutes);
+backend.use('/superadmin', superAdminRoutes);
 
 const PORT = process.env.PORT || 5000;
 

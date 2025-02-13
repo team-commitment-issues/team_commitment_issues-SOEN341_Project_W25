@@ -10,6 +10,15 @@ declare global {
     }
 }
 
+/**
+ * Middleware to authenticate a user using a JWT token.
+ * Make sure user is logged in before accessing protected routes.
+ * 
+ * @param {Request} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next middleware function.
+ * @returns {void}
+ */
 async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
