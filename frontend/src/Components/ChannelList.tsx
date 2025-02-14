@@ -12,12 +12,8 @@ const ChannelList: React.FC = () => {
       </h3>
       {!collapsed && (
         <ul style={styles.listContainer}>
-          {" "}
-          {/* ✅ Uses listContainer */}
           {channels.map((channel, index) => (
             <li key={index} style={styles.listItem}>
-              {" "}
-              {/* ✅ Uses listItem */}
               {channel}
             </li>
           ))}
