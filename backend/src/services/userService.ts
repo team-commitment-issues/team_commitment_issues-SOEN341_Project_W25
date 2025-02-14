@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import User from '../models/User';
 import jwt from 'jsonwebtoken';
-import { Role, Permission } from '../enums';
+import { Role } from '../enums';
 class UserService {
     static async createUser(email: string, password: string, firstName: string, lastName: string, userID: string, role: Role): Promise<any> {
         const existingUser = await User.findOne({ $or: [{ email }, { userID }] });

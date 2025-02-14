@@ -1,5 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 import { Role } from '../enums';
+import e from 'express';
 
 /**
  * Interface representing a User document in MongoDB.
@@ -99,3 +100,4 @@ const User = model<IUser>('User', UserSchema);
 User.createIndexes();
 
 export default User;
+export type { IUser };
