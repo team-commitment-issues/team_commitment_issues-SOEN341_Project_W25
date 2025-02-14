@@ -1,11 +1,11 @@
-import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 // Lazy-loaded components
-const Login = lazy(() => import('../Pages/Login'));
-const SignUp = lazy(() => import('../Pages/SignUp'));
-const Dashboard = lazy(() => import('../Pages/AdminDashboard'));
-const LandingPage = lazy(() => import('../Pages/LandingPage'));
+const Login = lazy(() => import("../Pages/Login"));
+const SignUp = lazy(() => import("../Pages/SignUp"));
+const Dashboard = lazy(() => import("../Pages/AdminDashboard"));
+const LandingPage = lazy(() => import("../Pages/LandingPage"));
 
 const AppRoutes: React.FC = () => {
   return (
@@ -22,4 +22,3 @@ const AppRoutes: React.FC = () => {
 };
 
 export default AppRoutes;
-
