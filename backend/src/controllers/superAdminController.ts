@@ -4,8 +4,8 @@ import SuperAdminService from '../services/superAdminService';
 class SuperAdminController {
     static async createTeam(req: Request, res: Response): Promise<void> {
         try {
-            const { name, createdByUserID } = req.body;
-            const team = await SuperAdminService.createTeam(name, createdByUserID);
+            const { teamName } = req.body;
+            const team = await SuperAdminService.createTeam(teamName, req.user._id);
 
             res.status(201).json({
                 message: 'Team created successfully',
