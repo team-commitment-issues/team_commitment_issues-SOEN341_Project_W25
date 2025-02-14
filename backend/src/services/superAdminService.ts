@@ -53,7 +53,7 @@ class SuperAdminService {
             
             return { message: 'User removed from team successfully' };
         } catch (error) {
-            throw new Error(`Error removing user from team: ${error.message}`);
+            throw new Error(`Error removing user from team: ${(error as Error).message}`);
         }
     }
 
@@ -70,7 +70,7 @@ class SuperAdminService {
 
             return { message: 'Team deleted successfully' };
         } catch (error) {
-            throw new Error(`Error deleting team: ${error.message}`);
+            throw new Error(`Error deleting team: ${(error as Error).message}`);
         }
     }
 }
