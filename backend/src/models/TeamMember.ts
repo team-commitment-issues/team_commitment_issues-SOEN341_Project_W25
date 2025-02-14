@@ -26,11 +26,11 @@ interface ITeamMember extends Document {
      */
     role: TeamRole;
     /**
-     * The ChannelMemberships of the user within the team.
+     * The Channels the user has access to within the team.
      * @type {Schema.Types.ObjectId[]}
-     * @see {@link ChannelMember}
+     * @see {@link Channel}
      */
-    channelMemberships: Schema.Types.ObjectId[];
+    channels: Schema.Types.ObjectId[];
 }
 
 /**
@@ -54,9 +54,9 @@ const TeamMemberSchema = new Schema<ITeamMember>({
         enum: Object.values(TeamRole),
         required: true
     },
-    channelMemberships: {
+    channels: {
         type: [Schema.Types.ObjectId],
-        ref: 'ChannelMember',
+        ref: 'Channel',
         default: [],
     }
 });

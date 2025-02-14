@@ -1,6 +1,5 @@
-import { Role, Permission } from '../enums';
+import { TeamRole } from '../enums';
 import Channel from '../models/Channel';
-import ChannelMember from '../models/ChannelMember';
 import User from '../models/User';
 import Team from '../models/Team';
 import TeamMember from '../models/TeamMember';
@@ -11,7 +10,7 @@ class SuperAdminService {
         return null;
     }
 
-    static async addUserToTeam(userID: string, teamID: string, role: Role): Promise<any> {
+    static async addUserToTeam(userID: string, teamID: string, teamRole: TeamRole): Promise<any> {
         /* TODO: Implement this method */
         return null;
     }

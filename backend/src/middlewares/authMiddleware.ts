@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 import jwt from 'jsonwebtoken';
 
 declare global {
     namespace Express {
         interface Request {
-            user?: any;
+            user: IUser;
         }
     }
 }
