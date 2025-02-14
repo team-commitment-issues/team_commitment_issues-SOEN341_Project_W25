@@ -45,6 +45,56 @@ class SuperAdminService {
 
         return teamMember;
     }
+
+    static async removeUserFromTeam(userID: string, teamID: string): Promise<any> {
+        try {
+            const teamMember = await TeamMember.findOne({ user: userID, team: teamID });
+            const membershipId = teamMember?._id as ObjectId;
+            if (!teamMember) throw new Error('User is not a member of the team');
+            await teamMember.deleteOne();
+
+            const user = await User.findById(userID);
+            if (!user) throw new Error('User not found');
+            user.teamMemberships = user.teamMemberships.filter((id) => id.toString() !== membershipId.toString());
+
+            await user.save();
+
+            const team = await Team.findById(teamID);
+            if (!team) throw new Error('Team not found');
+            team.teamMembers = team.teamMembers.filter((id) => id.toString() !== membershipId.toString());
+
+            await team.save();
+            
+            return { message: 'User removed from team successfully' };
+        } catch (error) {
+            throw new Error(`Error removing user from team: ${(error as Error).message}`);
+        }
+    }
+
+    static async deleteTeam(teamID: string): Promise<any> {
+        try {
+            const team = await Team.findById(teamID);
+            if (!team) throw new Error('Team not found');
+            await team.deleteOne();
+
+            const memberships = await TeamMember.find({ team: teamID });
+            for (const membership of memberships) {
+                const user = await User.findByIdAndUpdate(membership.user, {
+                    $pull: { teamMemberships: membership._id },
+                });
+                user?.save();
+                await membership.deleteOne();
+            }
+
+            await Channel.deleteMany({ team: teamID });
+
+            await Team.findByIdAndDelete(teamID);
+
+            return { message: 'Team deleted successfully' };
+        } catch (error) {
+            throw new Error(`Error deleting team: ${(error as Error).message}`);
+        }
+    }
 }
 
 export default SuperAdminService;

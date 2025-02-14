@@ -6,9 +6,9 @@ const Login = lazy(() => import('../Pages/Login'));
 const SignUp = lazy(() => import('../Pages/SignUp'));
 const Dashboard = lazy(() => import('../Pages/AdminDashboard'));
 const LandingPage = lazy(() => import('../Pages/LandingPage'));
-const CreateTeam = lazy(() => import('../Pages/CreateTeam'));  
+const Create = lazy(() => import('../Pages/CreateTeamPage'));
 const Profile = lazy(() => import('../Pages/Profile'));        
-const Settings = lazy(() => import('../Pages/Settings'));      
+const Settings = lazy(() => import('../Pages/Settings'));
 
 const AppRoutes: React.FC = () => {
   return (
