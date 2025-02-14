@@ -3,6 +3,7 @@ import { TeamRole, Role } from '../enums';
 import { Types } from 'mongoose';
 import User from '../models/User';
 import TeamMember from '../models/TeamMember';
+import Team from '../models/Team';
 
 function checkPermission(role: TeamRole | Role) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -30,9 +31,30 @@ function checkPermission(role: TeamRole | Role) {
             return;
         }
 
+        const teamExists = await Team.findById(team);
+        if (!teamExists) {
+            res.status(404).json({error: 'Team not found'});
+            return;
+        }
+
         const teamMember = await TeamMember.findOne({ team, user: user._id });
-        if (!teamMember || (teamMember.role !== role && user.role !== role)) {
-            res.status(403).json({ 'Forbidden': 'You do not have permission to access this resource' });
+        if (!teamMember) {
+            res.status(403).json({ error: 'You do not have permission to access this resource' });
+            return;
+        }
+
+        if (role === TeamRole.MEMBER) {
+            if (teamMember.role !== TeamRole.MEMBER && teamMember.role !== TeamRole.ADMIN) {
+            res.status(403).json({ error: 'You do not have permission to access this resource' });
+            return;
+            }
+        } else if (role === TeamRole.ADMIN) {
+            if (teamMember.role !== TeamRole.ADMIN) {
+            res.status(403).json({ error: 'You do not have permission to access this resource' });
+            return;
+            }
+        } else if (user.role !== role) {
+            res.status(403).json({ error: 'You do not have permission to access this resource' });
             return;
         }
 
