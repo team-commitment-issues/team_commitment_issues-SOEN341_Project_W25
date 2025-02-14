@@ -1,5 +1,5 @@
-import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 // Lazy-loaded components
 const Login = lazy(() => import('../Pages/Login'));
@@ -24,4 +24,3 @@ const AppRoutes: React.FC = () => {
 };
 
 export default AppRoutes;
-
