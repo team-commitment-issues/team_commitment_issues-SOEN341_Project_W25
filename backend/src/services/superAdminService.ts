@@ -45,6 +45,34 @@ class SuperAdminService {
 
         return teamMember;
     }
+
+    static async removeUserFromTeam(userID: string, teamID: string): Promise<any> {
+        try {
+            const teamMember = await TeamMember.findOneAndDelete({ user: userID, team: teamID });
+            if (!teamMember) throw new Error('User is not a member of the team');
+            
+            return { message: 'User removed from team successfully' };
+        } catch (error) {
+            throw new Error(`Error removing user from team: ${error.message}`);
+        }
+    }
+
+    static async deleteTeam(teamID: string): Promise<any> {
+        try {
+            const team = await Team.findById(teamID);
+            if (!team) throw new Error('Team not found');
+
+            await TeamMember.deleteMany({ team: teamID });
+
+            await Channel.deleteMany({ team: teamID });
+
+            await Team.findByIdAndDelete(teamID);
+
+            return { message: 'Team deleted successfully' };
+        } catch (error) {
+            throw new Error(`Error deleting team: ${error.message}`);
+        }
+    }
 }
 
 export default SuperAdminService;
