@@ -3,13 +3,9 @@ import express from 'express';
 import channelRoutes from '../routes/channelRoutes';
 import authenticate from '../middlewares/authMiddleware';
 import checkPermission from '../middlewares/permissionMiddleware';
-import { TeamRole } from '../enums';
-import mongoose, { Mongoose, Types } from 'mongoose';
-import jwt from 'jsonwebtoken';
-import User from '../models/User';
-import Team from '../models/Team';
-import Channel from '../models/Channel';
-import TeamMember from '../models/TeamMember';
+import { Role, TeamRole } from '../enums';
+import mongoose from 'mongoose';
+import TestHelpers from './testHelpers';
 
 const app = express();
 app.use(express.json());
@@ -17,24 +13,11 @@ app.use('/channel', authenticate, checkPermission(TeamRole.ADMIN), channelRoutes
 
 describe('POST /channel/createChannel', () => {
     it('should create a new channel successfully', async () => {
-        const user = new User({
-            email: 'admin@user.com',
-            password: 'testpassword',
-            firstName: 'Admin',
-            lastName: 'User',
-            userID: 'adminuser',
-            role: 'SUPER_ADMIN',
-        });
-        await user.save();
+        const user = await TestHelpers.createTestSuperAdmin([]);
 
-        const team = new Team({
-            name: 'Test Team',
-            createdBy: user._id,
-            teamMembers: [user._id],
-        });
-        await team.save();
+        const team = await TestHelpers.createTestTeam('Test Team', user._id, [], []);
 
-        const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(user.userID, user.email);
 
         const newChannel = {
             name: 'Test Channel',
@@ -66,17 +49,9 @@ describe('POST /channel/createChannel', () => {
     });
 
     it('should return an error if the team is not found', async () => {
-        const user = new User({
-            email: 'admin@user.com',
-            password: 'testpassword',
-            firstName: 'Admin',
-            lastName: 'User',
-            userID: 'adminuser',
-            role: 'SUPER_ADMIN',
-        });
-        await user.save();
+        const user = await TestHelpers.createTestSuperAdmin([]);
 
-        const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(user.userID, user.email);
 
         const newChannel = {
             name: 'Test Channel',
@@ -95,59 +70,25 @@ describe('POST /channel/createChannel', () => {
 
 describe('POST /channel/addUserToChannel', () => {
     it('should add a user to a channel successfully', async () => {
-        const superAdminUser = new User({
-            email: 'superadmin@user.com',
-            password: 'testpassword',
-            firstName: 'Super',
-            lastName: 'Admin',
-            userID: 'superadminuser',
-            role: 'SUPER_ADMIN',
-        });
-        await superAdminUser.save();
+        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
 
-        const token = jwt.sign({ userID: superAdminUser.userID, email: superAdminUser.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
 
-        const user = new User({
-            email: 'user@user.com',
-            password: 'testpassword',
-            firstName: 'User',
-            lastName: 'User',
-            userID: 'useruser',
-            role: 'USER',
-            teamMemberships: [],
-        });
-        await user.save();
+        const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
 
-        const team = new Team({
-            name: 'Test Team',
-            createdBy: superAdminUser._id,
-            teamMembers: [],
-            channels: [],
-        });
+        const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
+
+        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+
+        team.teamMembers.push(teamMember._id);
         await team.save();
 
-        const teamMember = new TeamMember({
-            user: user._id,
-            team: team._id,
-            role: TeamRole.MEMBER,
-        }) as mongoose.Document & { _id: mongoose.Types.ObjectId };
-        await teamMember.save();
-
-        team.teamMembers.push(teamMember._id as unknown as mongoose.Schema.Types.ObjectId);
-        await team.save();
-
-        user.teamMemberships.push(teamMember._id as unknown as mongoose.Schema.Types.ObjectId);
+        user.teamMemberships.push(teamMember._id);
         await user.save();
 
-        const channel = new Channel({
-            name: 'Test Channel',
-            createdBy: superAdminUser._id,
-            team: team._id,
-            members: [],
-        });
-        await channel.save();
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, superAdminUser._id, [teamMember._id]);
 
-        team.channels.push(channel._id as unknown as mongoose.Schema.Types.ObjectId);
+        team.channels.push(channel._id);
         await team.save();
 
         const addUserRequest = {
@@ -162,7 +103,7 @@ describe('POST /channel/addUserToChannel', () => {
             .expect(201);
 
         expect(response.body.message).toBe('User added to channel successfully');
-        expect(response.body.channel.members).toContain((user._id as unknown as mongoose.Schema.Types.ObjectId).toString());
+        expect(response.body.channel.members).toContain((user._id).toString());
     });
 
     it('should return an error if the user is not authorized', async () => {
@@ -180,21 +121,13 @@ describe('POST /channel/addUserToChannel', () => {
     });
 
     it('should return an error if the channel is not found', async () => {
-        const adminUser = new User({
-            email: 'admin@user.com',
-            password: 'testpassword',
-            firstName: 'Admin',
-            lastName: 'User',
-            userID: 'adminuser',
-            role: 'SUPER_ADMIN',
-        });
-        await adminUser.save();
+        const adminUser = await TestHelpers.createTestSuperAdmin([]);
 
-        const token = jwt.sign({ userID: adminUser.userID, email: adminUser.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(adminUser.userID, adminUser.email);
 
         const addUserRequest = {
             channelName: 'Nonexistent Channel',
-            userID: 'adminuser',
+            userID: 'superadminuser',
         };
 
         const response = await request(app)
@@ -207,35 +140,19 @@ describe('POST /channel/addUserToChannel', () => {
     });
 
     it('should return an error if the user is not found', async () => {
-        const adminUser = new User({
-            email: 'admin@user.com',
-            password: 'testpassword',
-            firstName: 'Admin',
-            lastName: 'User',
-            userID: 'adminuser',
-            role: 'SUPER_ADMIN',
-        });
-        await adminUser.save();
+        const adminUser = await TestHelpers.createTestSuperAdmin([]);
 
-        const team = new Team({
-            name: 'Test Team',
-            createdBy: adminUser._id,
-            teamMembers: [adminUser._id],
-        });
+        const team = await TestHelpers.createTestTeam('Test Team', adminUser._id, [], []);
+
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, adminUser._id, []);
+
+        team.channels.push(channel._id);
         await team.save();
 
-        const channel = new Channel({
-            name: 'Test Channel',
-            createdBy: adminUser._id,
-            team: team._id,
-            members: [adminUser._id],
-        });
-        await channel.save();
-
-        const token = jwt.sign({ userID: adminUser.userID, email: adminUser.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(adminUser.userID, adminUser.email);
 
         const addUserRequest = {
-            channelID: (channel._id as Types.ObjectId).toString(),
+            channelID: (channel._id).toString(),
             userID: 'nonexistentuser',
         };
 

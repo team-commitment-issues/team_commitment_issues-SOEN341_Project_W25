@@ -1,6 +1,8 @@
 import request from 'supertest';
 import express from 'express';
 import userRoutes from '../routes/userRoutes';
+import TestHelpers from './testHelpers';
+import { Role } from '../enums';
 
 const app = express();
 app.use(express.json());
@@ -25,88 +27,50 @@ describe('POST /user/login', () => {
     });
 
     it('should return an error if the email is already taken', async () => {
-        const Test2User1 = {
-            email: 'john@doe.com',
-            password: 'testpassword',
-            firstName: 'John',
-            lastName: 'Doe',
-            userID: 'johndoe',
-        };
+        const testUser1 = await TestHelpers.createTestUser('john@doe.com', 'testpassword', 'John', 'Doe', 'johndoe', Role.USER, []);
 
-        const Test2User2 = {
+        const testUser2 = {
             email: 'john@doe.com',
             password: 'testpassword',
             firstName: 'Jane',
             lastName: 'Doe',
             userID: 'janedoe',
         };
-    
-        await request(app)
-            .post('/user/signUp')
-            .send(Test2User1)
-            .expect(201);
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
         
         const response = await request(app)
             .post('/user/SignUp')
-            .send(Test2User2)
+            .send(testUser2)
             .expect(400);
 
         expect(response.body.error).toBe('Email already exists');
     });
 
     it('should return an error if the userID is already taken', async () => {
-        const Test3User1 = {
-            email: 'john@doe.com',
-            password: 'testpassword',
-            firstName: 'John',
-            lastName: 'Doe',
-            userID: 'johndoe',
-        };
+        const testUser1 = await TestHelpers.createTestUser('john@doe.com', 'testpassword', 'John', 'Doe', 'johndoe', Role.USER, []);
 
-        const Test3User2 = {
+        const testUser2 = {
             email: 'jane@doe.com',
             password: 'testpassword',
             firstName: 'Jane',
             lastName: 'Doe',
             userID: 'johndoe',
         };
-    
-        await request(app)
-            .post('/user/signUp')
-            .send(Test3User1)
-            .expect(201);
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
 
         const response = await request(app)
             .post('/user/signUp')
-            .send(Test3User2)
+            .send(testUser2)
             .expect(400);
 
         expect(response.body.error).toBe('UserID already exists');
     });
 
     it('should log in a user successfully if the credentials are correct', async () => {
-        const Test4User = {
-            email: 'george@doe.com',
-            password: 'testpassword',
-            firstName: 'George',
-            lastName: 'Doe',
-            userID: 'georgedoe',
-        };
-
-        await request(app)
-            .post('/user/signUp')
-            .send(Test4User)
-            .expect(201);
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        const testpassword: string = 'testpassword';
+        const testUser = await TestHelpers.createTestUser('test@test.com', testpassword, 'Test', 'User', 'testuser', Role.USER, []);
 
         const response = await request(app)
             .post('/user/login')
-            .send({ userID: Test4User.userID, password: Test4User.password })
+            .send({ userID: testUser.userID, password: testpassword })
             .expect(200);
 
 
@@ -115,31 +79,19 @@ describe('POST /user/login', () => {
     });
 
     it('should return an error if the credentials are incorrect', async () => {
-        const Test5User = {
-            email: 'may@doe.com',
-            password: 'testpassword',
-            firstName: 'May',
-            lastName: 'Doe',
-            userID: 'maydoe',
-        };
-
-        await request(app)
-            .post('/user/signUp')
-            .send(Test5User)
-            .expect(201);
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        const testpassword = 'testpassword';
+        const testUser = await TestHelpers.createTestUser('test@test.com', testpassword, 'Test', 'User', 'testuser', Role.USER, []);
 
         const response = await request(app)
             .post('/user/login')
-            .send({ userID: Test5User.userID, password: 'wrongpassword' })
+            .send({ userID: testUser.userID, password: 'wrongpassword' })
             .expect(400);
 
         expect(response.body.error).toBe('Incorrect password');
 
         const response2 = await request(app)
             .post('/user/login')
-            .send({ userID: 'wronguserID', password: Test5User.password })
+            .send({ userID: 'wronguserID', password: testpassword })
             .expect(404);
 
         expect(response2.body.error).toBe('User not found');
