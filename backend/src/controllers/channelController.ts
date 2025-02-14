@@ -14,11 +14,11 @@ class ChannelController {
                 channel: newChannel,
             });
         } catch (err) {
-            console.error('Error creating channel:', err); // Add this line to log the error
-            if ((err as any).message === 'User not found or not an admin') {
-                res.status(403).json({ error: 'User not found or not an admin' });
+            //console.error('Error creating channel:', err);
+            if ((err as any).message === 'User not found') {
+                res.status(403).json({ error: 'User not found' });
             } else if ((err as any).message === 'Team not found') {
-                res.status(400).json({ error: 'Team is required' });
+                res.status(400).json({ error: 'Team not found' });
             } else {
                 res.status(500).json({ error: 'Internal server error' });
             }
@@ -28,19 +28,23 @@ class ChannelController {
     // **Add User to Channel**
     static async addUserToChannel(req: Request, res: Response): Promise<void> {
         try {
-            const { channelID, userID } = req.body;
-            const newChannel = await ChannelService.addUserToChannel(channelID, userID);
+            const { channelName, userID } = req.body;
+            const newChannel = await ChannelService.addUserToChannel(channelName, userID);
 
             res.status(201).json({
                 message: 'User added to channel successfully',
                 channel: newChannel,
             });
         } catch (err) {
-            console.error('Error adding user to channel:', err); // Add this line to log the error
+            //console.error('Error adding user to channel:', err);
             if ((err as any).message === 'User not found') {
                 res.status(404).json({ error: 'User not found' });
             } else if ((err as any).message === 'Channel not found') {
                 res.status(404).json({ error: 'Channel not found' });
+            } else if ((err as any).message === 'Team not found') {
+                res.status(400).json({ error: 'Team not found' });
+            } else if ((err as any).message === 'User not a member of the team') {
+                res.status(403).json({ error: 'User not a member of the team' });
             } else {
                 res.status(500).json({ error: 'Internal server error' });
             }

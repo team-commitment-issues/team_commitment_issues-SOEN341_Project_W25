@@ -5,27 +5,34 @@ import TeamMember from '../models/TeamMember';
 import { Schema, Types } from 'mongoose';
 
 class ChannelService {
-    static async createChannel(name: string, createdByUserID: string, team: string): Promise<any> {
+    static async createChannel(name: string, createdByUserID: string, teamName: string): Promise<any> {
         const user = await User.findOne({ userID: createdByUserID });
         if (!user) {
             throw new Error('User not found');
         }
 
-        const channel = new Channel({ name, createdBy: user._id, team });
+        const teamExists = await Team.findOne({ name: teamName });
+        if (!teamExists) {
+            throw new Error('Team not found');
+        }
+
+        const channel = new Channel({ name, createdBy: user._id, team: teamExists._id });
         await channel.save();
 
-        await ChannelService.addUserToChannel(channel._id as Types.ObjectId, user.userID);
+        if (user.role !== 'SUPER_ADMIN') {
+            await ChannelService.addUserToChannel(channel.name, user.userID);
+        }
 
         return await channel.save();
     }
 
-    static async addUserToChannel(channelID: Types.ObjectId, userID: string): Promise<any> {
+    static async addUserToChannel(channelName: string, userID: string): Promise<any> {
         const user = await User.findOne({ userID });
         if (!user) {
             throw new Error('User not found');
         }
 
-        const channel = await Channel.findById(channelID);
+        const channel = await Channel.findOne({ name: channelName });
         if (!channel) {
             throw new Error('Channel not found');
         }
@@ -35,15 +42,14 @@ class ChannelService {
             throw new Error('Team not found');
         }
 
-        const teamMember = team.teamMembers.find((member: any) => member.equals(user._id));
-
+        const teamMember = await TeamMember.findOne({ team: team._id, user: user._id });
         if (!teamMember) {
             throw new Error('User not a member of the team');
         }
 
-        await TeamMember.updateOne({ team: team._id, user: user._id }, { $push: { channels: channel._id } });
-        
-        await Channel.updateOne({ _id: channel._id }, { $push: { members: user._id } });
+        team.channels.push(channel._id as Schema.Types.ObjectId);
+        await team.save();
+        channel.members.push(user._id as Schema.Types.ObjectId);
         return await channel.save();
     }
 }
