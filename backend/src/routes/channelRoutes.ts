@@ -7,6 +7,7 @@ import { TeamRole } from '../enums';
 
 const channelRoutes = Router();
 
-channelRoutes.post('/channels', authenticate, checkPermission(TeamRole.ADMIN), ChannelController.createChannel);
+channelRoutes.post('/createChannel', authenticate, checkPermission(TeamRole.ADMIN), ChannelController.createChannel);
+channelRoutes.post('/addUserToChannel', authenticate, checkPermission(TeamRole.ADMIN), ChannelController.addUserToChannel);
 
 export default channelRoutes;
