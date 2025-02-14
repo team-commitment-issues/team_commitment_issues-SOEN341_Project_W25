@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
           <h3>Create a Channel</h3>
           <p>Start a New Discussion Space.</p>
           <div style={styles.buttonContainer}>
-            <Button text="Create Channel" onClick={() => navigate('/create-channel')} />
+            <Button text="Create Team" onClick={() => navigate('/create-team')} />
           </div>
         </div>
 

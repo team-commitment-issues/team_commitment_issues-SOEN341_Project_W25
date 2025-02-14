@@ -6,6 +6,7 @@ const Login = lazy(() => import('../Pages/Login'));
 const SignUp = lazy(() => import('../Pages/SignUp'));
 const Dashboard = lazy(() => import('../Pages/AdminDashboard'));
 const LandingPage = lazy(() => import('../Pages/LandingPage'));
+const Create = lazy(() => import('../Pages/CreateTeam'));
 
 const AppRoutes: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={React.createElement(Login)} />
         <Route path="/signup" element={React.createElement(SignUp)} />
         <Route path="/dashboard" element={React.createElement(Dashboard)} />
+        <Route path="/create-team" element={React.createElement(Create)} />
         <Route path="/" element={React.createElement(LandingPage)} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
