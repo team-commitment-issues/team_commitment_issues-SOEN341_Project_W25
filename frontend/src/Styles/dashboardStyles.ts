@@ -27,6 +27,21 @@ const styles = {
       backgroundColor: "#145DBF",
     },
   },
+  menuItem: {
+    backgroundColor: "transparent",
+    border: "none",
+    padding: "10px",
+    textAlign: "left" as const,
+    cursor: "pointer",
+    fontSize: "14px",
+    width: "100%",
+    transition: "background 0.3s",
+    fontWeight: "500",
+    "&:hover": {
+      backgroundColor: "#E4E6EB",
+    },
+  },
+  
   dropdownMenu: {
     position: "absolute" as const,
     top: "30px",
@@ -61,20 +76,7 @@ const styles = {
     padding: "10px",
     gap: "15px",
   },
-  userList: {
-    width: "20%",
-    height: "74%",
-    padding: "15px",
-    backgroundColor: "#FFFFFF",
-    borderRadius: "12px",
-    textAlign: "center" as const,
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    border: "1px solid #E4E6EB",
-    transition: "box-shadow 0.3s ease",
-    "&:hover": {
-      boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
-    },
-  },
+  
   middleContainer: {
     display: "flex",
     flexDirection: "column" as "column",
@@ -94,7 +96,6 @@ const styles = {
     flexDirection: "column" as "column",
     justifyContent: "space-between",
   },
-
   chatHeader: {
     width: "100%",
     padding: "10px",
@@ -106,7 +107,6 @@ const styles = {
     textAlign: "center" as const,
     height: "50px",
   },
-
   chatBox: {
     flex: 1,
     overflowY: "auto" as "auto",
@@ -139,90 +139,120 @@ const styles = {
     width: "248px",
     fontSize: "12px",
   },
-
   adminActionsHeading: {
     fontSize: "16px",
     fontWeight: "bold",
     paddingLeft: "45px",
     marginBottom: "0px",
   },
-
   adminActionsText: {
     fontSize: "12px",
     paddingLeft: "20px",
   },
-
   assignUserButton: {
     marginTop: "10px",
     backgroundColor: "#1877F2",
     color: "#FFFFFF",
     border: "none",
-    padding: "8px 14px",
+    padding: "8px 12px",
     borderRadius: "6px",
-    fontSize: "13px",
+    fontSize: "14px",
     fontWeight: "bold",
     cursor: "pointer",
     transition: "background 0.3s",
-    display: "block",
-    marginLeft: "48px",
+    width: "100%",
+    textAlign: "center" as const,
     "&:hover": {
       backgroundColor: "#145DBF",
     },
   },
-
-  teamList: {
-    width: "92.5%",
-    height: "auto",
-    padding: "15px",
-    backgroundColor: "#FFFFFF",
-    borderRadius: "12px",
-    textAlign: "center" as const,
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    border: "1px solid #E4E6EB",
-    transition: "box-shadow 0.3s ease",
-    "&:hover": {
-      boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
-    },
-  },
-  channelList: {
-    width: "92.5%",
-    height: "auto",
-    padding: "15px",
-    backgroundColor: "#FFFFFF",
-    borderRadius: "12px",
-    textAlign: "center" as const,
-    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
-    border: "1px solid #E4E6EB",
-    transition: "box-shadow 0.3s ease",
-    "&:hover": {
-      boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
-    },
-  },
-  draggableItem: {
-    padding: "10px",
-    cursor: "grab",
-    userSelect: "none",
-    borderRadius: "6px",
-    backgroundColor: "#FFFFFF",
-    border: "1px solid #E4E6EB",
-    transition: "transform 0.2s ease-in-out",
-    "&:hover": {
-      transform: "scale(1.05)",
-    },
-  },
-  menuItem: {
-    backgroundColor: "transparent",
-    border: "none",
-    padding: "10px",
-    textAlign: "left" as const,
-    cursor: "pointer",
-    fontSize: "14px",
+  cardContainer: {
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "10px",
     width: "100%",
+    padding: "10px",
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: "8px",
+    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+    padding: "15px",
+    width: "250px",
+    textAlign: "center" as const,
+  },
+  buttonContainer: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "10px",
+  },
+  formContainer: {
+    display: "flex",
+    flexDirection: "column" as const,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    backgroundColor: "#F0F2F5",
+  },
+  formTitle: {
+    fontSize: "20px",
+    fontWeight: "bold",
+    marginBottom: "15px",
+  },
+  formLabel: {
+    fontSize: "14px",
+    fontWeight: "bold",
+    marginTop: "10px",
+    textAlign: "left" as const,
+    width: "100%",
+  },
+  formInput: {
+    width: "250px",
+    padding: "8px",
+    marginTop: "5px",
+    borderRadius: "6px",
+    border: "1px solid #CCC",
+    fontSize: "14px",
+  },
+  formButtons: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "15px",
+    width: "250px",
+  },
+  cancelButton: {
+    backgroundColor: "#CCC",
+    color: "#333",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    cursor: "pointer",
     transition: "background 0.3s",
-    fontWeight: "500",
     "&:hover": {
-      backgroundColor: "#E4E6EB",
+      backgroundColor: "#999",
     },
+  },
+  submitButton: {
+    backgroundColor: "#1877F2",
+    color: "#FFFFFF",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    transition: "background 0.3s",
+    "&:hover": {
+      backgroundColor: "#145DBF",
+    },
+  },
+  listHeader: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    textAlign: "center" as const,
+    paddingBottom: "5px",
+    borderBottom: "1px solid #E4E6EB",
   },
   listContainer: {
     display: "flex",
@@ -237,24 +267,7 @@ const styles = {
     margin: "0",
     paddingLeft: "0",
   },
-  listItem: {
-    padding: "8px",
-    fontSize: "14px",
-    cursor: "pointer",
-    transition: "background 0.3s",
-    borderBottom: "1px solid #E4E6EB",
-    "&:hover": {
-      backgroundColor: "#F0F2F5",
-    },
-  },
-
-  listHeader: {
-    fontSize: "16px",
-    fontWeight: "bold",
-    textAlign: "center" as const,
-    paddingBottom: "5px",
-    borderBottom: "1px solid #E4E6EB",
-  },
+  
   createTeamButton: {
     marginTop: "10px",
     backgroundColor: "#1877F2",
@@ -272,7 +285,14 @@ const styles = {
       backgroundColor: "#145DBF",
     },
   },
+  
 
+  chatPlaceholder: {
+    fontSize: "14px",
+    color: "#606770",
+    textAlign: "center" as const,
+  },
+  
   chatMessage: {
     padding: "8px",
     backgroundColor: "#DCF8C6",
@@ -282,13 +302,7 @@ const styles = {
     fontSize: "14px",
     wordBreak: "break-word",
   },
-
-  chatPlaceholder: {
-    fontSize: "14px",
-    color: "#606770",
-    textAlign: "center" as const,
-  },
-
+  
   inputBox: {
     display: "flex",
     alignItems: "center",
@@ -296,7 +310,7 @@ const styles = {
     padding: "10px",
     borderTop: "1px solid #E4E6EB",
   },
-
+  
   inputField: {
     flex: 1,
     padding: "10px",
@@ -304,7 +318,7 @@ const styles = {
     border: "1px solid #CCC",
     fontSize: "14px",
   },
-
+  
   sendButton: {
     backgroundColor: "#1877F2",
     color: "#FFFFFF",
@@ -319,6 +333,71 @@ const styles = {
       backgroundColor: "#145DBF",
     },
   },
+  teamHeader: {
+    width: "100%",
+    padding: "10px",
+    fontWeight: "bold",
+    borderBottom: "1px solid #E4E6EB",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center" as const,
+    height: "50px",
+  },
+  channelList: {
+    width: "94%",
+    height: "auto",
+    padding: "15px",
+    backgroundColor: "#FFFFFF",
+    borderRadius: "12px",
+    textAlign: "center" as const,
+    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+    border: "1px solid #E4E6EB",
+    transition: "box-shadow 0.3s ease",
+    "&:hover": {
+      boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
+    },
+  },
+  
+  teamList: {
+    width: "94%",
+    height: "auto",
+    padding: "15px",
+    backgroundColor: "#FFFFFF",
+    borderRadius: "12px",
+    textAlign: "center" as const,
+    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+    border: "1px solid #E4E6EB",
+    transition: "box-shadow 0.3s ease",
+    "&:hover": {
+      boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
+    },
+  },
+  listItem: {
+    padding: "8px",
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "background 0.3s, font-weight 0.3s",
+    borderBottom: "1px solid #E4E6EB",
+    "&:hover": {
+      backgroundColor: "#F0F2F5",
+    },
+  },
+  userList: {
+    width: "20%",
+    height: "auto",
+    padding: "15px",
+    backgroundColor: "#FFFFFF",
+    borderRadius: "12px",
+    textAlign: "center" as const,
+    boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
+    border: "1px solid #E4E6EB",
+    transition: "box-shadow 0.3s ease",
+    "&:hover": {
+      boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
+    },
+  },
+
 };
 
 export default styles;
