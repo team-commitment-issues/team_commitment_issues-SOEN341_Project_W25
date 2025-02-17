@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import styles from "../Styles/dashboardStyles";
 
 const DirectMessages: React.FC = () => {
-  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
+  const [message, setMessage] = useState("");
 
   const handleSendMessage = () => {
-    if (message.trim() !== "") {
+    if (message.trim()) {
       setMessages([...messages, message]);
       setMessage("");
     }
@@ -14,7 +14,7 @@ const DirectMessages: React.FC = () => {
 
   return (
     <div style={styles.directMessages}>
-      <h3 style={styles.chatHeader}>Direct Messages</h3>
+      <div style={styles.chatHeader}>Direct Messages</div>
       <div style={styles.chatBox}>
         {messages.length === 0 ? (
           <p style={styles.chatPlaceholder}>Select a user to chat with.</p>

@@ -4,7 +4,6 @@ import UserList from "../Components/userList";
 import TeamList from "../Components/TeamList";
 import ChannelList from "../Components/ChannelList";
 import DirectMessages from "../Components/DirectMessages";
-import AdminActions from "../Components/AdminActions";
 import styles from "../Styles/dashboardStyles";
 
 const AdminDashboard: React.FC = () => {
@@ -33,7 +32,6 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      {/* Dropdown Menu for Profile, Settings, and Logout */}
       <div style={styles.menuContainer} ref={dropdownRef}>
         <button
           style={styles.menuButton}
@@ -67,18 +65,11 @@ const AdminDashboard: React.FC = () => {
 
       <div style={styles.mainContainer}>
         <UserList />
-
         <div style={styles.middleContainer}>
           <TeamList />
           <ChannelList />
         </div>
-
         <DirectMessages />
-      </div>
-
-      {/* ✅ Assign Admins Box Now Positioned at Bottom-Left */}
-      <div style={styles.adminActionsContainer}>
-        <AdminActions />
       </div>
     </div>
   );

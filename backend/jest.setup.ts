@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
+
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
@@ -5,8 +8,8 @@ let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
+  process.env.MONGO_URI = mongoServer.getUri();
+  await mongoose.connect(process.env.MONGO_URI, { dbName: 'testingDB'});
 });
 
 afterAll(async () => {
