@@ -234,3 +234,23 @@ describe('POST /superadmin/deleteTeam', ()    => {
         expect(updatedUser!.teamMemberships).not.toContain(teamMember._id);
     });
 });
+
+describe('GET/superadmin/getUsers', () => {
+    it('should return all users', async () => {
+        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
+
+        const user1 = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
+        const user2 = await TestHelpers.createTestUser('user2@user.com', 'testpassword', 'User2', 'User2', 'useruser2', Role.USER, []);
+
+        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
+
+        const response = await request(app)
+            .get('/superadmin/getUsers')
+            .set('Authorization', `Bearer ${token}`)
+            .expect(200);
+        
+        expect(response.body.length).toBe(2);
+        expect(response.body[0].userID).toBe(user1.userID);
+        expect(response.body[1].userID).toBe(user2.userID);
+    });
+});

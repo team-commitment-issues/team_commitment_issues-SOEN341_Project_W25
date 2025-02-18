@@ -73,6 +73,16 @@ class SuperAdminController {
             }
         }
     }
+
+    static async getUsers(req: Request, res: Response): Promise<void> {
+        try {
+            const users = await SuperAdminService.getUsers();
+
+            res.status(200).json(users);
+        } catch (err) {
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 }
 
 export default SuperAdminController;

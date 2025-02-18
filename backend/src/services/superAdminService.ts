@@ -1,4 +1,4 @@
-import { TeamRole } from '../enums';
+import { Role, TeamRole } from '../enums';
 import Channel from '../models/Channel';
 import User from '../models/User';
 import Team from '../models/Team';
@@ -101,6 +101,10 @@ class SuperAdminService {
         } catch (error) {
             throw new Error(`Error deleting team: ${(error as Error).message}`);
         }
+    }
+
+    static async getUsers(): Promise<any> {
+        return (await User.find({})).filter((user) => user.role !== Role.SUPER_ADMIN);
     }
 }
 

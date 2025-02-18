@@ -10,5 +10,6 @@ superAdminRoutes.post('/createTeam', authenticate, checkPermission(Role.SUPER_AD
 superAdminRoutes.post('/addUserToTeam', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.addUserToTeam);
 superAdminRoutes.post('/removeUserFromTeam', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.removeUserFromTeam);
 superAdminRoutes.post('/deleteTeam', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.deleteTeam);
+superAdminRoutes.get('/getUsers', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.getUsers);
 
 export default superAdminRoutes;
