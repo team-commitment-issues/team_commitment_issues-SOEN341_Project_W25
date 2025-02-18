@@ -30,6 +30,16 @@ class DashboardController {
             }
         }
     }
+
+    static async listUsers(req: Request, res: Response): Promise<void> {
+        try {
+            const userID = req.user.userID;
+            const users = await DashboardSerivce.listUsers(userID);
+            res.status(200).json(users);
+        } catch (error) {
+            res.status(500).json({ 'Internal Server Error': (error as Error).message });
+        }
+    }
 }
 
 export default DashboardController;
