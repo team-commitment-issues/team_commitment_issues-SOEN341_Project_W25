@@ -42,6 +42,11 @@ class DashboardService {
         const channels = await Channel.find({ _id: { $in: teamMembership.channels.map((channel: any) => channel._id) } });
         return channels;
     }
+
+    static async listUsers(userID: string): Promise<any> {
+        const users = (await User.find()).filter((user) => user.userID !== userID).map((user) => ({ userID: user.userID }));
+        return users;
+    }
 }
 
 export default DashboardService;

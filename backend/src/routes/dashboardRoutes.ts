@@ -8,5 +8,6 @@ const dashboardRoutes = Router();
 
 dashboardRoutes.get('/listTeams', authenticate, DashboardController.listTeams);
 dashboardRoutes.get('/listChannels', authenticate, checkPermission(TeamRole.MEMBER), DashboardController.listChannels);
+dashboardRoutes.get('/listUsers', authenticate, checkPermission(TeamRole.MEMBER), DashboardController.listUsers);
 
 export default dashboardRoutes;
