@@ -48,13 +48,13 @@ class SuperAdminService {
 
     static async removeUserFromTeam(userID: string, teamID: string): Promise<any> {
         try {
-            const teamMember = await TeamMember.findOne({ user: userID, team: teamID });
+            const user = await User.findOne({ userID });
+            if (!user) throw new Error('User not found');
+            const teamMember = await TeamMember.findOne({ user: user?._id, team: teamID });
             const membershipId = teamMember?._id as ObjectId;
             if (!teamMember) throw new Error('User is not a member of the team');
             await teamMember.deleteOne();
-
-            const user = await User.findById(userID);
-            if (!user) throw new Error('User not found');
+            
             user.teamMemberships = user.teamMemberships.filter((id) => id.toString() !== membershipId.toString());
 
             await user.save();
@@ -75,16 +75,18 @@ class SuperAdminService {
         try {
             const team = await Team.findById(teamID);
             if (!team) throw new Error('Team not found');
-            await team.deleteOne();
 
             const memberships = await TeamMember.find({ team: teamID });
             for (const membership of memberships) {
                 const user = await User.findByIdAndUpdate(membership.user, {
                     $pull: { teamMemberships: membership._id },
                 });
-                user?.save();
-                await membership.deleteOne();
+                if (user) {
+                    await user?.save();
+                }
             }
+
+            await TeamMember.deleteMany({ team: teamID });
 
             await Channel.deleteMany({ team: teamID });
 

@@ -2,14 +2,10 @@ import request from 'supertest';
 import express from 'express';
 import dashboardRoutes from '../routes/dashboardRoutes';
 import authenticate from '../middlewares/authMiddleware';
-import checkPermission from '../middlewares/permissionMiddleware';
 import { TeamRole } from '../enums';
 import mongoose from 'mongoose';
-import jwt from 'jsonwebtoken';
-import User from '../models/User';
-import Team from '../models/Team';
-import Channel from '../models/Channel';
-import TeamMember from '../models/TeamMember';
+import TestHelpers from './testHelpers';
+import { Role } from '../enums';
 
 const app = express();
 app.use(express.json());
@@ -17,39 +13,19 @@ app.use('/dashboard', authenticate, dashboardRoutes);
 
 describe('GET /dashboard/listTeams', () => {
     it('should list all teams for the authenticated user', async () => {
-        const user = new User({
-            email: 'user@user.com',
-            password: 'testpassword',
-            firstName: 'User',
-            lastName: 'User',
-            userID: 'useruser',
-            role: 'USER',
-            teamMemberships: [],
-        });
-        await user.save();
+        const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
 
-        const team = new Team({
-            name: 'Test Team',
-            createdBy: user._id,
-            teamMembers: [],
-            channels: [],
-        });
+        const team = await TestHelpers.createTestTeam('Test Team', user._id, [], []);
+
+        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+
+        team.teamMembers.push(teamMember._id);
         await team.save();
 
-        const teamMember = new TeamMember({
-            user: user._id,
-            team: team._id,
-            role: TeamRole.MEMBER,
-        }) as mongoose.Document & { _id: mongoose.Types.ObjectId };
-        await teamMember.save();
-
-        team.teamMembers.push(teamMember._id as unknown as mongoose.Schema.Types.ObjectId);
-        await team.save();
-
-        user.teamMemberships.push(teamMember._id as unknown as mongoose.Schema.Types.ObjectId);
+        user.teamMemberships.push(teamMember._id);
         await user.save();
 
-        const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(user.userID, user.email);
 
         const response = await request(app)
             .get('/dashboard/listTeams')
@@ -71,50 +47,27 @@ describe('GET /dashboard/listTeams', () => {
 
 describe('GET /dashboard/listChannels', () => {
     it('should list all channels for the authenticated user in a team', async () => {
-        const user = new User({
-            email: 'user@user.com',
-            password: 'testpassword',
-            firstName: 'User',
-            lastName: 'User',
-            userID: 'useruser',
-            role: 'USER',
-        });
+        const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
+
+        const team = await TestHelpers.createTestTeam('Test Team', user._id, [], []);
+
+        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+
+        user.teamMemberships.push(teamMember._id);
         await user.save();
 
-        const team = new Team({
-            name: 'Test Team',
-            createdBy: user._id,
-            teamMembers: [user._id],
-            channels: [],
-        });
+        team.teamMembers.push(teamMember._id);
         await team.save();
 
-        const teamMember = new TeamMember({
-            user: user._id,
-            team: team._id,
-            role: TeamRole.MEMBER,
-            channels: [],
-        });
-        await teamMember.save();
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, user._id, [teamMember._id]);
 
-        user.teamMemberships.push(teamMember._id as unknown as mongoose.Schema.Types.ObjectId);
-        await user.save();
-
-        const channel = new Channel({
-            name: 'Test Channel',
-            team: team._id,
-            createdBy: user._id,
-            members: [user._id],
-        });
-        await channel.save();
-
-        team.channels.push(channel._id as unknown as mongoose.Schema.Types.ObjectId);
+        team.channels.push(channel._id);
         await team.save();
 
-        teamMember.channels.push(channel._id as unknown as mongoose.Schema.Types.ObjectId);
+        teamMember.channels.push(channel._id);
         await teamMember.save();
 
-        const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(user.userID, user.email);
 
         const response = await request(app)
             .get('/dashboard/listChannels')
@@ -135,17 +88,9 @@ describe('GET /dashboard/listChannels', () => {
     });
 
     it('should return an error if the team is not found', async () => {
-        const user = new User({
-            email: 'user@user.com',
-            password: 'testpassword',
-            firstName: 'User',
-            lastName: 'User',
-            userID: 'useruser',
-            role: 'USER',
-        });
-        await user.save();
+        const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
 
-        const token = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+        const token = await TestHelpers.generateToken(user.userID, user.email);
 
         const response = await request(app)
             .get('/dashboard/listChannels')

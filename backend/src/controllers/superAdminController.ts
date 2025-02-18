@@ -39,6 +39,40 @@ class SuperAdminController {
             }
         }
     }
+
+    static async removeUserFromTeam(req: Request, res: Response): Promise<void> {
+        try {
+            const { userID, teamID } = req.body;
+            const result = await SuperAdminService.removeUserFromTeam(userID, teamID);
+
+            res.status(200).json(result);
+        } catch (err) {
+            if ((err as any).message === 'User is not a member of the team') {
+                res.status(400).json({ error: 'User is not a member of the team' });
+            } else if ((err as any).message === 'User not found') {
+                res.status(400).json({ error: 'User not found' });
+            } else if ((err as any).message === 'Team not found') {
+                res.status(400).json({ error: 'Team not found' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
+
+    static async deleteTeam(req: Request, res: Response): Promise<void> {
+        try {
+            const { teamID } = req.body;
+            const result = await SuperAdminService.deleteTeam(teamID);
+
+            res.status(200).json(result);
+        } catch (err) {
+            if ((err as any).message === 'Team not found') {
+                res.status(400).json({ error: 'Team not found' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
 }
 
 export default SuperAdminController;
