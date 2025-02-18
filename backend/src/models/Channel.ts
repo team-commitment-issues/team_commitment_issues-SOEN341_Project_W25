@@ -73,3 +73,4 @@ const ChannelSchema = new Schema<IChannel>({
  */
 const Channel = model<IChannel>('Channel', ChannelSchema);
 export default Channel;
+export type { IChannel };

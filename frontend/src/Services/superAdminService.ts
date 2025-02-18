@@ -15,11 +15,11 @@ export const createTeam = async (teamName: string, teamMembers: string[]) => {
     }
 }
 
-export const addUserToTeam = async (userID: string, teamID: string, role: string) => {
+export const addUserToTeam = async (username: string, teamName: string, role: string) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(`${API_URL}/addUserToTeam`, 
-            { userID, teamID, role },
+            { username, teamName, role },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return response.data;
@@ -28,14 +28,28 @@ export const addUserToTeam = async (userID: string, teamID: string, role: string
     }
 }
 
-export const getUsers = async () => {
+export const removeUserFromTeam = async (username: string, teamName: string) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/getUsers`, { headers:
-            { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.post(`${API_URL}/removeUserFromTeam`, 
+            { username, teamName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
         return response.data;
     } catch (error) {
-        throw new Error((error as any).response?.data?.error || 'Failed to fetch users. Please try again.');
+        throw new Error((error as any).response?.data?.error || 'Failed to remove user from team. Please try again.');
+    }
+}
+
+export const deleteTeam = async (teamName: string) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/deleteTeam`, 
+            { teamName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data;
+    } catch (error) {
+        throw new Error((error as any).response?.data?.error || 'Failed to delete team. Please try again.');
     }
 }

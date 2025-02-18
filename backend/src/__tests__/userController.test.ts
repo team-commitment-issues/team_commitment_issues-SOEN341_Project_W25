@@ -15,7 +15,7 @@ describe('POST /user/login', () => {
             password: 'testpassword',
             firstName: 'Test',
             lastName: 'User',
-            userID: 'testuser',
+            username: 'testuser',
         };
 
         const response = await request(app)
@@ -34,7 +34,7 @@ describe('POST /user/login', () => {
             password: 'testpassword',
             firstName: 'Jane',
             lastName: 'Doe',
-            userID: 'janedoe',
+            username: 'janedoe',
         };
         
         const response = await request(app)
@@ -45,7 +45,7 @@ describe('POST /user/login', () => {
         expect(response.body.error).toBe('Email already exists');
     });
 
-    it('should return an error if the userID is already taken', async () => {
+    it('should return an error if the username is already taken', async () => {
         const testUser1 = await TestHelpers.createTestUser('john@doe.com', 'testpassword', 'John', 'Doe', 'johndoe', Role.USER, []);
 
         const testUser2 = {
@@ -53,7 +53,7 @@ describe('POST /user/login', () => {
             password: 'testpassword',
             firstName: 'Jane',
             lastName: 'Doe',
-            userID: 'johndoe',
+            username: 'johndoe',
         };
 
         const response = await request(app)
@@ -70,7 +70,7 @@ describe('POST /user/login', () => {
 
         const response = await request(app)
             .post('/user/login')
-            .send({ userID: testUser.userID, password: testpassword })
+            .send({ username: testUser.username, password: testpassword })
             .expect(200);
 
 
@@ -84,21 +84,21 @@ describe('POST /user/login', () => {
 
         const response = await request(app)
             .post('/user/login')
-            .send({ userID: testUser.userID, password: 'wrongpassword' })
+            .send({ username: testUser.username, password: 'wrongpassword' })
             .expect(400);
 
         expect(response.body.error).toBe('Incorrect password');
 
         const response2 = await request(app)
             .post('/user/login')
-            .send({ userID: 'wronguserID', password: testpassword })
+            .send({ username: 'wrongusername', password: testpassword })
             .expect(404);
 
         expect(response2.body.error).toBe('User not found');
 
         const response3 = await request(app)
             .post('/user/login')
-            .send({ userID: 'wronguserID', password: 'wrongpassword' })
+            .send({ username: 'wrongusername', password: 'wrongpassword' })
             .expect(404);
 
         expect(response3.body.error).toBe('User not found');

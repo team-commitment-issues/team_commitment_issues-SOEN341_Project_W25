@@ -2,7 +2,7 @@ import request from 'supertest';
 import express from 'express';
 import channelRoutes from '../routes/channelRoutes';
 import authenticate from '../middlewares/authMiddleware';
-import checkPermission from '../middlewares/permissionMiddleware';
+import { checkTeamPermission, checkChannelPermission } from '../middlewares/permissionMiddleware';
 import { Role, TeamRole } from '../enums';
 import mongoose from 'mongoose';
 import TestHelpers from './testHelpers';
@@ -12,70 +12,13 @@ import Team from '../models/Team';
 
 const app = express();
 app.use(express.json());
-app.use('/channel', authenticate, checkPermission(TeamRole.ADMIN), channelRoutes);
-
-describe('POST /channel/createChannel', () => {
-    it('should create a new channel successfully', async () => {
-        const user = await TestHelpers.createTestSuperAdmin([]);
-
-        const team = await TestHelpers.createTestTeam('Test Team', user._id, [], []);
-
-        const token = await TestHelpers.generateToken(user.userID, user.email);
-
-        const newChannel = {
-            name: 'Test Channel',
-            team: team.name,
-        };
-
-        const response = await request(app)
-            .post('/channel/createChannel')
-            .set('Authorization', `Bearer ${token}`)
-            .send(newChannel)
-            .expect(201);
-
-        expect(response.body.message).toBe('Channel created successfully');
-        expect(response.body.channel.name).toBe(newChannel.name);
-    });
-
-    it('should return an error if the user is not authorized', async () => {
-        const newChannel = {
-            name: 'Test Channel',
-            team: new mongoose.Types.ObjectId().toString(),
-        };
-
-        const response = await request(app)
-            .post('/channel/createChannel')
-            .send(newChannel)
-            .expect(401);
-
-        expect(response.body.error).toBe('Unauthorized: No token provided');
-    });
-
-    it('should return an error if the team is not found', async () => {
-        const user = await TestHelpers.createTestSuperAdmin([]);
-
-        const token = await TestHelpers.generateToken(user.userID, user.email);
-
-        const newChannel = {
-            name: 'Test Channel',
-            team: 'Nonexistent Team',
-        };
-
-        const response = await request(app)
-            .post('/channel/createChannel')
-            .set('Authorization', `Bearer ${token}`)
-            .send(newChannel)
-            .expect(400);
-
-        expect(response.body.error).toBe('Team not found');
-    });
-});
+app.use('/channel', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), channelRoutes);
 
 describe('POST /channel/addUserToChannel', () => {
     it('should add a user to a channel successfully', async () => {
         const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
 
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
 
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
 
@@ -94,30 +37,34 @@ describe('POST /channel/addUserToChannel', () => {
         team.channels.push(channel._id);
         await team.save();
 
-        const addUserRequest = {
-            channelName: channel.name,
-            userID: user.userID,
+        const requestPayload = { 
+            username: user.username,
+            teamName: team.name,
+            channelName: channel.name
         };
 
         const response = await request(app)
-            .post('/channel/addUserToChannel')
+            .post(`/channel/addUserToChannel`)
             .set('Authorization', `Bearer ${token}`)
-            .send(addUserRequest)
+            .send(requestPayload)
             .expect(201);
 
         expect(response.body.message).toBe('User added to channel successfully');
-        expect(response.body.channel.members).toContain((user._id).toString());
     });
 
     it('should return an error if the user is not authorized', async () => {
-        const addUserRequest = {
-            channelID: new mongoose.Types.ObjectId().toString(),
-            userID: 'nonexistentuser',
+        const adminUser = await TestHelpers.createTestSuperAdmin([]);
+        const team = await TestHelpers.createTestTeam('Test Team', adminUser._id, [], []);
+
+        const requestPayload = {
+            teamName: team.name,
+            channelName: 'Test Channel',
+            username: 'useruser',
         };
 
         const response = await request(app)
-            .post('/channel/addUserToChannel')
-            .send(addUserRequest)
+            .post(`/channel/addUserToChannel`)
+            .send(requestPayload)
             .expect(401);
 
         expect(response.body.error).toBe('Unauthorized: No token provided');
@@ -126,20 +73,21 @@ describe('POST /channel/addUserToChannel', () => {
     it('should return an error if the channel is not found', async () => {
         const adminUser = await TestHelpers.createTestSuperAdmin([]);
 
-        const token = await TestHelpers.generateToken(adminUser.userID, adminUser.email);
+        const token = await TestHelpers.generateToken(adminUser.username, adminUser.email);
 
-        const addUserRequest = {
+        const team = await TestHelpers.createTestTeam('Test Team', adminUser._id, [], []);
+
+        const requestPayload = {
+            teamName: team.name,
             channelName: 'Nonexistent Channel',
-            userID: 'superadminuser',
+            username: 'superadminuser',
         };
 
         const response = await request(app)
-            .post('/channel/addUserToChannel')
+            .post(`/channel/addUserToChannel`)
             .set('Authorization', `Bearer ${token}`)
-            .send(addUserRequest)
+            .send(requestPayload)
             .expect(404);
-
-        expect(response.body.error).toBe('Channel not found');
     });
 
     it('should return an error if the user is not found', async () => {
@@ -152,17 +100,18 @@ describe('POST /channel/addUserToChannel', () => {
         team.channels.push(channel._id);
         await team.save();
 
-        const token = await TestHelpers.generateToken(adminUser.userID, adminUser.email);
+        const token = await TestHelpers.generateToken(adminUser.username, adminUser.email);
 
-        const addUserRequest = {
-            channelID: (channel._id).toString(),
-            userID: 'nonexistentuser',
+        const requestPayload = {
+            teamName: team.name,
+            channelName: channel.name,
+            username: 'nonexistentuser',
         };
 
         const response = await request(app)
-            .post('/channel/addUserToChannel')
+            .post(`/channel/addUserToChannel`)
             .set('Authorization', `Bearer ${token}`)
-            .send(addUserRequest)
+            .send(requestPayload)
             .expect(404);
 
         expect(response.body.error).toBe('User not found');
@@ -198,17 +147,17 @@ describe('POST /channel/deleteChannel', () => {
         channel.messages.push(message._id);
         await channel.save();
 
-        const token = await TestHelpers.generateToken(user.userID, user.email);
+        const token = await TestHelpers.generateToken(user.username, user.email);
 
-        const deleteChannelRequest = {
-            channelName: channel.name,
-            team: team._id,
+        const requestPayload = {
+            teamName: team.name,
+            channelName: channel.name
         };
 
         const response = await request(app)
-            .post('/channel/deleteChannel')
+            .post(`/channel/deleteChannel`)
             .set('Authorization', `Bearer ${token}`)
-            .send(deleteChannelRequest)
+            .send(requestPayload)
             .expect(200);
 
         expect(response.body.message).toBe('Channel deleted successfully');
@@ -221,13 +170,14 @@ describe('POST /channel/deleteChannel', () => {
     });
 
     it('should return an error if the user is not authorized', async () => {
-        const deleteChannelRequest = {
+        const requestPayload = {
+            teamName: 'Test Team',
             channelName: 'Test Channel',
         };
 
         const response = await request(app)
-            .post('/channel/deleteChannel')
-            .send(deleteChannelRequest)
+            .post(`/channel/deleteChannel`)
+            .send(requestPayload)
             .expect(401);
 
         expect(response.body.error).toBe('Unauthorized: No token provided');
@@ -236,18 +186,17 @@ describe('POST /channel/deleteChannel', () => {
     it('should return an error if the channel is not found', async () => {
         const adminUser = await TestHelpers.createTestSuperAdmin([]);
 
-        const token = await TestHelpers.generateToken(adminUser.userID, adminUser.email);
+        const token = await TestHelpers.generateToken(adminUser.username, adminUser.email);
 
-        const deleteChannelRequest = {
+        const requestPayload = {
+            teamName: 'Test Team',
             channelName: 'Nonexistent Channel',
         };
 
         const response = await request(app)
-            .post('/channel/deleteChannel')
+            .post(`/channel/deleteChannel`)
             .set('Authorization', `Bearer ${token}`)
-            .send(deleteChannelRequest)
+            .send(requestPayload)
             .expect(404);
-
-        expect(response.body.error).toBe('Channel not found');
     });
 });

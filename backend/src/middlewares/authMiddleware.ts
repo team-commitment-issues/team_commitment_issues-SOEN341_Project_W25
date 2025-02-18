@@ -1,11 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import User, { IUser } from '../models/User';
+import { ITeam } from '../models/Team';
+import { ITeamMember } from '../models/TeamMember';
+import { IChannel } from '../models/Channel';
+import { IMessage } from '../models/Message';
 import jwt from 'jsonwebtoken';
 
 declare global {
     namespace Express {
         interface Request {
             user: IUser;
+            team: ITeam;
+            teamMember: ITeamMember;
+            channel: IChannel;
+            message: IMessage;
         }
     }
 }
@@ -27,7 +35,7 @@ async function authenticate(req: Request, res: Response, next: NextFunction): Pr
     }
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-        const user = await User.findOne({ userID: (decoded as any).userID });
+        const user = await User.findOne({ username: (decoded as any).username });
         if (!user) {
             res.status(401).json({ error: 'Unauthorized: User not found' });
             return;

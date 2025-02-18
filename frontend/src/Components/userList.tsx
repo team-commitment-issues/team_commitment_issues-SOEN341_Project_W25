@@ -1,19 +1,39 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "../Styles/dashboardStyles";
+import { getUsers } from "../Services/dashboardService";
 
-const UserList: React.FC = () => {
+interface User {
+    username: string;
+}
+
+interface UserListProps {
+    selectedUsers: string[];
+    setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+const UserList: React.FC<UserListProps> = ({ selectedUsers, setSelectedUsers }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
 
-  const users = ["User 1", "User 2", "User 3", "User N"];
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const usersList = await getUsers();
+        setUsers(usersList);
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      }
+    };
 
-  const handleAssignUser = () => {
-    if (selectedUser) {
-      alert(`Assigned ${selectedUser} as an admin!`);
-      setSelectedUser(null); // Clear selection after assignment
-    } else {
-      alert("Please select a user to assign.");
-    }
+    fetchUsers();
+  }, []);
+
+  const toggleUserSelection = (user: string) => {
+    setSelectedUsers((prevSelectedUsers) =>
+      prevSelectedUsers.includes(user)
+        ? prevSelectedUsers.filter((u) => u !== user)
+        : [...prevSelectedUsers, user]
+    );
   };
 
   return (
@@ -27,33 +47,21 @@ const UserList: React.FC = () => {
 
       {!collapsed && (
         <ul style={styles.listContainer}>
-          {users.map((user, index) => (
+          {users.map((user) => (
             <li
-              key={index}
+              key={user.username}
               style={{
                 ...styles.listItem,
-                backgroundColor: selectedUser === user ? "#D3E3FC" : "transparent",
-                fontWeight: selectedUser === user ? "bold" : "normal",
+                backgroundColor: selectedUsers.includes(user.username) ? "#D3E3FC" : "transparent",
+                fontWeight: selectedUsers.includes(user.username) ? "bold" : "normal",
               }}
-              onClick={() => setSelectedUser(user)}
+              onClick={() => toggleUserSelection(user.username)}
             >
-              {user}
+              {user.username}
             </li>
           ))}
         </ul>
       )}
-
-      <button 
-        style={{
-          ...styles.assignUserButton, 
-          opacity: selectedUser ? 1 : 0.6,
-          cursor: selectedUser ? "pointer" : "not-allowed"
-        }} 
-        onClick={handleAssignUser} 
-        disabled={!selectedUser}
-      >
-        Assign User
-      </button>
     </div>
   );
 };

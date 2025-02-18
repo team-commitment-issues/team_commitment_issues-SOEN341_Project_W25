@@ -15,7 +15,7 @@ class TestHelpers {
             password: 'testpassword',
             firstName: 'Super',
             lastName: 'Admin',
-            userID: 'superadminuser',
+            username: 'superadminuser',
             role: Role.SUPER_ADMIN,
             teamMemberships,
         });
@@ -23,14 +23,14 @@ class TestHelpers {
         return superAdminUser;
     }
 
-    static async createTestUser(email: string, password: string, firstName: string, lastName: string, userID: string, role: Role, teamMemberships: mongoose.Types.ObjectId[]): Promise<any> {
+    static async createTestUser(email: string, password: string, firstName: string, lastName: string, username: string, role: Role, teamMemberships: mongoose.Types.ObjectId[]): Promise<any> {
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({
             email,
             password: hashedPassword,
             firstName,
             lastName,
-            userID,
+            username,
             role,
             teamMemberships,
         });
@@ -61,8 +61,8 @@ class TestHelpers {
         return channel;
     }
 
-    static async generateToken(userID: string, email:string): Promise<string> {
-        return jwt.sign({ userID, email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+    static async generateToken(username: string, email:string): Promise<string> {
+        return jwt.sign({ username, email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
     }
 
     static async createTestTeamMember(user: mongoose.Types.ObjectId, team: mongoose.Types.ObjectId, role: TeamRole, channels: mongoose.Types.ObjectId[]): Promise<any> {

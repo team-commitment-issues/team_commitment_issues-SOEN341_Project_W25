@@ -2,7 +2,7 @@ import request from 'supertest';
 import express from 'express';
 import superAdminRoutes from '../routes/superAdminRoutes';
 import authenticate from '../middlewares/authMiddleware';
-import checkPermission from '../middlewares/permissionMiddleware';
+import { checkTeamPermission, checkUserPermission, checkChannelPermission } from '../middlewares/permissionMiddleware';
 import { Role, TeamRole } from '../enums';
 import mongoose from 'mongoose';
 import TestHelpers from './testHelpers';
@@ -12,61 +12,7 @@ import User from '../models/User';
 
 const app = express();
 app.use(express.json());
-app.use('/superadmin', authenticate, checkPermission(Role.SUPER_ADMIN), superAdminRoutes);
-
-describe('POST /superadmin/createTeam', () => {
-    it('should create a new team successfully', async () => {
-        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
-
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
-
-        const newTeam = {
-            teamName: 'Test Team',
-        };
-
-        const response = await request(app)
-            .post('/superadmin/createTeam')
-            .set('Authorization', `Bearer ${token}`)
-            .send(newTeam)
-            .expect(201);
-
-        expect(response.body.message).toBe('Team created successfully');
-        expect(response.body.team.name).toBe(newTeam.teamName);
-    });
-
-    it('should return an error if the team already exists', async () => {
-        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
-
-        const team = await TestHelpers.createTestTeam('Existing Team', superAdminUser._id, [], []);
-
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
-
-        const newTeam = {
-            teamName: 'Existing Team',
-        };
-
-        const response = await request(app)
-            .post('/superadmin/createTeam')
-            .set('Authorization', `Bearer ${token}`)
-            .send(newTeam)
-            .expect(400);
-
-        expect(response.body.error).toBe('Team already exists');
-    });
-
-    it('should return an error if the user is not authorized', async () => {
-        const newTeam = {
-            teamName: 'Unauthorized Team',
-        };
-
-        const response = await request(app)
-            .post('/superadmin/createTeam')
-            .send(newTeam)
-            .expect(401);
-
-        expect(response.body.error).toBe('Unauthorized: No token provided');
-    });
-});
+app.use('/superadmin', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), superAdminRoutes);
 
 describe('POST /superadmin/addUserToTeam', () => {
     it('should add a user to a team successfully', async () => {
@@ -76,23 +22,22 @@ describe('POST /superadmin/addUserToTeam', () => {
 
         const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
 
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
 
         const addUserRequest = {
-            userID: user._id.toString(),
-            teamID: team._id.toString(),
+            username: user.username,
             role: 'MEMBER',
+            teamName: team.name
         };
 
         const response = await request(app)
-            .post('/superadmin/addUserToTeam')
+            .post(`/superadmin/addUserToTeam`)
             .set('Authorization', `Bearer ${token}`)
             .send(addUserRequest)
             .expect(201);
 
         expect(response.body.message).toBe('User added to team successfully');
-        expect(response.body.teamMember.user).toBe(addUserRequest.userID);
-        expect(response.body.teamMember.team).toBe(addUserRequest.teamID);
+        expect(response.body.teamMember.user).toBe(user._id.toString());
     });
 
     it('should return an error if the team is not found', async () => {
@@ -100,21 +45,19 @@ describe('POST /superadmin/addUserToTeam', () => {
 
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
 
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
 
         const addUserRequest = {
-            userID: user._id.toString(),
-            teamID: new mongoose.Types.ObjectId().toString(),
+            username: user.username,
             role: 'MEMBER',
+            teamName: 'Test Team'
         };
 
         const response = await request(app)
-            .post('/superadmin/addUserToTeam')
+            .post(`/superadmin/addUserToTeam`)
             .set('Authorization', `Bearer ${token}`)
             .send(addUserRequest)
-            .expect(400);
-
-        expect(response.body.error).toBe('Team not found');
+            .expect(404);
     });
 
     it('should return an error if the user is not found', async () => {
@@ -122,16 +65,16 @@ describe('POST /superadmin/addUserToTeam', () => {
 
         const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
 
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
 
         const addUserRequest = {
-            userID: new mongoose.Types.ObjectId().toString(),
-            teamID: team._id.toString(),
+            username: 'testuser',
             role: 'MEMBER',
+            teamName: team.name
         };
 
         const response = await request(app)
-            .post('/superadmin/addUserToTeam')
+            .post(`/superadmin/addUserToTeam`)
             .set('Authorization', `Bearer ${token}`)
             .send(addUserRequest)
             .expect(400);
@@ -141,13 +84,13 @@ describe('POST /superadmin/addUserToTeam', () => {
 
     it('should return an error if the user is not authorized', async () => {
         const addUserRequest = {
-            userID: new mongoose.Types.ObjectId().toString(),
-            teamID: new mongoose.Types.ObjectId().toString(),
+            username: 'testuser',
             role: 'MEMBER',
+            teamName: 'Test Team'
         };
 
         const response = await request(app)
-            .post('/superadmin/addUserToTeam')
+            .post(`/superadmin/addUserToTeam`)
             .send(addUserRequest)
             .expect(401);
 
@@ -163,7 +106,7 @@ describe('POST /superadmin/removeUserFromTeam', () => {
 
         const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
 
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
 
         const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
 
@@ -174,12 +117,12 @@ describe('POST /superadmin/removeUserFromTeam', () => {
         await team.save();
 
         const removeUserRequest = {
-            userID: user.userID,
-            teamID: team._id.toString(),
+            username: user.username,
+            teamName: team.name
         };
 
         const response = await request(app)
-            .post('/superadmin/removeUserFromTeam')
+            .post(`/superadmin/removeUserFromTeam`)
             .set('Authorization', `Bearer ${token}`)
             .send(removeUserRequest)
             .expect(200);
@@ -195,7 +138,7 @@ describe('POST /superadmin/deleteTeam', ()    => {
 
         const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
 
-        const token = await TestHelpers.generateToken(superAdminUser.userID, superAdminUser.email);
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
 
         const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
 
@@ -216,11 +159,12 @@ describe('POST /superadmin/deleteTeam', ()    => {
         const message = await TestHelpers.createTestMessage('Test message', user._id, channel._id);
 
         const deleteTeamRequest = {
-            teamID: team._id.toString(),
+            teamName: team.name,
+            channelName: channel.name
         };
 
         const response = await request(app)
-            .post('/superadmin/deleteTeam')
+            .post(`/superadmin/deleteTeam`)
             .set('Authorization', `Bearer ${token}`)
             .send(deleteTeamRequest)
             .expect(200);

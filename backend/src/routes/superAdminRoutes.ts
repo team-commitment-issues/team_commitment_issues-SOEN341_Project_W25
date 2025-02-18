@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import authenticate from '../middlewares/authMiddleware';
-import { Role } from '../enums';
+import { Role, TeamRole } from '../enums';
 import SuperAdminController from '../controllers/superAdminController';
-import checkPermission from '../middlewares/permissionMiddleware';
+import { checkTeamPermission, checkUserPermission } from '../middlewares/permissionMiddleware';
 
 const superAdminRoutes = Router();
 
-superAdminRoutes.post('/createTeam', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.createTeam);
-superAdminRoutes.post('/addUserToTeam', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.addUserToTeam);
-superAdminRoutes.post('/removeUserFromTeam', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.removeUserFromTeam);
-superAdminRoutes.post('/deleteTeam', authenticate, checkPermission(Role.SUPER_ADMIN), SuperAdminController.deleteTeam);
+superAdminRoutes.post('/createTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), SuperAdminController.createTeam);
+superAdminRoutes.post('/addUserToTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.addUserToTeam);
+superAdminRoutes.post('/removeUserFromTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.removeUserFromTeam);
+superAdminRoutes.post('/deleteTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.deleteTeam);
 
 export default superAdminRoutes;

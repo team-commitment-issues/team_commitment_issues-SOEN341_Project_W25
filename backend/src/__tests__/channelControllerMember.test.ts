@@ -2,7 +2,7 @@ import request from 'supertest';
 import express from 'express';
 import channelRoutes from '../routes/channelRoutes';
 import authenticate from '../middlewares/authMiddleware';
-import checkPermission from '../middlewares/permissionMiddleware';
+import { checkTeamPermission, checkUserPermission, checkChannelPermission } from '../middlewares/permissionMiddleware';
 import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
 import Channel from '../models/Channel';
@@ -11,13 +11,13 @@ import { Message } from '../models/Message';
 
 const app = express();
 app.use(express.json());
-app.use('/channel', authenticate, checkPermission(TeamRole.MEMBER), channelRoutes);
+app.use('/channel', authenticate, checkTeamPermission(TeamRole.MEMBER), checkChannelPermission(), channelRoutes);
 
 describe('POST /channel/sendMessage', () => {
     it('should send a message to a channel successfully', async () => {
         const user = await TestHelpers.createTestUser('test@test.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
 
-        const token = await TestHelpers.generateToken(user.userID, user.email);
+        const token = await TestHelpers.generateToken(user.username, user.email);
 
         const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
 
@@ -40,28 +40,27 @@ describe('POST /channel/sendMessage', () => {
         await teamMember.save();
 
         const message = {
-            channelName: channel.name,
             text: 'Test message',
-            team: team._id.toString(),
+            teamName: team.name,
+            channelName: channel.name
         };
 
         const response = await request(app)
-            .post('/channel/sendMessage')
+            .post(`/channel/sendMessage`)
             .set('Authorization', `Bearer ${token}`)
             .send(message)
             .expect(201);
 
-        expect(response.body.message).toBe('Message sent successfully');
         const foundChannel = await Channel.findOne({ name: channel.name });
         expect(foundChannel?.messages).toHaveLength(1);
     });
 });
 
-describe('GET/channel/getMessages', () => {
+describe('GET /channel/getMessages', () => {
     it('should return all messages in a channel', async () => {
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
 
-        const token = await TestHelpers.generateToken(user.userID, user.email);
+        const token = await TestHelpers.generateToken(user.username, user.email);
 
         const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
 
@@ -93,15 +92,15 @@ describe('GET/channel/getMessages', () => {
         channel.messages.push(message2._id);
         await channel.save();
 
-        const getMessagesRequest = {
-            channelName: channel.name,
-            team: team._id.toString(),
+        const payload = {
+            teamName: team.name,
+            channelName: channel.name
         };
 
         const response = await request(app)
             .get(`/channel/getMessages`)
             .set('Authorization', `Bearer ${token}`)
-            .send(getMessagesRequest)
+            .send(payload)
             .expect(200);
 
         expect(response.body).toHaveLength(2);

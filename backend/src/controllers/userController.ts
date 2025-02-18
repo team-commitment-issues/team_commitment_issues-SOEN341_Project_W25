@@ -5,14 +5,14 @@ import { Role } from '../enums';
 class UserController {
     static async signUp(req: Request, res: Response): Promise<void> {
         try {
-            const { email, password, firstName, lastName, userID } = req.body;
-            const newUser = await UserService.createUser(email, password, firstName, lastName, userID, Role.USER);
+            const { email, password, firstName, lastName, username } = req.body;
+            const newUser = await UserService.createUser(email, password, firstName, lastName, username, Role.USER);
 
             const userResponse = {
                 email: newUser.email,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
-                userID: newUser.userID,
+                username: newUser.username,
             };
 
             res.status(201).json({
@@ -32,8 +32,8 @@ class UserController {
 
     static async login(req: Request, res: Response): Promise<void> {
         try {
-            const { userID, password } = req.body;
-            const token = await UserService.userAuth(userID, password);
+            const { username, password } = req.body;
+            const token = await UserService.userAuth(username, password);
             
             res.status(200).json({ message: 'User logged in successfully', token });
         } catch (err) {
