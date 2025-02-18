@@ -1,16 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // ✅ Import navigate function
 import { FaTrash } from "react-icons/fa"; // ✅ Import FontAwesome trash bin icon
 import styles from "../Styles/dashboardStyles";
+import { getTeams } from "../Services/dashboardService";
 
-const TeamList: React.FC = () => {
+interface Team {
+    _id: string;
+    name: string;
+}
+
+interface TeamListProps {
+    selectedUsers: string[];
+}
+
+const TeamList: React.FC<TeamListProps> = ({ selectedUsers }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [teams, setTeams] = useState<string[]>(["Team 1", "Team 2", "Team 3"]);
-  const navigate = useNavigate(); // ✅ Use navigate for redirection
+  const [teams, setTeams] = useState<Team[]>([]);
+  const navigate = useNavigate();
 
-  const handleDeleteTeam = (teamToDelete: string) => {
-    setTeams(teams.filter((team) => team !== teamToDelete));
+  const handleDeleteTeam = async (team: Team) => {
+    try {
+      // ✅ Add delete team functionality
+    } catch (err) {
+      console.error("Failed to delete team", err);
+    }
   };
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const teamsList = await getTeams();
+        setTeams(teamsList);
+      } catch (err) {
+        console.error("Failed to fetch teams", err);
+      }
+    };
+
+    fetchTeams();
+  }, []);
 
   return (
     <div style={styles.teamList}>
@@ -21,7 +48,7 @@ const TeamList: React.FC = () => {
         <ul style={styles.listContainer}>
           {teams.map((team, index) => (
             <li key={index} style={styles.listItem}>
-              {team}
+              {team.name}
               <button
                 style={styles.deleteTeamButton}
                 onClick={() => handleDeleteTeam(team)}
@@ -33,10 +60,7 @@ const TeamList: React.FC = () => {
           ))}
         </ul>
       )}
-      <button
-        style={styles.createTeamButton}
-        onClick={() => navigate("/create-team")}
-      >
+      <button style={styles.createTeamButton} onClick={() => navigate("/create-team", { state: { selectedUsers } })}>
         Create Team
       </button>
     </div>
@@ -44,3 +68,7 @@ const TeamList: React.FC = () => {
 };
 
 export default TeamList;
+
+function useEffect(arg0: () => void, arg1: never[]) {
+  throw new Error("Function not implemented.");
+}
