@@ -6,6 +6,7 @@ import Team from '../models/Team';
 import Channel from '../models/Channel';
 import TeamMember from '../models/TeamMember';
 import TestHelpers from './testHelpers';
+import e from 'express';
 
 
 describe("createTestSuperAdmin", () => {
@@ -145,7 +146,8 @@ describe("createTestChannel", () => {
             name,
             team,
             createdBy,
-            members
+            members,
+            [],
         );
 
         expect(channel).toBeDefined();
@@ -167,7 +169,8 @@ describe("createTestChannel", () => {
             name,
             team,
             createdBy,
-            members
+            members,
+            [],
         );
 
         const foundChannel = await Channel.findOne({ name });
@@ -213,6 +216,26 @@ describe("createTestTeamMember", () => {
         expect(teamMember.team).toEqual(team);
         expect(teamMember.role).toBe(role);
         expect(teamMember.channels).toEqual(channels);
+    });
+});
+
+describe("createTestMessage", () => {
+    it("should create a message with the given details", async () => {
+        const text = "Test message";
+        const user = new User()._id as mongoose.Types.ObjectId;
+        const channel = new Channel()._id as mongoose.Types.ObjectId;
+
+        const message = await TestHelpers.createTestMessage(
+            text,
+            user,
+            channel
+        );
+
+        expect(message).toBeDefined();
+        expect(message.text).toBe(text);
+        expect(message.user).toEqual(user);
+        expect(message.channel).toEqual(channel);
+        expect(message.createdAt).toBeDefined();
     });
 });
         

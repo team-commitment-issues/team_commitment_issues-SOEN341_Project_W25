@@ -1,0 +1,65 @@
+import { Document, Schema, model } from 'mongoose';
+
+/**
+ * Interface representing a Message document in MongoDB.
+ * @interface IMessage
+ * @extends Document
+ */
+interface IMessage extends Document {
+    /**
+     * The text of the message.
+     * @type {string}
+     */
+    text: string;
+    /**
+     * The user who sent the message.
+     * @type {Schema.Types.ObjectId}
+     * @see {@link User}
+     */
+    user: Schema.Types.ObjectId;
+    /**
+     * The channel that the message belongs to.
+     * @type {Schema.Types.ObjectId}
+     * @see {@link Channel}
+     */
+    channel: Schema.Types.ObjectId;
+    /**
+     * The date and time the message was sent.
+     * @type {Date}
+     */
+    createdAt: Date;
+}
+
+/**
+ * Mongoose schema for the Message collection.
+ * @const {Schema<IMessage>}
+ */
+const MessageSchema = new Schema<IMessage>({
+    text: {
+        type: String,
+        required: true,
+    },
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    channel: {
+        type: Schema.Types.ObjectId,
+        ref: 'Channel',
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+});
+
+/**
+ * Mongoose model for the Message collection.
+ * @type {Model<IMessage>}
+ * @see {@link IMessage}
+ */
+const Message = model<IMessage>('Message', MessageSchema);
+
+export { Message };

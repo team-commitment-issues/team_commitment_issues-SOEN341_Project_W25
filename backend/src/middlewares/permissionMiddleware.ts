@@ -45,13 +45,14 @@ function checkPermission(role: TeamRole | Role) {
 
         if (role === TeamRole.MEMBER) {
             if (teamMember.role !== TeamRole.MEMBER && teamMember.role !== TeamRole.ADMIN) {
-            res.status(403).json({ error: 'You do not have permission to access this resource' });
-            return;
+                res.status(403).json({ error: 'You do not have permission to access this resource' });
+                return;
             }
         } else if (role === TeamRole.ADMIN) {
             if (teamMember.role !== TeamRole.ADMIN) {
-            res.status(403).json({ error: 'You do not have permission to access this resource' });
-            return;
+                console.log('User not a member of the team');
+                res.status(403).json({ error: 'You do not have permission to access this resource' });
+                return;
             }
         } else if (user.role !== role) {
             res.status(403).json({ error: 'You do not have permission to access this resource' });

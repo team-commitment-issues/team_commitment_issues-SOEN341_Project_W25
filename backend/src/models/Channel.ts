@@ -29,6 +29,12 @@ interface IChannel extends Document {
      * @see {@link TeamMember}
      */
     members: Schema.Types.ObjectId[];
+    /**
+     * The messages in the channel.
+     * @type {Schema.Types.ObjectId[]}
+     * @see {@link Message}
+     */
+    messages: Schema.Types.ObjectId[];
 }
 
 /**
@@ -55,6 +61,9 @@ const ChannelSchema = new Schema<IChannel>({
         ref: 'TeamMember',
         required: true,
     }],
+    messages: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Message' }],
 });
 
 /**
