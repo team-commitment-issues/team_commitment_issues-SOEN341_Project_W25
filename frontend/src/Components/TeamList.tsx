@@ -1,11 +1,34 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Import navigate function
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "../Styles/dashboardStyles";
+import { getTeams } from "../Services/dashboardService";
 
-const TeamList: React.FC = () => {
+interface Team {
+    _id: string;
+    name: string;
+}
+
+interface TeamListProps {
+    selectedUsers: string[];
+}
+
+const TeamList: React.FC<TeamListProps> = ({ selectedUsers }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const teams = ["Team 1", "Team 2", "Team 3"];
-  const navigate = useNavigate(); // ✅ Use navigate for redirection
+  const [teams, setTeams] = useState<Team[]>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        const teamsList = await getTeams();
+        setTeams(teamsList);
+      } catch (err) {
+        console.error("Failed to fetch teams", err);
+      }
+    };
+
+    fetchTeams();
+  }, []);
 
   return (
     <div style={styles.teamList}>
@@ -16,12 +39,12 @@ const TeamList: React.FC = () => {
         <ul style={styles.listContainer}>
           {teams.map((team, index) => (
             <li key={index} style={styles.listItem}>
-              {team}
+              {team.name}
             </li>
           ))}
         </ul>
       )}
-      <button style={styles.createTeamButton} onClick={() => navigate("/create-team")}>
+      <button style={styles.createTeamButton} onClick={() => navigate("/create-team", { state: { selectedUsers } })}>
         Create Team
       </button>
     </div>

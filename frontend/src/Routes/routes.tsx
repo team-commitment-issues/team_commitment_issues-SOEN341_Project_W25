@@ -17,7 +17,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={React.createElement(Login)} />
         <Route path="/signup" element={React.createElement(SignUp)} />
         <Route path="/dashboard" element={React.createElement(Dashboard)} />
-        <Route path="/create-team" element={React.createElement(CreateTeam)} />
+        <Route path="/create-team" element={React.createElement(Create)} />
         <Route path="/profile" element={React.createElement(Profile)} />
         <Route path="/settings" element={React.createElement(Settings)} />
         <Route path="/" element={React.createElement(LandingPage)} />

@@ -11,6 +11,8 @@ const AdminDashboard: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -61,9 +63,9 @@ const AdminDashboard: React.FC = () => {
       <p style={styles.text}>Manage users, teams, channels, and messages.</p>
 
       <div style={styles.mainContainer}>
-        <UserList />
+        <UserList selectedUsers={selectedUsers} setSelectedUsers={setSelectedUsers} />
         <div style={styles.middleContainer}>
-          <TeamList />
+          <TeamList selectedUsers={selectedUsers} />
           <ChannelList />
         </div>
         <DirectMessages />
