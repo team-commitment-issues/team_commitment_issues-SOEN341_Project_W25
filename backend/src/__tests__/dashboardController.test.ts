@@ -59,7 +59,7 @@ describe('GET /dashboard/listChannels', () => {
         team.teamMembers.push(teamMember._id);
         await team.save();
 
-        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, user._id, [teamMember._id]);
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, user._id, [teamMember._id], []);
 
         team.channels.push(channel._id);
         await team.save();

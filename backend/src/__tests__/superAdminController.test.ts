@@ -205,6 +205,16 @@ describe('POST /superadmin/deleteTeam', ()    => {
         team.teamMembers.push(teamMember._id);
         await team.save();
 
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, superAdminUser._id, [teamMember._id], []);
+
+        team.channels.push(channel._id);
+        await team.save();
+
+        teamMember.channels.push(channel._id);
+        await teamMember.save();
+
+        const message = await TestHelpers.createTestMessage('Test message', user._id, channel._id);
+
         const deleteTeamRequest = {
             teamID: team._id.toString(),
         };

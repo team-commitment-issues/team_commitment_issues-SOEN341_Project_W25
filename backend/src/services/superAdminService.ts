@@ -4,6 +4,7 @@ import User from '../models/User';
 import Team from '../models/Team';
 import TeamMember from '../models/TeamMember';
 import { ObjectId } from 'mongoose';
+import { Message } from '../models/Message';
 
 class SuperAdminService {
     static async createTeam(name: string, createdByUserID: string): Promise<any> {
@@ -88,6 +89,10 @@ class SuperAdminService {
 
             await TeamMember.deleteMany({ team: teamID });
 
+            const channels = await Channel.find({ team: teamID });
+            for (const channel of channels) {
+                await Message.deleteMany({ channel: channel._id });
+            }
             await Channel.deleteMany({ team: teamID });
 
             await Team.findByIdAndDelete(teamID);

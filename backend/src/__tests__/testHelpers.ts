@@ -6,6 +6,7 @@ import Channel from '../models/Channel';
 import jwt from 'jsonwebtoken';
 import TeamMember from '../models/TeamMember';
 import bcrypt from 'bcrypt';
+import { Message } from '../models/Message';
 
 class TestHelpers {
     static async createTestSuperAdmin(teamMemberships: mongoose.Types.ObjectId[]): Promise<any> {
@@ -48,12 +49,13 @@ class TestHelpers {
         return team;
     }
 
-    static async createTestChannel(name: string, team: mongoose.Types.ObjectId, createdBy: mongoose.Types.ObjectId, members: mongoose.Types.ObjectId[]): Promise<any> {
+    static async createTestChannel(name: string, team: mongoose.Types.ObjectId, createdBy: mongoose.Types.ObjectId, members: mongoose.Types.ObjectId[], messages: mongoose.Types.ObjectId[]): Promise<any> {
         const channel = new Channel({
             name,
             team,
             createdBy,
             members,
+            messages,
         });
         await channel.save();
         return channel;
@@ -72,6 +74,16 @@ class TestHelpers {
         });
         await teamMember.save();
         return teamMember;
+    }
+
+    static async createTestMessage(text: string, user: mongoose.Types.ObjectId, channel: mongoose.Types.ObjectId): Promise<any> {
+        const message = new Message({
+            text,
+            user,
+            channel
+        });
+        await message.save();
+        return message;
     }
 }
 
