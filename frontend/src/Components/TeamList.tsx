@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Import navigate function
-import { FaTrash } from "react-icons/fa"; // ✅ Import FontAwesome trash bin icon
+import { useNavigate } from "react-router-dom";
+import { FaTrash } from "react-icons/fa";
 import styles from "../Styles/dashboardStyles";
 import { getTeams } from "../Services/dashboardService";
 
@@ -20,7 +20,7 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers }) => {
 
   const handleDeleteTeam = async (team: Team) => {
     try {
-      // ✅ Add delete team functionality
+      // Add delete team functionality
     } catch (err) {
       console.error("Failed to delete team", err);
     }
@@ -54,7 +54,7 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers }) => {
                 onClick={() => handleDeleteTeam(team)}
               >
                 <FaTrash style={styles.trashIcon} />{" "}
-                {/* ✅ Small red trash bin */}
+                {}
               </button>
             </li>
           ))}
@@ -68,7 +68,3 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers }) => {
 };
 
 export default TeamList;
-
-function useEffect(arg0: () => void, arg1: never[]) {
-  throw new Error("Function not implemented.");
-}
