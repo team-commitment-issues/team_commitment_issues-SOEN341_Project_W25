@@ -421,8 +421,38 @@ const styles = {
     marginLeft: "10px",
     transition: "transform 0.2s",
     "&:hover": {
-      transform: "scale(1.2)", // ✅ Small zoom effect on hover
+      transform: "scale(1.2)",
     },
+  },
+
+  createChannelButton: {
+    marginTop: "10px",
+    backgroundColor: "#1877F2",
+    color: "#FFFFFF",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "background 0.3s",
+    width: "100%",
+    textAlign: "center" as const,
+    "&:hover": {
+      backgroundColor: "#145DBF",
+    },
+  },
+
+  teamName: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    textAlign: "center" as const,
+  },
+
+  channelName: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    textAlign: "center" as const,
   },
 };
 
