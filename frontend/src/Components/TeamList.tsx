@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaTrash } from "react-icons/fa";
 import styles from "../Styles/dashboardStyles";
 import { getTeams } from "../Services/dashboardService";
+import { deleteTeam } from "../Services/superAdminService";
 
 interface Team {
     _id: string;
@@ -22,7 +23,11 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers, selectedTeam, setSel
 
   const handleDeleteTeam = async (team: Team) => {
     try {
-      // Add delete team functionality
+      await deleteTeam(team.name);
+      setTeams((prevTeams) => prevTeams.filter((t) => t._id !== team._id));
+      setSelectedTeam((prevSelectedTeam) =>
+        prevSelectedTeam === team._id ? null : prevSelectedTeam
+      );
     } catch (err) {
       console.error("Failed to delete team", err);
     }

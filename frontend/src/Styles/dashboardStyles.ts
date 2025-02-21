@@ -344,7 +344,6 @@ const styles = {
     height: "50px",
   },
   channelList: {
-    width: "94%",
     height: "auto",
     padding: "15px",
     backgroundColor: "#FFFFFF",
@@ -359,7 +358,6 @@ const styles = {
   },
 
   teamList: {
-    width: "94%",
     height: "auto",
     padding: "15px",
     backgroundColor: "#FFFFFF",

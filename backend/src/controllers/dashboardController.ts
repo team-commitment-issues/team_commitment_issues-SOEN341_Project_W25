@@ -18,7 +18,12 @@ class DashboardController {
         try {
             const role = req.user.role;
             const team = req.team._id as Types.ObjectId;
-            const teamMember = req.teamMember._id as Types.ObjectId;
+            let teamMember: Types.ObjectId | null = null;
+            if (req.user.role === 'SUPER_ADMIN') {
+                teamMember = null;
+            } else {
+                teamMember = req.teamMember._id as Types.ObjectId;
+            }
 
             const channels = await DashboardSerivce.listChannels(role, team, teamMember);
             res.status(200).json(channels);
