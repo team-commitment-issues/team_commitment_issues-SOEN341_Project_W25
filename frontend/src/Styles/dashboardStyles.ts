@@ -41,7 +41,7 @@ const styles = {
       backgroundColor: "#E4E6EB",
     },
   },
-  
+
   dropdownMenu: {
     position: "absolute" as const,
     top: "30px",
@@ -76,7 +76,7 @@ const styles = {
     padding: "10px",
     gap: "15px",
   },
-  
+
   middleContainer: {
     display: "flex",
     flexDirection: "column" as "column",
@@ -267,7 +267,7 @@ const styles = {
     margin: "0",
     paddingLeft: "0",
   },
-  
+
   createTeamButton: {
     marginTop: "10px",
     backgroundColor: "#1877F2",
@@ -285,14 +285,13 @@ const styles = {
       backgroundColor: "#145DBF",
     },
   },
-  
 
   chatPlaceholder: {
     fontSize: "14px",
     color: "#606770",
     textAlign: "center" as const,
   },
-  
+
   chatMessage: {
     padding: "8px",
     backgroundColor: "#DCF8C6",
@@ -302,7 +301,7 @@ const styles = {
     fontSize: "14px",
     wordBreak: "break-word",
   },
-  
+
   inputBox: {
     display: "flex",
     alignItems: "center",
@@ -310,7 +309,7 @@ const styles = {
     padding: "10px",
     borderTop: "1px solid #E4E6EB",
   },
-  
+
   inputField: {
     flex: 1,
     padding: "10px",
@@ -318,7 +317,7 @@ const styles = {
     border: "1px solid #CCC",
     fontSize: "14px",
   },
-  
+
   sendButton: {
     backgroundColor: "#1877F2",
     color: "#FFFFFF",
@@ -358,7 +357,7 @@ const styles = {
       boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
     },
   },
-  
+
   teamList: {
     width: "94%",
     height: "auto",
@@ -398,6 +397,63 @@ const styles = {
     },
   },
 
+  deleteChannelButton: {
+    backgroundColor: "transparent",
+    border: "none",
+    cursor: "pointer",
+    marginLeft: "10px",
+    transition: "transform 0.2s",
+    "&:hover": {
+      transform: "scale(1.2)",
+    },
+  },
+
+  trashIcon: {
+    color: "#D9534F",
+    fontSize: "14px",
+    verticalAlign: "middle",
+  },
+
+  deleteTeamButton: {
+    backgroundColor: "transparent",
+    border: "none",
+    cursor: "pointer",
+    marginLeft: "10px",
+    transition: "transform 0.2s",
+    "&:hover": {
+      transform: "scale(1.2)",
+    },
+  },
+
+  createChannelButton: {
+    marginTop: "10px",
+    backgroundColor: "#1877F2",
+    color: "#FFFFFF",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    fontSize: "14px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    transition: "background 0.3s",
+    width: "100%",
+    textAlign: "center" as const,
+    "&:hover": {
+      backgroundColor: "#145DBF",
+    },
+  },
+
+  teamName: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    textAlign: "center" as const,
+  },
+
+  channelName: {
+    fontSize: "16px",
+    fontWeight: "bold",
+    textAlign: "center" as const,
+  },
 };
 
 export default styles;

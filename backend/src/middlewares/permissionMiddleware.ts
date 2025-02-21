@@ -1,66 +1,81 @@
 import { Request, Response, NextFunction } from 'express';
 import { TeamRole, Role } from '../enums';
-import { Types } from 'mongoose';
-import User from '../models/User';
 import TeamMember from '../models/TeamMember';
 import Team from '../models/Team';
+import Channel from '../models/Channel';
 
-function checkPermission(role: TeamRole | Role) {
+function checkUserPermission(role: Role) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        if (!req.user) {
-            res.status(401).json({'Unauthorized': 'No token provided'});
-            return;
-        }
-        const user = await User.findById(req.user._id).populate('teamMemberships');
-
-        if (!user) {
-            res.status(404).json({'Not Found': 'User not found'});
-            return;
-        }
-
-        if (user.role === Role.SUPER_ADMIN) {
+        if (req.user.role === role) {
+            return next();
+        } else if (req.user.role === Role.SUPER_ADMIN) {
             return next();
         }
-        const team = req.body.team; // _id of the team
-
-        if (!team) {
-            res.status(400).json({'Bad Request': 'Team is required'});
-            return;
-        } else if (!Types.ObjectId.isValid(team)) {
-            res.status(400).json({'Bad Request': 'Invalid team ID'});
+        else {
+            res.status(403).json({'Forbidden': 'User does not have permission to access this resource'});
             return;
         }
-
-        const teamExists = await Team.findById(team);
-        if (!teamExists) {
-            res.status(404).json({error: 'Team not found'});
-            return;
-        }
-
-        const teamMember = await TeamMember.findOne({ team, user: user._id });
-        if (!teamMember) {
-            res.status(403).json({ error: 'You do not have permission to access this resource' });
-            return;
-        }
-
-        if (role === TeamRole.MEMBER) {
-            if (teamMember.role !== TeamRole.MEMBER && teamMember.role !== TeamRole.ADMIN) {
-                res.status(403).json({ error: 'You do not have permission to access this resource' });
-                return;
-            }
-        } else if (role === TeamRole.ADMIN) {
-            if (teamMember.role !== TeamRole.ADMIN) {
-                console.log('User not a member of the team');
-                res.status(403).json({ error: 'You do not have permission to access this resource' });
-                return;
-            }
-        } else if (user.role !== role) {
-            res.status(403).json({ error: 'You do not have permission to access this resource' });
-            return;
-        }
-
-        return next();
-    };
+    }
 }
 
-export default checkPermission;
+function checkTeamPermission(teamRole: TeamRole) {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        const team = await Team.findOne({ name: req.body.teamName });
+        if (!team) {
+            res.status(404).json({'Not Found': 'Team not found'});
+            return;
+        }
+        req.team = team;
+
+        if (req.user.role === Role.SUPER_ADMIN) {
+            return next();
+        }
+
+        const teamMember = await TeamMember.findOne({ user: req.user._id, team: team._id }).populate('channels');
+        if (!teamMember) {
+            res.status(404).json({'Not Found': 'Team member not found'});
+            return;
+        }
+
+        if (teamMember.role === teamRole) {
+            req.teamMember = teamMember;
+            return next();
+        } else if (teamMember.role === TeamRole.ADMIN) {
+            return next();
+        }
+        else {
+            res.status(403).json({'Forbidden': 'User does not have permission to access this resource'});
+            return;
+        }
+    }
+}
+
+function checkChannelPermission() {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        const channel = await Channel.findOne({ name: req.body.channelName, team: req.team._id }).populate('members');
+        if (!channel) {
+            res.status(404).json({'Not Found': 'Channel not found'});
+            return;
+        }
+        req.channel = channel;
+
+        if (req.user.role === Role.SUPER_ADMIN) {
+            return next();
+        }
+
+        if (req.teamMember.role === TeamRole.ADMIN) {
+            return next();
+        }
+
+        TeamMember.findOne({ user: req.user._id, team: req.team._id }).then((teamMember) => {
+            if (!teamMember) {
+                res.status(404).json({'Not Found': 'Team member not found'});
+                return;
+            }
+            req.teamMember = teamMember;
+        });
+        return next();
+    }
+}
+
+export { checkUserPermission, checkTeamPermission, checkChannelPermission };

@@ -6,41 +6,48 @@ import { Role } from '../enums';
 import TeamMember from '../models/TeamMember';
 
 class DashboardService {
-    static async listTeams(userID: string): Promise<any> {
-        const user = await User.findOne({ userID }).populate('teamMemberships');
-        if (!user) {
-            throw new Error('User not found');
+    static async listTeams(role: Role, teamMemberships: Schema.Types.ObjectId[]): Promise<any> {
+        if (role === Role.SUPER_ADMIN) {
+            const teamNames = await Team.find().select('name');
+            return teamNames;
+        }
+        const teamNames = [];
+        for (const teamMemberId of teamMemberships) {
+            const teamMember = await TeamMember.findOne({ _id: teamMemberId }).select('team');
+            const team = await Team.findOne({ _id: (teamMember!.team) }).select('name');
+            teamNames.push(team!.name);
         }
 
-        const teamIDs = user.teamMemberships.map((membership: any) => membership.team);
-
-        const teams = await Team.find({ _id: { $in: teamIDs } });
-        return teams;
+        return teamNames;
     }
 
-    static async listChannels(userID: string, teamID: string): Promise<any> {
-        const user = await User.findOne({ userID }).populate('teamMemberships');
-        if (!user) {
-            throw new Error('User not found');
-        }
-
-        const team = await Team.findById(teamID);
-        if (!team) {
-            throw new Error('Team not found');
-        }
-
-        if (user.role === Role.SUPER_ADMIN) {
-            const channels = await Channel.find({ team: teamID });
+    static async listChannels(role: Role, team: Types.ObjectId, teamMember: Types.ObjectId): Promise<any> {
+        if (role === Role.SUPER_ADMIN) {
+            const channels = await Channel.find({ team: team });
             return channels;
         }
 
-        const teamMembership = await TeamMember.findOne({ user: user._id, team: teamID }).populate('channels');
-        if (!teamMembership) {
-            throw new Error('User is not a member of the specified team');
-        }
+        const channels = await Channel.find({ team: team, members: teamMember }).select('name');
+        const channelNames = channels.map((channel) => ({ name: channel.name }));
+        return channelNames;
+    }
 
-        const channels = await Channel.find({ _id: { $in: teamMembership.channels.map((channel: any) => channel._id) } });
-        return channels;
+    static async listUsers(username: string): Promise<any> {
+        const users = (await User.find()).filter((user) => user.username !== username).map((user) => ({ username: user.username }));
+        return users;
+    }
+
+    static async listTeamUsers(team: Types.ObjectId): Promise<any> {
+        const teamMembers = await TeamMember.find({ team: team }).populate('user').select('user');
+        const usernames = (await User.find({ _id: { $in: teamMembers } })).map((user) => ({ username: user.username }));
+        
+        return usernames;
+    }
+
+    static async listChannelUsers(channel: Types.ObjectId): Promise<any> {
+        const channelMembers = await Channel.findOne({ _id: channel }).populate('members').select('members');
+        const usernames = (await User.find({ _id: { $in: channelMembers } })).map((user) => ({ username: user.username }));
+        return usernames;
     }
 }
 

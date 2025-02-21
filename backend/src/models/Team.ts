@@ -68,3 +68,4 @@ const TeamSchema = new Schema<ITeam>({
  */
 const Team = model<ITeam>('Team', TeamSchema);
 export default Team;
+export type { ITeam };

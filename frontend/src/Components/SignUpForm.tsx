@@ -13,7 +13,7 @@ const SignUpForm: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
-  const [userID, setUserID] = useState<string>('');
+  const [username, setUserID] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ const SignUpForm: React.FC = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signUp(email, password, firstName, lastName, userID);
+      await signUp(email, password, firstName, lastName, username);
       navigate('/login');
     } catch (err) {
       setError('Signup failed. Please try again.');
@@ -66,7 +66,7 @@ const SignUpForm: React.FC = () => {
           <Input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
         </FormGroup>
         <FormGroup label="User ID (Visible to Others):">
-          <Input type="text" value={userID} onChange={(e) => setUserID(e.target.value)} required />
+          <Input type="text" value={username} onChange={(e) => setUserID(e.target.value)} required />
         </FormGroup>
         <Button text="Sign Up" type="submit" />
       </form>

@@ -6,7 +6,6 @@ import Team from '../models/Team';
 import Channel from '../models/Channel';
 import TeamMember from '../models/TeamMember';
 import TestHelpers from './testHelpers';
-import e from 'express';
 
 
 describe("createTestSuperAdmin", () => {
@@ -19,7 +18,7 @@ describe("createTestSuperAdmin", () => {
         expect(superAdminUser.email).toBe("superadmin@user.com");
         expect(superAdminUser.firstName).toBe("Super");
         expect(superAdminUser.lastName).toBe("Admin");
-        expect(superAdminUser.userID).toBe("superadminuser");
+        expect(superAdminUser.username).toBe("superadminuser");
         expect(superAdminUser.role).toBe(Role.SUPER_ADMIN);
         expect(superAdminUser.teamMemberships).toEqual(teamMemberships);
     });
@@ -31,7 +30,7 @@ describe("createTestUser", () => {
         const password = "password123";
         const firstName = "John";
         const lastName = "Doe";
-        const userID = "johndoe";
+        const username = "johndoe";
         const role = Role.USER;
         const teamMemberships: mongoose.Types.ObjectId[] = [];
 
@@ -40,7 +39,7 @@ describe("createTestUser", () => {
             password,
             firstName,
             lastName,
-            userID,
+            username,
             role,
             teamMemberships
         );
@@ -49,7 +48,7 @@ describe("createTestUser", () => {
         expect(user.email).toBe(email);
         expect(user.firstName).toBe(firstName);
         expect(user.lastName).toBe(lastName);
-        expect(user.userID).toBe(userID);
+        expect(user.username).toBe(username);
         expect(user.role).toBe(role);
         expect(user.teamMemberships).toEqual(teamMemberships);
     });
@@ -59,7 +58,7 @@ describe("createTestUser", () => {
         const password = "password123";
         const firstName = "Jane";
         const lastName = "Smith";
-        const userID = "janesmith";
+        const username = "janesmith";
         const role = Role.USER;
         const teamMemberships: mongoose.Types.ObjectId[] = [
             new TeamMember()._id as mongoose.Types.ObjectId,
@@ -70,7 +69,7 @@ describe("createTestUser", () => {
             password,
             firstName,
             lastName,
-            userID,
+            username,
             role,
             teamMemberships
         );
@@ -81,7 +80,7 @@ describe("createTestUser", () => {
         expect(foundUser?.email).toBe(email);
         expect(foundUser?.firstName).toBe(firstName);
         expect(foundUser?.lastName).toBe(lastName);
-        expect(foundUser?.userID).toBe(userID);
+        expect(foundUser?.username).toBe(username);
         expect(foundUser?.role).toBe(role);
         expect(foundUser?.teamMemberships).toEqual(teamMemberships);
     });
@@ -185,14 +184,14 @@ describe("createTestChannel", () => {
 
 describe("generateToken", () => {
     it("should sign a token with the given user details", async () => {
-        const userID = "testuser";
+        const username = "testuser";
         const email = "test@example.com";
 
-        const token = await TestHelpers.generateToken(userID, email);
+        const token = await TestHelpers.generateToken(username, email);
 
         expect(token).toBeDefined();
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userID: string, email: string };
-        expect(decoded.userID).toBe(userID);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { username: string, email: string };
+        expect(decoded.username).toBe(username);
         expect(decoded.email).toBe(email);
     });
 });

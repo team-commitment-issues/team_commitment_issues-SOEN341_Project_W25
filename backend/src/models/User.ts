@@ -1,6 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
 import { Role } from '../enums';
-import e from 'express';
 
 /**
  * Interface representing a User document in MongoDB.
@@ -36,7 +35,7 @@ interface IUser extends Document {
      * The unique username of the user.
      * @type {string}
      */
-    userID: string;
+    username: string;
 
     /**
      * The role of the user.
@@ -73,7 +72,7 @@ const UserSchema = new Schema<IUser>({
         type: String,
         required: true,
     },
-    userID: {
+    username: {
         type: String,
         required: true,
         unique: true,
