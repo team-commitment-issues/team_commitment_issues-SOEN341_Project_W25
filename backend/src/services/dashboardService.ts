@@ -21,7 +21,7 @@ class DashboardService {
         return teamNames;
     }
 
-    static async listChannels(role: Role, team: Types.ObjectId, teamMember: Types.ObjectId): Promise<any> {
+    static async listChannels(role: Role, team: Types.ObjectId, teamMember: Types.ObjectId | null): Promise<any> {
         if (role === Role.SUPER_ADMIN) {
             const channels = await Channel.find({ team: team });
             return channels;

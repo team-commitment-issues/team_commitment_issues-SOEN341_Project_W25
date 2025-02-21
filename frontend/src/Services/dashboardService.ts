@@ -22,11 +22,11 @@ export const getUsers = async () => {
     }
 }
 
-export const getChannels = async (teamName: string) => {
+export const getChannels = async (teamId: string) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_URL}/listChannels/`, {
-            params: { teamName },
+            params: { teamId },
             headers: { Authorization: `Bearer ${token}` }
         });
         return response.data;
