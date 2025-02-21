@@ -4,6 +4,7 @@ import UserList from "../Components/userList";
 import TeamList from "../Components/TeamList";
 import ChannelList from "../Components/ChannelList";
 import DirectMessages from "../Components/DirectMessages";
+import AddUserToTeam from "../Components/AddUserToTeam";
 import styles from "../Styles/dashboardStyles";
 
 const AdminDashboard: React.FC = () => {
@@ -65,11 +66,26 @@ const AdminDashboard: React.FC = () => {
       <p style={styles.text}>Manage users, teams, channels, and messages.</p>
 
       <div style={styles.mainContainer}>
-        <UserList selectedUsers={selectedUsers} setSelectedUsers={setSelectedUsers} />
+        <UserList 
+          selectedUsers={selectedUsers} 
+          setSelectedUsers={setSelectedUsers} 
+        />
+        
+        <AddUserToTeam selectedUsers={selectedUsers} />
+
         <div style={styles.middleContainer}>
-          <TeamList selectedUsers={selectedUsers} setSelectedTeam={setSelectedTeam} selectedTeam={selectedTeam}/>
-          <ChannelList selectedTeam={selectedTeam} selectedChannel={selectedChannel} setSelectedChannel={setSelectedChannel}/>
+          <TeamList 
+            selectedUsers={selectedUsers} 
+            setSelectedTeam={setSelectedTeam} 
+            selectedTeam={selectedTeam}
+          />
+          <ChannelList 
+            selectedTeam={selectedTeam} 
+            selectedChannel={selectedChannel} 
+            setSelectedChannel={setSelectedChannel}
+          />
         </div>
+        
         <DirectMessages />
       </div>
     </div>
