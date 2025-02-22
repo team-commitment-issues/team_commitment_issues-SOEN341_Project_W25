@@ -3,7 +3,7 @@ import express from 'express';
 import channelRoutes from '../routes/channelRoutes';
 import authenticate from '../middlewares/authMiddleware';
 import { checkTeamPermission } from '../middlewares/permissionMiddleware';
-import { TeamRole } from '../enums';
+import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
 
 const app = express();
@@ -23,7 +23,7 @@ describe('POST /channel/createChannel', () => {
         const response = await request(app)
             .post('/channel/createChannel')
             .set('Authorization', `Bearer ${token}`)
-            .send({ teamName: team.name, channelName: name })
+            .send({ teamName: team.name, channelName: name, selectedTeamMembers: [] })
             .expect(201);
 
         expect(response.body.message).toBe('Channel created successfully');
@@ -34,6 +34,7 @@ describe('POST /channel/createChannel', () => {
         const newChannel = {
             teamName: 'Test Team',
             channelName: 'Test Channel',
+            selectedTeamMembers: [],
         };
 
         const response = await request(app)
@@ -52,6 +53,7 @@ describe('POST /channel/createChannel', () => {
         const newChannel = {
             teamName: 'Nonexistent Team',
             channelName: 'Test Channel',
+            selectedTeamMembers: [],
         };
 
         const response = await request(app)
@@ -60,4 +62,38 @@ describe('POST /channel/createChannel', () => {
             .send(newChannel)
             .expect(404);
     });
+
+    it('should add all selected team members (users) to the channel', async () => {
+        const user = await TestHelpers.createTestSuperAdmin([]);
+        const user1 = await TestHelpers.createTestUser('user1@user1.com', '1234', 'user1', 'User1', 'user1', Role.USER, []);
+        const user2 = await TestHelpers.createTestUser('user2@user2.com', '1234', 'user2', 'User2', 'user2', Role.USER, []);
+
+        const team = await TestHelpers.createTestTeam('Test Team', user._id, [], []);
+
+        const teamMember1 = await TestHelpers.createTestTeamMember(user1._id, team._id, TeamRole.MEMBER, []);
+        const teamMember2 = await TestHelpers.createTestTeamMember(user2._id, team._id, TeamRole.MEMBER, []);
+
+        user1.teamMemberships.push(teamMember1._id);
+        user2.teamMemberships.push(teamMember2._id);
+        await user1.save();
+        await user2.save();
+
+        team.teamMembers.push(teamMember1._id);
+        team.teamMembers.push(teamMember2._id);
+        await team.save();
+
+        const token = await TestHelpers.generateToken(user.username, user.email);
+
+        const name = 'Test Channel';
+
+        const response = await request(app)
+            .post('/channel/createChannel')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ teamName: team.name, channelName: name, selectedTeamMembers: [user1.username, user2.username] })
+            .expect(201);
+
+        expect(response.body.message).toBe('Channel created successfully');
+        expect(response.body.channel.name).toBe(name);
+    });
+        
 });

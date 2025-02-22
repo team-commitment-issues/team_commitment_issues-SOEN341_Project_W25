@@ -7,7 +7,7 @@ import { Message } from '../models/Message';
 import { Role } from '../enums';
 
 class ChannelService {
-    static async createChannel(team: Types.ObjectId, channelName: string, createdBy: Types.ObjectId, username: string, role: Role): Promise<any> {
+    static async createChannel(team: Types.ObjectId, channelName: string, createdBy: Types.ObjectId, username: string, role: Role, selectedTeamMembers: string[]): Promise<any> {
         if (await Channel.findOne({ name: channelName })) {
             throw new Error('Channel already exists');
         }
@@ -18,7 +18,10 @@ class ChannelService {
             await ChannelService.addUserToChannel(team, channel.name, username);
         }
 
-        return await channel.save();
+        for (const member of selectedTeamMembers) {
+            await ChannelService.addUserToChannel(team, channel.name, member);
+        }
+        return (await channel.save());
     }
 
     static async addUserToChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
@@ -47,6 +50,7 @@ class ChannelService {
         channel.members.push(teamMember._id as Schema.Types.ObjectId);
         await channel.save();
         teamMember.channels.push(channel._id as Schema.Types.ObjectId);
+        console.log(channel);
         return await teamMember.save();
     }
 

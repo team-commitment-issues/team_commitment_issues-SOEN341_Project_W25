@@ -7,11 +7,16 @@ interface User {
 }
 
 interface UserListProps {
-    selectedUsers: string[];
-    setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedUsers: string[];
+  setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedTeam: string | null;
+  setSelectedTeam: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedChannel: string | null;
+  setSelectedChannel: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const UserList: React.FC<UserListProps> = ({ selectedUsers, setSelectedUsers }) => {
+const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, selectedTeam, setSelectedTeam, selectedChannel, setSelectedChannel, setSelectedTeamMembers}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
 
@@ -21,7 +26,8 @@ const UserList: React.FC<UserListProps> = ({ selectedUsers, setSelectedUsers }) 
         const usersList = await getUsers();
         setUsers(usersList);
       } catch (err) {
-        console.error("Failed to fetch users", err);
+        setUsers([]);
+        //console.error("Failed to fetch users", err);
       }
     };
 
@@ -34,7 +40,14 @@ const UserList: React.FC<UserListProps> = ({ selectedUsers, setSelectedUsers }) 
         ? prevSelectedUsers.filter((u) => u !== user)
         : [...prevSelectedUsers, user]
     );
+    setSelectedTeam(null);
+    setSelectedChannel(null);
+    setSelectedTeamMembers([]);
   };
+
+  if (!users.length) {
+    return null;
+  }
 
   return (
     <div style={styles.userList}>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getTeams } from '../Services/dashboardService';
 import { addUserToTeam } from '../Services/superAdminService';
+import styles from '../Styles/dashboardStyles';
 
 interface Team {
   _id: string;
@@ -64,20 +65,20 @@ const AddUserToTeam: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
   if (selectedUsers.length === 0) return null;
 
   return (
-    <div className="p-4 mt-4 border border-gray-300 rounded bg-white">
-      <h3 className="text-lg font-semibold mb-2">Add User(s) to Team</h3>
+    <div style={styles.addUserToTeamContainer}>
+      <h3 style={styles.addUserToTeamHeading}>Add User(s) to Team</h3>
 
       {errorMessage && (
-        <div className="text-red-500 mb-4">{errorMessage}</div>
+        <div style={styles.addUserToTeamErrorMessage}>{errorMessage}</div>
       )}
       {successMessage && (
-        <div className="text-green-500 mb-4">{successMessage}</div>
+        <div style={styles.addUserToTeamSuccessMessage}>{successMessage}</div>
       )}
 
       <select
         value={selectedTeam}
         onChange={(e) => setSelectedTeam(e.target.value)}
-        className="border p-2 rounded w-full"
+        style={styles.addUserToTeamSelect}
       >
         <option value="">Select a team</option>
         {Array.isArray(teams) && teams.length > 0 ? (
@@ -92,7 +93,7 @@ const AddUserToTeam: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
       </select>
 
       <button
-        className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        style={styles.addUserToTeamButton}
         onClick={handleAddUserToTeam}
         disabled={!selectedTeam}
       >

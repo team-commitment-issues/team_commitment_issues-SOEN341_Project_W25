@@ -56,7 +56,7 @@ describe('POST /channel/sendMessage', () => {
     });
 });
 
-describe('GET /channel/getMessages', () => {
+describe('POST /channel/getMessages', () => {
     it('should return all messages in a channel', async () => {
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
 
@@ -98,7 +98,7 @@ describe('GET /channel/getMessages', () => {
         };
 
         const response = await request(app)
-            .get(`/channel/getMessages`)
+            .post(`/channel/getMessages`)
             .set('Authorization', `Bearer ${token}`)
             .send(payload)
             .expect(200);

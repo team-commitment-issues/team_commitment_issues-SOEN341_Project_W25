@@ -2,11 +2,11 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/channel'; 
 
-export const createChannel = async (channelName: string, selectedTeam: string, selectedTeamMembers: string[]) => {
+export const createChannel = async (channelName: string, teamName: string, selectedTeamMembers: string[]) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(`${API_URL}/createChannel`, 
-            { channelName, selectedTeam, selectedTeamMembers },
+            { channelName, teamName, selectedTeamMembers },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return response.data;

@@ -14,12 +14,15 @@ interface Team {
 }
 
 interface TeamListProps {
-    selectedUsers: string[];
-    selectedTeam: string | null;
-    setSelectedTeam: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedUsers: string[];
+  setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedTeam: string | null;
+  setSelectedTeam: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedChannel: string | null;
+  setSelectedChannel: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-const TeamList: React.FC<TeamListProps> = ({ selectedUsers, selectedTeam, setSelectedTeam }) => {
+const TeamList: React.FC<TeamListProps> = ({selectedUsers, setSelectedUsers, selectedTeam, setSelectedTeam, selectedChannel, setSelectedChannel}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const navigate = useNavigate();
@@ -27,9 +30,9 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers, selectedTeam, setSel
   const handleDeleteTeam = async (team: Team) => {
     try {
       await deleteTeam(team.name);
-      setTeams((prevTeams) => prevTeams.filter((t) => t._id !== team._id));
+      setTeams((prevTeams) => prevTeams.filter((t) => t.name !== team.name));
       setSelectedTeam((prevSelectedTeam) =>
-        prevSelectedTeam === team._id ? null : prevSelectedTeam
+        prevSelectedTeam === team.name ? null : prevSelectedTeam
       );
     } catch (err) {
       console.error("Failed to delete team", err);
@@ -53,6 +56,8 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers, selectedTeam, setSel
     setSelectedTeam((prevSelectedTeam) =>
       prevSelectedTeam === team ? null : team
     );
+    setSelectedUsers([]);
+    setSelectedChannel(null);
   };
 
   return (
@@ -67,10 +72,10 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers, selectedTeam, setSel
               key={index} 
               style={{
                 ...styles.listItem,
-                backgroundColor: selectedTeam === team._id ? "#D3E3FC" : "transparent",
-                fontWeight: selectedTeam === team._id ? "bold" : "normal",
+                backgroundColor: selectedTeam === team.name ? "#D3E3FC" : "transparent",
+                fontWeight: selectedTeam === team.name ? "bold" : "normal",
               }}
-              onClick={() => toggleTeamSelection(team._id)}
+              onClick={() => toggleTeamSelection(team.name)}
             >
               {team.name}
               <button

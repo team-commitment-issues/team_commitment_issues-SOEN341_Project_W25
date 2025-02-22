@@ -7,11 +7,12 @@ class ChannelController {
     static async createChannel(req: Request, res: Response): Promise<void> {
         try {
             const channelName = req.body.channelName;
+            const teamMembers = req.body.selectedTeamMembers;
             const team = req.team._id as Types.ObjectId;
             const user = req.user._id as Types.ObjectId;
             const username = req.user.username;
             const role = req.user.role;
-            const newChannel = await ChannelService.createChannel(team, channelName, user, username, role);
+            const newChannel = await ChannelService.createChannel(team, channelName, user, username, role, teamMembers);
 
             res.status(201).json({
                 message: 'Channel created successfully',
