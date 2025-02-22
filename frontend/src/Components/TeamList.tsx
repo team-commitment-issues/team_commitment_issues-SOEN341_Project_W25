@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaTrash } from "react-icons/fa";
+import { IconType } from "react-icons";
 import styles from "../Styles/dashboardStyles";
 import { getTeams } from "../Services/dashboardService";
 import { deleteTeam } from "../Services/superAdminService";
+
+const TrashIcon: IconType = FaTrash;
 
 interface Team {
     _id: string;
@@ -72,10 +75,12 @@ const TeamList: React.FC<TeamListProps> = ({ selectedUsers, selectedTeam, setSel
               {team.name}
               <button
                 style={styles.deleteTeamButton}
-                onClick={() => handleDeleteTeam(team)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteTeam(team);
+                }}
               >
-                <FaTrash style={styles.trashIcon} />{" "}
-                {}
+                <TrashIcon style={styles.trashIcon} />
               </button>
             </li>
           ))}
