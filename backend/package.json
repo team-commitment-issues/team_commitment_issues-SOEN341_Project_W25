@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "build": "tsc",
-    "test" : "jest",
+    "test": "jest",
     "start": "node dist/server.js",
     "build and start": "tsc && node dist/server.js",
     "build and test": "tsc && jest"
@@ -21,7 +21,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.10.1"
+    "mongoose": "^8.10.1",
+    "express-rate-limit": "^7.5.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
