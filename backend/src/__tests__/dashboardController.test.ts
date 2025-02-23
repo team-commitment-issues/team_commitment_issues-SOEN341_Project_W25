@@ -32,7 +32,7 @@ describe('GET /dashboard/listTeams', () => {
             .expect(200);
 
         expect(response.body).toHaveLength(1);
-        expect(response.body[0]).toBe('Test Team');
+        expect(response.body[0]).toMatchObject({ name: 'Test Team' });
     });
 
     it('should return an error if the user is not authenticated', async () => {

@@ -22,13 +22,12 @@ export const getUsers = async () => {
     }
 }
 
-export const getChannels = async (teamId: string) => {
+export const getChannels = async (teamName: string) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/listChannels/`, {
-            params: { teamId },
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.post(`${API_URL}/listChannels/`, {
+            teamName: teamName
+        }, { headers: { Authorization: `Bearer ${token}` } });
         return response.data;
     } catch (error) {
         throw new Error((error as any).response?.data?.error || 'Failed to fetch dashboard data. Please try again.');
@@ -38,10 +37,9 @@ export const getChannels = async (teamId: string) => {
 export const getUsersInTeam = async (teamName: string) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/listUsersInTeam/`, {
-            params: { teamName },
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.post(`${API_URL}/listUsersInTeam/`, {
+            teamName: teamName
+        }, { headers: { Authorization: `Bearer ${token}` } });
         return response.data;
     } catch (error) {
         throw new Error((error as any).response?.data?.error || 'Failed to fetch dashboard data. Please try again.');
@@ -51,10 +49,10 @@ export const getUsersInTeam = async (teamName: string) => {
 export const getUsersInChannel = async (teamName: string, channelName: string) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/listUsersInChannel/`, {
-            params: { teamName, channelName },
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.post(`${API_URL}/listUsersInChannel/`, {
+            teamName: teamName,
+            channelName: channelName
+        }, { headers: { Authorization: `Bearer ${token}` } });
         return response.data;
     } catch (error) {
         throw new Error((error as any).response?.data?.error || 'Failed to fetch dashboard data. Please try again.');

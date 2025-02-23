@@ -452,6 +452,49 @@ const styles = {
     fontWeight: "bold",
     textAlign: "center" as const,
   },
+  addUserToTeamContainer: {
+    padding: "16px",
+    marginTop: "16px",
+    border: "1px solid #D1D5DB",
+    borderRadius: "8px",
+    backgroundColor: "#FFFFFF",
+  },
+  addUserToTeamHeading: {
+    fontSize: "18px",
+    fontWeight: "600",
+    marginBottom: "8px",
+  },
+  addUserToTeamErrorMessage: {
+    color: "#EF4444",
+    marginBottom: "16px",
+  },
+  addUserToTeamSuccessMessage: {
+    color: "#10B981",
+    marginBottom: "16px",
+  },
+  addUserToTeamSelect: {
+    border: "1px solid #D1D5DB",
+    padding: "8px",
+    borderRadius: "8px",
+    width: "100%",
+    marginBottom: "16px",
+  },
+  addUserToTeamButton: {
+    marginTop: "8px",
+    backgroundColor: "#3B82F6",
+    color: "#FFFFFF",
+    padding: "8px 16px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "background-color 0.3s",
+    "&:hover": {
+      backgroundColor: "#2563EB",
+    },
+    "&:disabled": {
+      backgroundColor: "#93C5FD",
+      cursor: "not-allowed",
+    },
+  },
 };
 
 export default styles;

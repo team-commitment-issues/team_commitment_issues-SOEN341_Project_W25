@@ -6,6 +6,7 @@ import ChannelList from "../Components/ChannelList";
 import DirectMessages from "../Components/DirectMessages";
 import AddUserToTeam from "../Components/AddUserToTeam";
 import styles from "../Styles/dashboardStyles";
+import TeamMemberList from "../Components/teamMemberList";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -67,22 +69,42 @@ const AdminDashboard: React.FC = () => {
 
       <div style={styles.mainContainer}>
         <UserList 
-          selectedUsers={selectedUsers} 
-          setSelectedUsers={setSelectedUsers} 
+          selectedUsers={selectedUsers}
+          setSelectedUsers={setSelectedUsers}
+          selectedTeam={selectedTeam}
+          setSelectedTeam={setSelectedTeam}
+          selectedChannel={selectedChannel} 
+          setSelectedChannel={setSelectedChannel}
+          setSelectedTeamMembers={setSelectedTeamMembers}
         />
-        
+
         <AddUserToTeam selectedUsers={selectedUsers} />
+        
+        <TeamMemberList
+          selectedTeamMembers={selectedTeamMembers}
+          setSelectedTeamMembers={setSelectedTeamMembers}
+          selectedTeam={selectedTeam}
+          selectedChannel={selectedChannel} 
+        />
 
         <div style={styles.middleContainer}>
-          <TeamList 
+          <TeamList
             selectedUsers={selectedUsers} 
-            setSelectedTeam={setSelectedTeam} 
+            setSelectedUsers={setSelectedUsers}
             selectedTeam={selectedTeam}
-          />
-          <ChannelList 
-            selectedTeam={selectedTeam} 
+            setSelectedTeam={setSelectedTeam} 
             selectedChannel={selectedChannel} 
             setSelectedChannel={setSelectedChannel}
+          />
+          <ChannelList
+            selectedUsers={selectedUsers} 
+            setSelectedUsers={setSelectedUsers}
+            selectedTeam={selectedTeam} 
+            setSelectedTeam={setSelectedTeam} 
+            selectedChannel={selectedChannel} 
+            setSelectedChannel={setSelectedChannel}
+            selectedTeamMembers={selectedTeamMembers}
+            setSelectedTeamMembers={setSelectedTeamMembers}
           />
         </div>
         
