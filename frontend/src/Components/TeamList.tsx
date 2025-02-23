@@ -20,9 +20,10 @@ interface TeamListProps {
   setSelectedTeam: React.Dispatch<React.SetStateAction<string | null>>;
   selectedChannel: string | null;
   setSelectedChannel: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const TeamList: React.FC<TeamListProps> = ({selectedUsers, setSelectedUsers, selectedTeam, setSelectedTeam, selectedChannel, setSelectedChannel}) => {
+const TeamList: React.FC<TeamListProps> = ({selectedUsers, setSelectedUsers, selectedTeam, setSelectedTeam, selectedChannel, setSelectedChannel, setSelectedTeamMembers}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const navigate = useNavigate();
@@ -58,6 +59,7 @@ const TeamList: React.FC<TeamListProps> = ({selectedUsers, setSelectedUsers, sel
     );
     setSelectedUsers([]);
     setSelectedChannel(null);
+    setSelectedTeamMembers([]);
   };
 
   return (
