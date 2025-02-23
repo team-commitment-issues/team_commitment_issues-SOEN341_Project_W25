@@ -95,6 +95,7 @@ const AdminDashboard: React.FC = () => {
             setSelectedTeam={setSelectedTeam} 
             selectedChannel={selectedChannel} 
             setSelectedChannel={setSelectedChannel}
+            setSelectedTeamMembers={setSelectedTeamMembers}
           />
           <ChannelList
             selectedUsers={selectedUsers} 

@@ -60,12 +60,17 @@ const ChannelList: React.FC<ChannelListProps> = ({selectedUsers, setSelectedUser
       prevSelectedChannel === channel ? null : channel
     );
     setSelectedUsers([]);
+    setSelectedTeamMembers([]);
   };
+
+  if (!selectedTeam) {
+    return null;
+  }
 
   return (
     <div style={styles.channelList}>
       <h3 onClick={() => setCollapsed(!collapsed)} style={styles.listHeader}>
-        Channels {collapsed ? "▲" : "▼"}
+        {selectedTeam ? `Channels for ${selectedTeam}` : "Channels"} {collapsed ? "▲" : "▼"}
       </h3>
       {!collapsed && (
         <ul style={styles.listContainer}>
