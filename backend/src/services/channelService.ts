@@ -50,25 +50,33 @@ class ChannelService {
         channel.members.push(teamMember._id as Schema.Types.ObjectId);
         await channel.save();
         teamMember.channels.push(channel._id as Schema.Types.ObjectId);
-        console.log(channel);
         return await teamMember.save();
     }
 
-    static async sendMessage(channel: Types.ObjectId, teamMember: Types.ObjectId, text: string): Promise<any> {
+    static async sendMessage(channel: Types.ObjectId, teamMember: Types.ObjectId | string, text: string): Promise<any> {
         const selectedChannel = await Channel.findById(channel);
         if (!selectedChannel) {
             throw new Error('Channel not found');
+        }
+        if (typeof teamMember === 'string') {
+            const message = new Message({ text, username: teamMember, channel, createdAt: new Date() });
+            await message.save();
+            selectedChannel.messages.push(message._id as Schema.Types.ObjectId);
+            return await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
         }
         const member = await TeamMember.findById(teamMember);
         if (!member) {
             throw new Error('Team member not found');
         }
-        const user = member.user;
-        const message = new Message({ text, user, channel, createdAt: new Date() });
+        const user = await User.findById(member.user).select('username');
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const message = new Message({ text, username: user.username, channel, createdAt: new Date() });
         await message.save();
 
         selectedChannel.messages.push(message._id as Schema.Types.ObjectId);
-        return await selectedChannel.save();
+        return await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
     }
 
     static async deleteChannel(teamId: Types.ObjectId, channelId: Types.ObjectId): Promise<any> {
@@ -97,6 +105,7 @@ class ChannelService {
 
     static async getMessages(channel: Types.ObjectId): Promise<any> {
         const messages = await Message.find({ channel: channel });
+
         return messages;
     }
 }

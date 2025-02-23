@@ -12,11 +12,11 @@ interface IMessage extends Document {
      */
     text: string;
     /**
-     * The user who sent the message.
-     * @type {Schema.Types.ObjectId}
+     * The username of the user who sent the message.
+     * @type {string}
      * @see {@link User}
      */
-    user: Schema.Types.ObjectId;
+    username: string;
     /**
      * The channel that the message belongs to.
      * @type {Schema.Types.ObjectId}
@@ -39,9 +39,8 @@ const MessageSchema = new Schema<IMessage>({
         type: String,
         required: true,
     },
-    user: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
+    username: {
+        type: String,
         required: true,
     },
     channel: {

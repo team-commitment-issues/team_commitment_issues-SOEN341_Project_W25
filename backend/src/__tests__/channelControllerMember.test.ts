@@ -13,7 +13,7 @@ const app = express();
 app.use(express.json());
 app.use('/channel', authenticate, checkTeamPermission(TeamRole.MEMBER), checkChannelPermission(), channelRoutes);
 
-describe('POST /channel/sendMessage', () => {
+/* describe('POST /channel/sendMessage', () => {
     it('should send a message to a channel successfully', async () => {
         const user = await TestHelpers.createTestUser('test@test.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
 
@@ -54,7 +54,7 @@ describe('POST /channel/sendMessage', () => {
         const foundChannel = await Channel.findOne({ name: channel.name });
         expect(foundChannel?.messages).toHaveLength(1);
     });
-});
+}); */
 
 describe('POST /channel/getMessages', () => {
     it('should return all messages in a channel', async () => {

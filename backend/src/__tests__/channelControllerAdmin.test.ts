@@ -142,7 +142,7 @@ describe('POST /channel/deleteChannel', () => {
         channel.members.push(user._id);
         await channel.save();
 
-        const message = await TestHelpers.createTestMessage("test message", teamMember._id, channel._id);
+        const message = await TestHelpers.createTestMessage("test message", user.username, channel._id);
 
         channel.messages.push(message._id);
         await channel.save();

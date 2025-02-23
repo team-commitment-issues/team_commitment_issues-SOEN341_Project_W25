@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import http from 'http';
+
 import express from 'express';
-import mongoose from 'mongoose';
+import mongoose, { Schema, set, Types } from 'mongoose';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes';
 import channelRoutes from './routes/channelRoutes';
@@ -10,6 +12,8 @@ import superAdminRoutes from './routes/superAdminRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
+import { setupWebSocketServer } from './webSocketServer';
+
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chathavendb';
 
@@ -38,8 +42,9 @@ backend.use('/superadmin', superAdminRoutes);
 backend.use('/dashboard', dashboardRoutes);
 
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(backend);
 
-backend.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log('Backend is listening on port ' + PORT);
 });
 
@@ -55,3 +60,5 @@ backend.get("*", (req, res) => {
         )
     );
 });
+
+setupWebSocketServer(server);
