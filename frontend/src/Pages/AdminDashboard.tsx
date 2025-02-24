@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import UserList from "../Components/userList";
 import TeamList from "../Components/TeamList";
 import ChannelList from "../Components/ChannelList";
-import DirectMessages from "../Components/DirectMessages";
+import TeamMessages from "../Components/DirectMessages";
 import AddUserToTeam from "../Components/AddUserToTeam";
 import styles from "../Styles/dashboardStyles";
 import TeamMemberList from "../Components/teamMemberList";
@@ -109,7 +109,7 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
         
-        <DirectMessages 
+        <TeamMessages 
           selectedTeam={selectedTeam} 
           selectedChannel={selectedChannel}
         />
