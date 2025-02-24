@@ -83,7 +83,7 @@ const styles = {
     width: "35%",
     gap: "10px",
   },
-  directMessages: {
+  teamMessages: {
     width: "40%",
     height: "74%",
     padding: "15px",

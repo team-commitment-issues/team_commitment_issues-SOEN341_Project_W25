@@ -9,12 +9,12 @@ interface chatMessage {
   createdAt: Date;
 }
 
-interface DirectMessagesProps {
+interface TeamChannelProps {
   selectedTeam: string | null;
   selectedChannel: string | null;
 }
 
-const DirectMessages: React.FC<DirectMessagesProps> = ({ selectedTeam, selectedChannel }) => {
+const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel }) => {
   const [messages, setMessages] = useState<chatMessage[]>([]);
   const [message, setMessage] = useState<string>("");
   const ws = useRef<WebSocket | null>(null);
@@ -86,7 +86,7 @@ const DirectMessages: React.FC<DirectMessagesProps> = ({ selectedTeam, selectedC
   }, [selectedChannel, selectedTeam]);
 
   return (
-    <div style={styles.directMessages}>
+    <div style={styles.teamMessages}>
       <div style={styles.chatHeader}>Direct Messages</div>
       <div style={styles.chatBox}>
         {messages.length === 0 ? (
@@ -124,4 +124,4 @@ const DirectMessages: React.FC<DirectMessagesProps> = ({ selectedTeam, selectedC
   );
 };
 
-export default DirectMessages;
+export default TeamMessages;
