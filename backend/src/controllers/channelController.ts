@@ -59,6 +59,13 @@ class ChannelController {
         try {
             const text = req.body.text;
             const channel = req.channel._id as Types.ObjectId;
+            if (req.user.role === 'SUPER_ADMIN') {
+                await ChannelService.sendMessage(channel, req.user.username, text);
+                res.status(201).json({
+                    message: 'Message sent successfully'
+                });
+                return;
+            }
             const teamMember = req.teamMember._id as Types.ObjectId;
             const newMessage = await ChannelService.sendMessage(channel, teamMember, text);
 
@@ -104,6 +111,7 @@ class ChannelController {
 
             res.status(200).json(messages);
         } catch (err) {
+            console.log(err);
             res.status(500).json({ error: 'Internal server error' });
         }
     }

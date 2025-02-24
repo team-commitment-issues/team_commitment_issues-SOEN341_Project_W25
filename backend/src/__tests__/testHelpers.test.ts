@@ -221,18 +221,19 @@ describe("createTestTeamMember", () => {
 describe("createTestMessage", () => {
     it("should create a message with the given details", async () => {
         const text = "Test message";
-        const user = new User()._id as mongoose.Types.ObjectId;
+        const user = new User();
+        user.username = "testuser" as string;
         const channel = new Channel()._id as mongoose.Types.ObjectId;
 
         const message = await TestHelpers.createTestMessage(
             text,
-            user,
+            user.username,
             channel
         );
 
         expect(message).toBeDefined();
         expect(message.text).toBe(text);
-        expect(message.user).toEqual(user);
+        expect(message.username).toEqual(user.username);
         expect(message.channel).toEqual(channel);
         expect(message.createdAt).toBeDefined();
     });

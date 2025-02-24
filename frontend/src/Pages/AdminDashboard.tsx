@@ -109,7 +109,10 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
         
-        <DirectMessages />
+        <DirectMessages 
+          selectedTeam={selectedTeam} 
+          selectedChannel={selectedChannel}
+        />
       </div>
     </div>
   );

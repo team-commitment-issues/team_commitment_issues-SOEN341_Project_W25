@@ -28,11 +28,11 @@ export const addUserToChannel = async (username: string, teamName: string, chann
     }
 }
 
-export const sendMessage = async (teamName: string, channelName: string, message: string) => {
+export const sendMessage = async (teamName: string, channelName: string, text: string) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(`${API_URL}/sendMessage`, 
-            { teamName, channelName, message },
+            { teamName, channelName, text },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return response.data;
@@ -57,10 +57,10 @@ export const deleteChannel = async (teamName: string, channelName: string) => {
 export const getMessages = async (teamName: string, channelName: string) => {
     try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/getMessages`, {
-            params: { teamName, channelName },
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await axios.post(`${API_URL}/getMessages`, 
+            { teamName, channelName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
         return response.data;
     } catch (error) {
         throw new Error((error as any).response?.data?.error || 'Failed to fetch messages. Please try again.');

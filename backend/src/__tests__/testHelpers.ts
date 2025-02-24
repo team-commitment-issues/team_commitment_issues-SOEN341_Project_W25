@@ -76,10 +76,10 @@ class TestHelpers {
         return teamMember;
     }
 
-    static async createTestMessage(text: string, user: mongoose.Types.ObjectId, channel: mongoose.Types.ObjectId): Promise<any> {
+    static async createTestMessage(text: string, username: string, channel: mongoose.Types.ObjectId): Promise<any> {
         const message = new Message({
             text,
-            user,
+            username,
             channel
         });
         await message.save();
