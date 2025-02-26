@@ -1,6 +1,10 @@
 import styled from 'styled-components';
 
-export const Sidebar = styled.div`
+interface ButtonProps {
+    selected: boolean;
+}
+
+export const SidebarContainer = styled.div`
     position: fixed;
     top: 0;
     bottom: 0;
@@ -10,11 +14,9 @@ export const Sidebar = styled.div`
     color: #ffffff;
     overflow-y: auto;
     padding: 10px;
-    display: flex;
-    flex-direction: column;
 `;
 
-export const ChannelBar = styled.div`
+export const ChannelBarContainer = styled.div`
     position: fixed;
     top: 0;
     bottom: 0;
@@ -26,7 +28,7 @@ export const ChannelBar = styled.div`
     padding: 10px;
 `;
 
-export const ChatArea = styled.div`
+export const ChatAreaContainer = styled.div`
     position: absolute;
     left: 25%;
     right: 0;
@@ -42,9 +44,27 @@ export const Header = styled.div`
     color: #ffffff;
     display: flex;
     align-items: center;
-    justify-content: space-between; // Ensures items are spread from left to right
-    padding: 0 20px;
-    position: relative; // Needed for absolute positioning of children
+    justify-content: space-between; // Ensure space between elements
+    padding: 0 20px; // Adjust padding to add space on both sides
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+`;
+
+export const Button = styled.button<ButtonProps>`
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: ${({ selected }) => (selected ? '#555' : '#333')};
+    color: white;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+
+    &:hover {
+        background: #555;
+        transform: translateX(10px);
+    }
 `;
 
 export const ProfilePic = styled.div`
@@ -54,56 +74,24 @@ export const ProfilePic = styled.div`
     background-color: #777;
     border: 2px solid #fff;
     cursor: pointer;
-    position: absolute;
-    right: 20px; // Positions the profile picture to the far right
-    top: 50%; // Center it vertically
-    transform: translateY(-50%); // Adjust positioning precisely
-`;
-export const Button = styled.button<{ selected?: boolean }>`
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 10px;
-    margin: 3px 0;
-    border: none;
-    background: ${({ selected }) => selected ? 'rgb(137, 103, 74)' : '#444'};
-    color: white;
-    text-align: left;
-    transition: background 0.3s, transform 0.3s;
-
-    .team-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background-color: #888;
-        margin-right: 10px;
-    }
-
-    &:hover {
-        background: #555;
-        transform: translateX(10px);
-    }
+    margin-right: 20px; // Add margin to the right to separate it from the title
 `;
 
 export const DropdownMenu = styled.div`
     position: absolute;
-    right: 10px;
     top: 60px;
-    background-color: #ffffff;
+    right: 20px;
+    background: white;
     border: 1px solid #ccc;
-    border-radius: 8px;
+    border-radius: 4px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     z-index: 1000;
-    width: auto; // Adjust based on content size
-    min-width: 180px; // Increased to 1.2 times larger
-    font-size: 1.2em; // Makes text larger, adhering to 1.2 scale factor
-    color: black; // Ensures text is black
-
     div {
-        padding: 12px 18px; // Increased padding for better spacing
+        padding: 10px;
         cursor: pointer;
+        color: black; // Set text color to black
         &:hover {
-            background-color: #f2f2f2;
+            background: #f0f0f0;
         }
     }
 `;
