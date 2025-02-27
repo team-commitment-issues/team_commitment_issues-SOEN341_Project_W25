@@ -1,6 +1,20 @@
 # ChatHaven - Team Commitment Issues
 
-Welcome to the official GitHub repository for Team Commitment Issues' ChatHaven project, part of the SOEN 341 course at Concordia University. This repository is used to track our progress throughout the development phases of ChatHaven, a chat application designed to connect users through a seamless and secure communication platform.
+Welcome to the official GitHub repository for Team Commitment Issues' ChatHaven project, part of the SOEN 341 course at Concordia University. This repository tracks our progress throughout the development phases of ChatHaven, a chat application designed to connect users through a seamless and secure communication platform.
+
+ChatHaven is a versatile communication platform designed for real-time interaction via text channels and direct messaging. It enables teams, communities, and individuals to communicate efficiently in a secure and structured environment.
+
+## Project Overview
+
+Key Features (Sprint 1 & 2)
+✔️ User Authentication & Management (Completed in Sprint 1)
+✔️ Text Channels for Group Communication
+✔️ Direct Messaging (DM) Between Users
+✔️ Role-Based Permissions (Admin & Member)
+✔️ Message Moderation (Admin Feature)
+✔️ Customizable User Experience
+
+Future Sprint features will be added as the project progresses.
 
 ## Project Description
 
@@ -14,6 +28,16 @@ The main objectives of ChatHaven are to:
 - Ensure privacy and security in communications.
 - Support community and direct messaging functionalities.
 - Offer customizable user experiences with scalable features.
+
+## Tech Stack
+
+Frontend: React.js, TailwindCSS
+Backend: Node.js, Express.js
+Database: Firebase Firestore
+Authentication: Firebase Auth (OAuth, JWT)
+Deployment: Vercel (Frontend), Firebase Hosting (Backend)
+CI/CD: GitHub Actions
+Version Control: GitHub
 
 ## Scope
 
