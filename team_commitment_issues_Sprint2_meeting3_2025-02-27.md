@@ -1,7 +1,7 @@
 Meeting #1 Minutes - Sprint 2 Progress
 
 Date: February 27, 2025
-Time: 14:00 - 15:00
+Time: 17:00 - 19:30
 Location: Discord Call
 
 
