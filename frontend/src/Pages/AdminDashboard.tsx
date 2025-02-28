@@ -7,6 +7,15 @@ import TeamMessages from "../Components/DirectMessages";
 import AddUserToTeam from "../Components/AddUserToTeam";
 import styles from "../Styles/dashboardStyles";
 import TeamMemberList from "../Components/teamMemberList";
+import Modal from "../Components/UI/Modal";
+
+const settingsOptions = {
+  Settings: [
+    "Manage Profile",
+    "Privacy Settings",
+    "Theme Customization",
+  ],
+};
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +26,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [modalContent, setModalContent] = useState<string | null>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -37,6 +47,11 @@ const AdminDashboard: React.FC = () => {
     navigate("/login");
   };
 
+  const showModal = (content: string) => {
+    setModalContent(content);
+    setDropdownOpen(!dropdownOpen);
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.menuContainer} ref={dropdownRef}>
@@ -52,7 +67,7 @@ const AdminDashboard: React.FC = () => {
               Profile
             </button>
             <button
-              onClick={() => navigate("/settings")}
+              onClick={() => showModal("Settings")}
               style={styles.menuItem}
             >
               Settings
@@ -63,54 +78,61 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
       </div>
+      {modalContent && (
+        <Modal
+          title={modalContent}
+          onClose={() => setModalContent(null)}
+          options={settingsOptions[modalContent as keyof typeof settingsOptions]}
+        />
+      )}
 
       <h2 style={styles.heading}>Ultimate Admin Dashboard</h2>
       <p style={styles.text}>Manage users, teams, channels, and messages.</p>
 
       <div style={styles.mainContainer}>
-        <UserList 
+        <UserList
           selectedUsers={selectedUsers}
           setSelectedUsers={setSelectedUsers}
           selectedTeam={selectedTeam}
           setSelectedTeam={setSelectedTeam}
-          selectedChannel={selectedChannel} 
+          selectedChannel={selectedChannel}
           setSelectedChannel={setSelectedChannel}
           setSelectedTeamMembers={setSelectedTeamMembers}
         />
 
         <AddUserToTeam selectedUsers={selectedUsers} />
-        
+
         <TeamMemberList
           selectedTeamMembers={selectedTeamMembers}
           setSelectedTeamMembers={setSelectedTeamMembers}
           selectedTeam={selectedTeam}
-          selectedChannel={selectedChannel} 
+          selectedChannel={selectedChannel}
         />
 
         <div style={styles.middleContainer}>
           <TeamList
-            selectedUsers={selectedUsers} 
+            selectedUsers={selectedUsers}
             setSelectedUsers={setSelectedUsers}
             selectedTeam={selectedTeam}
-            setSelectedTeam={setSelectedTeam} 
-            selectedChannel={selectedChannel} 
+            setSelectedTeam={setSelectedTeam}
+            selectedChannel={selectedChannel}
             setSelectedChannel={setSelectedChannel}
             setSelectedTeamMembers={setSelectedTeamMembers}
           />
           <ChannelList
-            selectedUsers={selectedUsers} 
+            selectedUsers={selectedUsers}
             setSelectedUsers={setSelectedUsers}
-            selectedTeam={selectedTeam} 
-            setSelectedTeam={setSelectedTeam} 
-            selectedChannel={selectedChannel} 
+            selectedTeam={selectedTeam}
+            setSelectedTeam={setSelectedTeam}
+            selectedChannel={selectedChannel}
             setSelectedChannel={setSelectedChannel}
             selectedTeamMembers={selectedTeamMembers}
             setSelectedTeamMembers={setSelectedTeamMembers}
           />
         </div>
-        
-        <TeamMessages 
-          selectedTeam={selectedTeam} 
+
+        <TeamMessages
+          selectedTeam={selectedTeam}
           selectedChannel={selectedChannel}
         />
       </div>

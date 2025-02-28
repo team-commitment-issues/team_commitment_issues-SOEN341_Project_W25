@@ -7,29 +7,29 @@ const styles: { [key: string]: CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)', // Blue gradient background
-    color: 'rgb(255,255,255)', // White font color for dark background
+    background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+    color: 'rgb(255,255,255)',
     minHeight: '100vh',
   },
   header: {
     fontSize: '32px',
     marginBottom: '30px',
-    color: 'rgb(255,255,255)', // White font color for header
+    color: 'rgb(255,255,255)',
   },
   subHeader: {
     fontSize: '24px',
     marginBottom: '15px',
-    color: 'rgb(255,255,255)', // White font color for sub-header
+    color: 'rgb(255,255,255)',
   },
   section: {
     marginBottom: '20px',
     width: '100%',
     maxWidth: '600px',
-    backgroundColor: 'rgb(253,251,243)', // Light background for sections
+    backgroundColor: 'rgb(253,251,243)', 
     padding: '20px',
     borderRadius: '10px',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    color: 'rgb(0,0,0)', // Black font color for sections
+    color: 'rgb(0,0,0)',
   },
   button: {
     display: 'block',
@@ -38,14 +38,14 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '15px',
     fontSize: '18px',
     cursor: 'pointer',
-    backgroundColor: 'rgb(32,32,32)', // Dark background for buttons
-    color: 'rgb(255,255,255)', // White font color for dark background
+    backgroundColor: 'rgb(32,32,32)', 
+    color: 'rgb(255,255,255)',
     border: 'none',
     borderRadius: '5px',
     transition: 'background-color 0.3s ease',
   },
   buttonHover: {
-    backgroundColor: 'rgb(50,50,50)', // Slightly lighter dark background for hover effect
+    backgroundColor: 'rgb(50,50,50)',
   },
 };
 
