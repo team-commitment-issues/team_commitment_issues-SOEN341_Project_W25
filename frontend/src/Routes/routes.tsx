@@ -7,7 +7,6 @@ const SignUp = lazy(() => import("../Pages/SignUp"));
 const Dashboard = lazy(() => import("../Pages/AdminDashboard"));
 const LandingPage = lazy(() => import("../Pages/LandingPage"));
 const CreateTeam = lazy(() => import("../Pages/CreateTeam"));
-const Profile = lazy(() => import("../Pages/Profile"));
 const Settings = lazy(() => import("../Pages/Settings"));
 const CreateChannel = lazy(() => import("../Pages/CreateChannel"));
 
@@ -23,7 +22,6 @@ const AppRoutes: React.FC = () => {
           path="/create-channel"
           element={React.createElement(CreateChannel)}
         />
-        <Route path="/profile" element={React.createElement(Profile)} />
         <Route path="/settings" element={React.createElement(Settings)} />
         <Route path="/" element={React.createElement(LandingPage)} />
         <Route path="*" element={<Navigate to="/" />} />
