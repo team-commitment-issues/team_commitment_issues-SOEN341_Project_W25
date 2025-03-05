@@ -4,7 +4,7 @@ import UserList from "../Components/userList";
 import TeamList from "../Components/TeamList";
 import ChannelList from "../Components/ChannelList";
 import TeamMessages from "../Components/DirectMessages";
-import AddUserToTeam from "../Components/AddUserToTeam";
+import ManageTeamMember from "../Components/AddUserToTeam";
 import styles from "../Styles/dashboardStyles";
 import TeamMemberList from "../Components/teamMemberList";
 
@@ -78,7 +78,7 @@ const AdminDashboard: React.FC = () => {
           setSelectedTeamMembers={setSelectedTeamMembers}
         />
 
-        <AddUserToTeam selectedUsers={selectedUsers} />
+        <ManageTeamMember selectedUsers={selectedUsers} />
         
         <TeamMemberList
           selectedTeamMembers={selectedTeamMembers}
