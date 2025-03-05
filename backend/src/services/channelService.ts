@@ -53,6 +53,29 @@ class ChannelService {
         return await teamMember.save();
     }
 
+    static async removeUserFromChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
+        const userToRemove = await User.findOne({ username });
+        if (!userToRemove) {
+            throw new Error('User not found');
+        }
+
+        const teamMember = await TeamMember.findOne({ user: userToRemove._id, team: team });
+        if (!teamMember) {
+            throw new Error('User not a member of the team');
+        }
+
+        const channel = await Channel.findOne({ name: channelName });
+        if (!channel) {
+            throw new Error('Channel not found');
+        }
+
+        channel.members = channel.members.filter((memberId) => memberId !== teamMember._id);
+        await channel.save();
+
+        teamMember.channels = teamMember.channels.filter((channelId) => channelId !== channel._id);
+        return await teamMember.save();
+    }
+
     static async sendMessage(channel: Types.ObjectId, teamMember: Types.ObjectId | string, text: string): Promise<any> {
         const selectedChannel = await Channel.findById(channel);
         if (!selectedChannel) {
