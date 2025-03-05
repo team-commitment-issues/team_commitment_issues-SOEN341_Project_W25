@@ -17,6 +17,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  // const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -76,6 +77,8 @@ const AdminDashboard: React.FC = () => {
           selectedChannel={selectedChannel} 
           setSelectedChannel={setSelectedChannel}
           setSelectedTeamMembers={setSelectedTeamMembers}
+          // contextMenu={contextMenu}
+          // setContextMenu={setContextMenu}
         />
 
         <ManageTeamMember selectedUsers={selectedUsers} />
@@ -85,6 +88,8 @@ const AdminDashboard: React.FC = () => {
           setSelectedTeamMembers={setSelectedTeamMembers}
           selectedTeam={selectedTeam}
           selectedChannel={selectedChannel} 
+          // contextMenu={contextMenu}
+          // setContextMenu={setContextMenu}
         />
 
         <div style={styles.middleContainer}>

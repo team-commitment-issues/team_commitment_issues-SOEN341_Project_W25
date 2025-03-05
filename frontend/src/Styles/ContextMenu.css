@@ -1,0 +1,18 @@
+.context-menu {
+    position: absolute;
+    list-style-type: none;
+    padding: 5px;
+    background-color: #fff;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    z-index: 1000;
+}
+
+.context-menu li {
+    padding: 5px 10px;
+    cursor: pointer;
+
+    &:hover {
+        background-color: #f0f0f0;
+    }
+}
