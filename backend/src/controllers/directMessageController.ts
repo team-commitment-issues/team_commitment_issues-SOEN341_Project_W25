@@ -38,26 +38,6 @@ class DirectMessageController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
-
-    static async sendDirectMessage(req: Request, res: Response): Promise<void> {
-        try {
-            const message = req.body.message;
-            const directMessageId = req.body.directMessageId as Types.ObjectId;
-            const senderId = req.body.senderId as Schema.Types.ObjectId;
-            const newMessage = await DirectMessageService.sendDirectMessage(directMessageId, message, senderId);
-
-            res.status(201).json({
-                message: 'Direct message sent successfully',
-                dmessage: newMessage,
-            });
-        } catch (err) {
-            if ((err as any).message === 'Direct message not found') {
-                res.status(404).json({ error: 'Direct message not found' });
-            } else {
-                res.status(500).json({ error: 'Internal server error' });
-            }
-        }
-    }
 }
 
 export default DirectMessageController;

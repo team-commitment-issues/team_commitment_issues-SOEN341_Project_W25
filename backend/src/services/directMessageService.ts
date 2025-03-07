@@ -33,16 +33,16 @@ class DirectMessageService {
         return messages;
     }
 
-    static async sendDirectMessage(directMessageId: Types.ObjectId, dmessage: string, senderId: Schema.Types.ObjectId) {
+    static async sendDirectMessage(text: string, username: string, directMessageId: Types.ObjectId) {
         const directMessage = await DirectMessage.findById(directMessageId);
         if (!directMessage) {
             throw new Error('Direct message not found');
         }
-
         const newDMessage = new DMessage({
-            directMessage: directMessage._id,
-            dmessage,
-            senderId,
+            text,
+            username,
+            directMessage: directMessageId,
+            createdAt: new Date(),
         });
         await newDMessage.save();
         directMessage.dmessages.push(newDMessage._id as Schema.Types.ObjectId);

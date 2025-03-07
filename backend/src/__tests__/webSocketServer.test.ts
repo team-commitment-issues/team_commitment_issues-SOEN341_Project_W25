@@ -28,6 +28,7 @@ describe('WebSocket Server', () => {
     let channel: any;
     let user2: any;
     let teamMember2: any;
+    let dm: any;
 
     beforeEach(async () => {
         user = await TestHelpers.createTestUser('test@user.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
@@ -48,6 +49,12 @@ describe('WebSocket Server', () => {
         await user2.save();
         team.teamMembers.push(teamMember2._id);
         await team.save();
+        const teamMemberIds = [teamMember._id, teamMember2._id];
+        dm = await TestHelpers.createTestDirectMessage(teamMemberIds, []);
+        teamMember.directMessages.push(dm._id);
+        await teamMember.save();
+        teamMember2.directMessages.push(dm._id);
+        await teamMember2.save();
     });
 
     it('should connect to the WebSocket server', (done) => {
@@ -165,19 +172,26 @@ describe('WebSocket Server', () => {
         ws.on('open', () => {
             console.log('Test: WebSocket connection opened');
             ws.send(JSON.stringify({
-                type: 'directMessage',
-                text: 'Hello, Direct Message!',
-                username: user2.username,
+                type: 'joinDirectMessage',
                 teamName: team.name,
-                createdAt: new Date()
+                username: user2.username
             }));
         });
 
-        ws.on('message', (message) => {
-            const parsedMessage = JSON.parse(message.toString());
-            console.log('Test: Received message:', parsedMessage);
-            if (parsedMessage.dmessage === 'Hello, Direct Message!') {
-                expect(parsedMessage.dmessage).toBe('Hello, Direct Message!');
+        ws.on('message', (joinMsg) => {
+            const parsedJoin = JSON.parse(joinMsg.toString());
+            console.log('Test: Received message:', parsedJoin);
+            if (parsedJoin.type === 'joinDirectMessage') {
+                ws.send(JSON.stringify({
+                    type: 'directMessage',
+                    text: 'Hello, Direct Message!',
+                    username: user2.username,
+                    teamName: team.name,
+                    createdAt: new Date()
+                }));
+            } else if (parsedJoin.type === 'directMessage') {
+                console.log('Test: Received direct message confirmation:', parsedJoin);
+                expect(parsedJoin.text).toBe('Hello, Direct Message!');
                 ws.close();
                 callDone();
             }
@@ -190,8 +204,32 @@ describe('WebSocket Server', () => {
 
         ws.on('close', () => {
             console.log('Test: WebSocket connection closed');
+            callDone();
         });
     });
+
+    it('should join a direct message', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({
+                type: 'joinDirectMessage',
+                teamName: team.name,
+                username: user2.username
+            }));
+        });
+
+        ws.on('message', (message) => {
+            const parsedMessage = JSON.parse(message.toString());
+            expect(parsedMessage.type).toBe('joinDirectMessage');
+            ws.close();
+            done();
+        });
+
+        ws.on('error', (error) => {
+            console.log(error);
+            done(error);
+        });
+    }, 5000);
 
     it('should handle unauthorized access', (done) => {
         const ws = new WebSocket(`ws://localhost:5001?token=InvalidToken`);

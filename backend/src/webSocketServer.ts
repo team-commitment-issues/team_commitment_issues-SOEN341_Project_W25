@@ -7,13 +7,14 @@ import User, { IUser } from './models/User';
 import Team, { ITeam } from './models/Team';
 import TeamMember, { ITeamMember } from './models/TeamMember';
 import Channel, { IChannel } from './models/Channel';
-import DirectMessage from './models/DirectMessage';
+import DirectMessage, { IDirectMessage } from './models/DirectMessage';
 
 interface ExtendedWebSocket extends WebSocket {
     team: ITeam;
     channel: IChannel;
     user: IUser;
     teamMember: ITeamMember;
+    directMessage: IDirectMessage;
 }
 
 interface DecodedToken {
@@ -82,6 +83,29 @@ const handleJoinMessage = async (ws: ExtendedWebSocket, req: any, parsedMessage:
         const errorMessage = (err instanceof Error) ? err.message : 'Unknown error';
         if (DEBUG) {
             console.error(`Error joining channel: ${errorMessage}`);
+        }
+        ws.close(1008, errorMessage);
+    }
+};
+
+const handleJoinDirectMessage = async (ws: ExtendedWebSocket, parsedMessage: any, token: string) => {
+    try {
+        const user = await verifyToken(token);
+        if (!user) throw new Error('User not found');
+        ws.user = user;
+
+        const userId = user._id as Schema.Types.ObjectId;
+        const { team, teamMember, directMessage } = await findTeamAndTeamMemberAndDirectMessage(userId, parsedMessage.teamName, parsedMessage.username);
+        ws.team = team;
+        ws.teamMember = teamMember;
+        if (!ws.team || !ws.teamMember) throw new Error('Team or team member not found');
+        if (!directMessage) throw new Error('Direct message not found');
+
+        ws.send(JSON.stringify({ type: 'joinDirectMessage', teamName: team.name, username: parsedMessage.username }));
+    } catch (err) {
+        const errorMessage = (err instanceof Error) ? err.message : 'Unknown error';
+        if (DEBUG) {
+            console.error(`Error joining direct message: ${errorMessage}`);
         }
         ws.close(1008, errorMessage);
     }
@@ -166,10 +190,11 @@ const handleDirectMessage = async (ws: ExtendedWebSocket, parsedMessage: any, ws
         const { team, teamMember, directMessage } = await findTeamAndTeamMemberAndDirectMessage(userId, parsedMessage.teamName, parsedMessage.username);
         ws.team = team;
         ws.teamMember = teamMember;
+        ws.directMessage = directMessage;
         if (!ws.team || !ws.teamMember) throw new Error('Team or team member not found');
-        if (!directMessage) throw new Error('Direct message not found');
+        if (!ws.directMessage) throw new Error('Direct message not found');
         
-        const newMessage = await DirectMessageService.sendDirectMessage(directMessage._id as Types.ObjectId, parsedMessage.text, teamMember._id as Schema.Types.ObjectId);
+        const newMessage = await DirectMessageService.sendDirectMessage(parsedMessage.text, parsedMessage.username, directMessage._id as Types.ObjectId);
 
         wss.clients.forEach((client) => {
             const extendedClient = client as ExtendedWebSocket;
@@ -216,6 +241,8 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
                     await handleMessage(ws, parsedMessage, wss, token);
                 } else if (parsedMessage.type === 'directMessage') {
                     await handleDirectMessage(ws, parsedMessage, wss, token);
+                } else if (parsedMessage.type === 'joinDirectMessage') {
+                    await handleJoinDirectMessage(ws, parsedMessage, token);
                 }
             } catch (error) {
                 if (DEBUG) {

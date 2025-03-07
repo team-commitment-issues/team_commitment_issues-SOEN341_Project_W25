@@ -80,34 +80,6 @@ class ChannelController {
         }
     }
 
-    // **Send Message**
-    static async sendMessage(req: Request, res: Response): Promise<void> {
-        try {
-            const text = req.body.text;
-            const channel = req.channel._id as Types.ObjectId;
-            if (req.user.role === 'SUPER_ADMIN') {
-                await ChannelService.sendMessage(channel, req.user.username, text);
-                res.status(201).json({
-                    message: 'Message sent successfully'
-                });
-                return;
-            }
-            const teamMember = req.teamMember._id as Types.ObjectId;
-            const newMessage = await ChannelService.sendMessage(channel, teamMember, text);
-
-            res.status(201).json({
-                message: 'Message sent successfully'
-            });
-        } catch (err) {
-            console.log(err);
-            if ((err as any).message === 'Channel not found') {
-                res.status(404).json({ error: 'Channel not found' });
-            } else {
-                res.status(500).json({ error: 'Internal server error' });
-            }
-        }
-    }
-
     static async deleteMessage(req: Request, res: Response): Promise<void> {
         try {
             const messageId = req.body.messageId as Schema.Types.ObjectId;
