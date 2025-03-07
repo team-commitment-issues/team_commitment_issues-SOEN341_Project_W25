@@ -8,6 +8,7 @@ import TeamMember from '../models/TeamMember';
 import DirectMessage from '../models/DirectMessage';
 import bcrypt from 'bcrypt';
 import { Message } from '../models/Message';
+import DMessage from '../models/DMessage';
 
 class TestHelpers {
     static async createTestSuperAdmin(teamMemberships: mongoose.Types.ObjectId[]): Promise<any> {
@@ -95,6 +96,16 @@ class TestHelpers {
         });
         await directMessage.save();
         return directMessage;
+    }
+
+    static async createTestDMessage(text: string, username: string, directMessage: mongoose.Types.ObjectId): Promise<any> {
+        const message = new DMessage({
+            text,
+            username,
+            directMessage
+        });
+        await message.save();
+        return message;
     }
 }
 

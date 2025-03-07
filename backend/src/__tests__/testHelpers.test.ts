@@ -275,3 +275,45 @@ describe("createTestDirectMessage", () => {
         expect(foundDirectMessage?.dmessages).toEqual(dmessages);
     });
 });
+
+describe("createTestDMessage", () => {
+    it("should create a direct message with the given details", async () => {
+        const text = "Test direct message";
+        const username = "testuser";
+        const directMessage = new DirectMessage()._id as mongoose.Types.ObjectId;
+        const user = { username };
+
+        const dMessage = await TestHelpers.createTestDMessage(
+            text,
+            username,
+            directMessage
+        );
+
+        expect(dMessage).toBeDefined();
+        expect(dMessage.text).toBe(text);
+        expect(dMessage.username).toEqual(user.username);
+        expect(dMessage.directMessage).toEqual(directMessage);
+        expect(dMessage.createdAt).toBeDefined();
+    });
+
+    it("should save the direct message to the database", async () => {
+        const text = "Test direct message 2";
+        const username = "testuser";
+        const directMessage = new DirectMessage()._id as mongoose.Types.ObjectId;
+        const user = { username };
+
+        const dMessage = await TestHelpers.createTestDMessage(
+            text,
+            username,
+            directMessage
+        );
+
+        const foundDMessage = await DMessage.findOne({ text });
+
+        expect(foundDMessage).toBeDefined();
+        expect(foundDMessage?.text).toBe(text);
+        expect(foundDMessage?.username).toEqual(user.username);
+        expect(foundDMessage?.directMessage).toEqual(directMessage);
+        expect(foundDMessage?.createdAt).toBeDefined();
+    });
+});
