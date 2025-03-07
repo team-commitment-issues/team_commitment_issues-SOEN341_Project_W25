@@ -54,7 +54,7 @@ class ChannelService {
     }
 
     static async removeUserFromChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
-        const userToRemove = await User.findOne({ username: { $eq: username } });
+        const userToRemove = await User.findOne({ username: { $eq: username }  });
         if (!userToRemove) {
             throw new Error('User not found');
         }
@@ -100,6 +100,27 @@ class ChannelService {
 
         selectedChannel.messages.push(message._id as Schema.Types.ObjectId);
         return await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
+    }
+
+    static async deleteMessage(channel: Types.ObjectId, messageId: Schema.Types.ObjectId): Promise<any> {
+        const message = await Message.findOne({_id: { $eq: messageId }});
+        if (!message) {
+            throw new Error('Message not found');
+        }
+        
+        const channelData = await Channel.findById(channel);
+        if (!channelData) {
+            throw new Error('Channel not found');
+        }
+        
+        if (!channelData.messages.includes(messageId)) {
+            throw new Error('Message not found');
+        }
+
+        channelData.messages = channelData.messages.filter((id) => String(id) !== String(message._id));
+        await channelData.save();
+
+        return await message.deleteOne();
     }
 
     static async deleteChannel(teamId: Types.ObjectId, channelId: Types.ObjectId): Promise<any> {

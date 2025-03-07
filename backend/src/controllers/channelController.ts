@@ -108,6 +108,24 @@ class ChannelController {
         }
     }
 
+    static async deleteMessage(req: Request, res: Response): Promise<void> {
+        try {
+            const messageId = req.body.messageId as Schema.Types.ObjectId;
+            const channel = req.channel._id as Types.ObjectId;
+            const result = await ChannelService.deleteMessage(channel, messageId);
+
+            res.status(200).json({
+                message: 'Message deleted successfully'
+            });
+        } catch (err) {
+            if ((err as any).message === 'Message not found') {
+                res.status(404).json({ error: 'Message not found' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
+
     // **Delete Channel**
     static async deleteChannel(req: Request, res: Response): Promise<void> {
         try {

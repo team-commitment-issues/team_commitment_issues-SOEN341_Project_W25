@@ -253,3 +253,120 @@ describe('POST /channel/deleteChannel', () => {
             .expect(404);
     });
 });
+
+describe('POST /channel/deleteMessage', () => {
+    it('should delete a message successfully', async () => {
+        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
+
+        const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
+
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, superAdminUser._id, [], []);
+
+        const user = await TestHelpers.createTestUser('test@test.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
+        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+        team.teamMembers.push(teamMember._id);
+        await team.save();
+        user.teamMemberships.push(teamMember._id);
+        await user.save();
+
+        channel.members.push(user._id);
+        await channel.save();
+
+        const message = await TestHelpers.createTestMessage('Test message', user.username, channel._id);
+
+        channel.messages.push(message._id);
+        await channel.save();
+
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
+
+        const requestPayload = {
+            teamName: team.name,
+            channelName: channel.name,
+            messageId: message._id
+        };
+
+        const response = await request(app)
+            .post(`/channel/deleteMessage`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(requestPayload)
+            .expect(200);
+
+        expect(response.body.message).toBe('Message deleted successfully');
+        
+        const updatedChannel = await
+            Channel.findOne({ name: channel.name }).populate('messages');
+        expect(updatedChannel?.messages).not.toContain(message._id);
+        const deletedMessage = await
+            Message.findOne({ _id: message._id });
+        expect(deletedMessage).toBeNull();
+    });
+
+    it('should return an error if the user is not authorized', async () => {
+        const requestPayload = {
+            teamName: 'Test Team',
+            channelName: 'Test Channel',
+            messageId: new mongoose.Types.ObjectId()
+        };
+
+        const response = await request(app)
+            .post(`/channel/deleteMessage`)
+            .send(requestPayload)
+            .expect(401);
+
+        expect(response.body.error).toBe('Unauthorized: No token provided');
+    });
+
+    it('should return an error if the channel is not found', async () => {
+        const adminUser = await TestHelpers.createTestSuperAdmin([]);
+
+        const token = await TestHelpers.generateToken(adminUser.username, adminUser.email);
+
+        const requestPayload = {
+            teamName: 'Test Team',
+            channelName: 'Nonexistent Channel',
+            messageId: new mongoose.Types.ObjectId()
+        };
+
+        const response = await request(app)
+            .post(`/channel/deleteMessage`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(requestPayload)
+            .expect(404);
+    });
+
+    it('should return an error if the message is not found', async () => {
+        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
+
+        const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
+
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, superAdminUser._id, [], []);
+
+        const user = await TestHelpers.createTestUser('Test', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
+        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+
+        team.teamMembers.push(teamMember._id);
+        await team.save();
+
+        user.teamMemberships.push(teamMember._id);
+        await user.save();
+
+        channel.members.push(user._id);
+        await channel.save();
+
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
+
+        const requestPayload = {
+            teamName: team.name,
+            channelName: channel.name,
+            messageId: new mongoose.Types.ObjectId()
+        };
+
+        const response = await request(app)
+            .post(`/channel/deleteMessage`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(requestPayload)
+            .expect(404);
+
+        expect(response.body.error).toBe('Message not found');
+    });
+});
