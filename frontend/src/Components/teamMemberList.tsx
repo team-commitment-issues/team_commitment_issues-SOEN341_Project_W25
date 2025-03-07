@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import styles from "../Styles/dashboardStyles";
 import { getUsersInTeam, getUsersInChannel } from "../Services/dashboardService";
 import { removeUserFromTeam } from "../Services/superAdminService";
-import { addUserToChannel, removeUserFromChannel } from "../Services/channelService";
+import { removeUserFromChannel } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
 
 interface User {
