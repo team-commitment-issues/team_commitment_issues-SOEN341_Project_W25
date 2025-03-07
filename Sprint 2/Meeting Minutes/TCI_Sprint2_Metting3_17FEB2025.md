@@ -39,9 +39,9 @@
 ---
 
 ## **Decisions Made**  
-- ✅ All team members will continue working on their assigned tasks for Sprint 2.  
-- ✅ **Brian** and **Fares** will collaborate on improving the frontend for better responsiveness.  
-- ✅ **Sam** and **Mohamed Ali** will focus on backend optimizations and fixing any bugs.  
+ All team members will continue working on their assigned tasks for Sprint 2.  
+   **Brian** and **Fares** will collaborate on improving the frontend for better responsiveness.  
+   **Sam** and **Mohamed Ali** will focus on backend optimizations and fixing any bugs.  
 
 ---
 
@@ -56,14 +56,15 @@
 ---
 
 ## **Next Meeting**  
-📅 **Date**: 21 February 2025  
-⏰ **Time**: 4:00 PM to 5:45 PM  
-📍 **Location**: Hall Building  
+ **Date**: 21 February 2025  
+ **Time**: 4:00 PM to 5:45 PM  
+**Location**: Hall Building  
 
 ---
 
-✅ **Usage Instructions**:  
+] **Usage Instructions**:  
 - Name the file in this format: `TeamName_Sprint#_Meeting#_Date.md`  
   Example: `TCI_Sprint2_Meeting1_17February2025.md`  
 
-📌 This ensures your meeting minutes are clear, structured, and GitHub-compatible! 🚀  
+
+This ensures your meeting minutes are clear, structured, and GitHub-compatible!  
