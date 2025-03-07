@@ -8,7 +8,10 @@ import DirectMessage from '../models/DirectMessage';
 
 class DirectMessageService {
     static async createDirectMessage(username: string, teamMember: Schema.Types.ObjectId, team: Schema.Types.ObjectId) {
-            const receiver = await User.findOne({ username: username });
+            if (typeof username !== 'string') {
+                throw new Error('Invalid username');
+            }
+            const receiver = await User.findOne({ username: { $eq: username } });
             if (!receiver) {
                 throw new Error('User not found');
             }
