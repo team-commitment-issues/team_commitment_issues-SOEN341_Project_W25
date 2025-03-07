@@ -20,11 +20,13 @@ const AdminDashboard: React.FC = () => {
   const [membersContextMenu, setMembersContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
   const [messagesContextMenu, setMessagesContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
 
+
   const handleContextMenu = (type: string, arg: { visible: boolean; x: number; y: number; selected: string }) => {
     if (type === "users") {
       setUsersContextMenu(arg);
       setMembersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
       setMessagesContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+
     }
     if (type === "members") {
       setMembersContextMenu(arg);
