@@ -57,9 +57,9 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
     return null;
   }
 
-  const handleContextMenu = (event: any) => {
+  const handleContextMenu = (event: any, username: string) => {
     event.preventDefault();
-    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: event.target.value });
+    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: username });
   };
 
   const handleCloseContextMenu = () => {
@@ -86,7 +86,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
           {users.map((user) => (
             <li
               key={user.username}
-              onContextMenu={handleContextMenu}
+              onContextMenu={e => handleContextMenu(e, user.username)}
               value={user.username}
               style={{
                 ...styles.listItem,
