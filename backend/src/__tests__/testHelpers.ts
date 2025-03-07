@@ -5,6 +5,7 @@ import Team from '../models/Team';
 import Channel from '../models/Channel';
 import jwt from 'jsonwebtoken';
 import TeamMember from '../models/TeamMember';
+import DirectMessage from '../models/DirectMessage';
 import bcrypt from 'bcrypt';
 import { Message } from '../models/Message';
 
@@ -71,6 +72,7 @@ class TestHelpers {
             team,
             role,
             channels,
+            directMessages: [],
         });
         await teamMember.save();
         return teamMember;
@@ -84,6 +86,15 @@ class TestHelpers {
         });
         await message.save();
         return message;
+    }
+
+    static async createTestDirectMessage(teamMembers: mongoose.Types.ObjectId[], messages: mongoose.Types.ObjectId[]): Promise<any> {
+        const directMessage = new DirectMessage({
+            teamMembers,
+            messages,
+        });
+        await directMessage.save();
+        return directMessage;
     }
 }
 
