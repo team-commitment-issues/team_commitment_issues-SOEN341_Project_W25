@@ -14,15 +14,14 @@ interface TeamMemberListProps {
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
   selectedChannel: string | null;
-  // contextMenu: { visible: boolean; x: number; y: number; selected: string };
-  // setContextMenu: React.Dispatch<React.SetStateAction<{ visible: boolean; x: number; y: number; selected: string }>>;
+  contextMenu: { visible: boolean; x: number; y: number; selected: string };
+  setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string;} ) => void;
 }
 
-const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel}) => {
+const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel, contextMenu, setContextMenu}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState<string>("Users");
-  const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
 
   useEffect(() => {
     const fetchUsers = async () => {

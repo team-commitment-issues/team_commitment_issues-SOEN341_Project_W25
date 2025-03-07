@@ -9,6 +9,8 @@ import TestHelpers from './testHelpers';
 import Channel from '../models/Channel';
 import { Message } from '../models/Message';
 import Team from '../models/Team';
+import User from '../models/User';
+import TeamMember from '../models/TeamMember';
 
 const app = express();
 app.use(express.json());
@@ -115,6 +117,57 @@ describe('POST /channel/addUserToChannel', () => {
             .expect(404);
 
         expect(response.body.error).toBe('User not found');
+    });
+});
+
+describe('POST /channel/removeUserFromChannel', () => {
+    it('should remove a user from a channel successfully', async () => {
+        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
+
+        const token = await TestHelpers.generateToken(superAdminUser.username, superAdminUser.email);
+
+        const user = await TestHelpers.createTestUser('test', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
+
+        const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
+
+        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+
+        team.teamMembers.push(teamMember._id);
+        await team.save();
+
+        user.teamMemberships.push(teamMember._id);
+        await user.save();
+
+        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, superAdminUser._id, [teamMember._id], []);
+
+        team.channels.push(channel._id);
+        await team.save();
+        
+        const requestPayload = {
+            username: user.username,
+            teamName: team.name,
+            channelName: channel.name
+        };
+
+        console.log(channel)
+
+        const response = await request(app)
+            .post(`/channel/removeUserFromChannel`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(requestPayload)
+            .expect(200);
+
+        expect(response.body.message).toBe('User removed from channel successfully');
+
+        const updatedChannel = await
+            Channel.findOne({ name: channel.name }).populate('members');
+        expect(updatedChannel?.members).not.toContain(user._id);
+
+        console.log(updatedChannel)
+
+        const updatedTeamMember = await
+            TeamMember.findOne({ user: user._id, team: team._id });
+        expect(updatedTeamMember?.channels).not.toContain(channel._id);
     });
 });
 

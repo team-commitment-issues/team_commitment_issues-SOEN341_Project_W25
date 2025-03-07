@@ -69,10 +69,10 @@ class ChannelService {
             throw new Error('Channel not found');
         }
 
-        channel.members = channel.members.filter((memberId) => memberId !== teamMember._id);
+        channel.members = channel.members.filter((memberId) => String(memberId) !== String(teamMember._id));
         await channel.save();
 
-        teamMember.channels = teamMember.channels.filter((channelId) => channelId !== channel._id);
+        teamMember.channels = teamMember.channels.filter((channelId) => String(channelId) !== String(channel._id));
         return await teamMember.save();
     }
 
