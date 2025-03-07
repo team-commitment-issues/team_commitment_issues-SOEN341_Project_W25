@@ -2,7 +2,7 @@
 
 **Date**: 2/10/2025  
 **Time**: 5:00 PM - 7:00 PM  
-**Location**: [Insert Location]  
+**Location**: Discord
 
 ---
 
@@ -53,8 +53,8 @@
 ---
 
 ## Next Meeting  
-📅 **Date**: [Next Meeting Date]  
-⏰ **Time**: [Next Meeting Time]  
-📍 **Location**: [Next Meeting Location]  
+📅 **Date**: 2/13/2025
+⏰ **Time**:  5:00 PM to 8:00 PM
+📍 **Location**:  discord
 
 ---
