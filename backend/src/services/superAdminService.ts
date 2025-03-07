@@ -78,6 +78,34 @@ class SuperAdminService {
         return await team.save();;
     }
 
+    static async promoteToAdmin(username: string, teamId: Types.ObjectId): Promise<any> {
+        const user = await User.findOne({ username: { $eq: username } });
+        if (!user) throw new Error('User not found');
+
+        const team = await Team.findById(teamId);
+        if (!team) throw new Error('Team not found');
+
+        const teamMember = await TeamMember.findOne({ user: user._id, team: team._id });
+        if (!teamMember) throw new Error('User is not a member of the team');
+
+        teamMember.role = TeamRole.ADMIN;
+        return await teamMember.save();
+    }
+
+    static async demoteToUser(username: string, teamId: Types.ObjectId): Promise<any> {
+        const user = await User.findOne({ username: { $eq: username } });
+        if (!user) throw new Error('User not found');
+
+        const team = await Team.findById(teamId);
+        if (!team) throw new Error('Team not found');
+
+        const teamMember = await TeamMember.findOne({ user: user._id, team: team._id });
+        if (!teamMember) throw new Error('User is not a member of the team');
+
+        teamMember.role = TeamRole.MEMBER;
+        return await teamMember.save();
+    }
+
     static async deleteTeam(teamId: Types.ObjectId): Promise<any> {
 
         const team = await Team.findById(teamId);

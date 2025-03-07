@@ -68,6 +68,52 @@ class SuperAdminController {
         }
     }
 
+    static async promoteToAdmin(req: Request, res: Response): Promise<void> {
+        try {
+            const { username } = req.body;
+            const team = req.team._id as Types.ObjectId;
+            const result = await SuperAdminService.promoteToAdmin(username, team);
+
+            res.status(200).json({
+                message: 'User promoted to admin successfully',
+            });
+        } catch (err) {
+            if ((err as any).message === 'User is already an admin of the team') {
+                res.status(400).json({ error: 'User is already an admin of the team' });
+            } else if ((err as any).message === 'User not found') {
+                res.status(400).json({ error: 'User not found' });
+            } else if ((err as any).message === 'Team not found') {
+                res.status(400).json({ error: 'Team not found' });
+            } else if ((err as any).message === 'User is not a member of the team') {
+                res.status(400).json({ error: 'User is not a member of the team' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
+    
+    static async demoteToUser(req: Request, res: Response): Promise<void> {
+        try {
+            const { username } = req.body;
+            const team = req.team._id as Types.ObjectId;
+            const result = await SuperAdminService.demoteToUser(username, team);
+
+            res.status(200).json({
+                message: 'Admin demoted to user successfully',
+            });
+        } catch (err) {
+            if ((err as any).message === 'User is not an admin of the team') {
+                res.status(400).json({ error: 'User is not an admin of the team' });
+            } else if ((err as any).message === 'User not found') {
+                res.status(400).json({ error: 'User not found' });
+            } else if ((err as any).message === 'Team not found') {
+                res.status(400).json({ error: 'Team not found' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
+
     static async deleteTeam(req: Request, res: Response): Promise<void> {
         try {
             const team = req.team._id as Types.ObjectId;

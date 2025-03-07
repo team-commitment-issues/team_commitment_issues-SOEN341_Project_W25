@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import styles from "../Styles/dashboardStyles";
 import { getUsersInTeam, getUsersInChannel } from "../Services/dashboardService";
-import { removeUserFromTeam } from "../Services/superAdminService";
+import { demoteToUser, promoteToAdmin, removeUserFromTeam } from "../Services/superAdminService";
 import { removeUserFromChannel } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
 
 interface User {
     username: string;
+    role: string;
 }
 
 interface TeamMemberListProps {
@@ -22,28 +23,30 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState<string>("Users");
+  const [selectedUserRole, setSelectedUserRole] = useState<string>("MEMBER");  
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      if (selectedChannel && selectedTeam) {
+        setTitle("Channel Members");
+        const channelMemberList = await getUsersInChannel(selectedTeam, selectedChannel);
+        setUsers(channelMemberList);
+      } else if (selectedTeam) {
+        setTitle("Team Members");
+        const teamMemberList = await getUsersInTeam(selectedTeam);
+        setUsers(teamMemberList);
+        console.log(teamMemberList)
+      } else {
+        return [];
+      }
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    }
+  }, [selectedChannel, selectedTeam]);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        if (selectedChannel && selectedTeam) {
-          setTitle("Channel Members");
-          const channelMemberList = await getUsersInChannel(selectedTeam, selectedChannel);
-          setUsers(channelMemberList);
-        } else if (selectedTeam) {
-          setTitle("Team Members");
-          const teamMemberList = await getUsersInTeam(selectedTeam);
-          setUsers(teamMemberList);
-        } else {
-          return [];
-        }
-      } catch (err) {
-        console.error("Failed to fetch users", err);
-      }
-    };
-
     fetchUsers();
-  }, [selectedChannel, selectedTeam]);
+  }, [selectedChannel, selectedTeam, fetchUsers]);
 
   const toggleTeamMemberSelection = (user: string) => {
     setSelectedTeamMembers((previouslySelectedMembers) =>
@@ -57,8 +60,9 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
     return null;
   }
 
-  const handleContextMenu = (event: any, username: string) => {
+  const handleContextMenu = (event: any, {username, role }: {username: string, role: string}) => {
     event.preventDefault();
+    setSelectedUserRole(role);
     setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: username });
   };
 
@@ -70,7 +74,16 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
     { label: 'Remove User from Team', onClick: () => selectedTeam && removeUserFromTeam(contextMenu.selected, selectedTeam) },
     { label: 'Remove User from Channel', onClick: () => selectedTeam && selectedChannel && removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel) },
   ];
-  
+
+  const adminOptions = [
+    ...menuItems,
+    { label: 'Demote User from Admin', onClick: async () => await demoteToUser(contextMenu.selected, selectedTeam).then(fetchUsers) },
+  ];
+
+  const memberOptions = [
+    ...menuItems,
+    { label: 'Promote User to Admin', onClick: async () => await promoteToAdmin(contextMenu.selected, selectedTeam).then(fetchUsers) },
+  ];
 
   return (
     <div style={styles.userList}>
@@ -86,7 +99,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
           {users.map((user) => (
             <li
               key={user.username}
-              onContextMenu={e => handleContextMenu(e, user.username)}
+              onContextMenu={e => handleContextMenu(e, user)}
               value={user.username}
               style={{
                 ...styles.listItem,
@@ -95,14 +108,14 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
               }}
               onClick={() => toggleTeamMemberSelection(user.username)}
             >
-              {user.username}
+              {user.username} - {user.role}
             </li>
           ))}
         </ul>
       )}
       {contextMenu.visible && (
         <ContextMenu
-          items={menuItems}
+          items={selectedUserRole === "ADMIN" ? adminOptions : memberOptions}
           position={{ x: contextMenu.x, y: contextMenu.y }}
           onClose={handleCloseContextMenu}
         />
