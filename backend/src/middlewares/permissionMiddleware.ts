@@ -43,6 +43,7 @@ function checkTeamPermission(teamRole: TeamRole) {
             req.teamMember = teamMember;
             return next();
         } else if (teamMember.role === TeamRole.ADMIN) {
+            req.teamMember = teamMember;
             return next();
         }
         else {
@@ -94,6 +95,15 @@ function checkDirectMessagePermission() {
                 res.status(404).json({'Not Found': 'Receiver not found'});
                 return;
             }
+            if (req.user.role === Role.SUPER_ADMIN) {
+                const dm = await DirectMessage.findOne({ teamMembers: { $all: [receiver._id] } });
+                if (!dm) {
+                    res.status(404).json({'Not Found': 'Direct message not found'});
+                    return;
+                }
+                req.dm = dm;
+                return next();
+            }
             const dm = await DirectMessage.findOne({ teamMembers: { $all: [req.teamMember._id, receiver._id] } });
             if (!dm) {
                 res.status(404).json({'Not Found': 'Direct message not found'});
@@ -102,8 +112,8 @@ function checkDirectMessagePermission() {
             req.dm = dm;
 
             return next();
-        } catch (error) {
-            res.status(500).json({'Error': 'An error occurred while processing your request'});
+        } catch (error: any) {
+            res.status(500).json({'Error': 'An error occurred while processing your request', 'Details': error.message});
         }
     }
 }

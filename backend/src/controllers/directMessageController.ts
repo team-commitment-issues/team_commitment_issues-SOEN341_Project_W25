@@ -6,6 +6,7 @@ class DirectMessageController {
     static async createDirectMessage(req: Request, res: Response): Promise<void> {
         try {
             const username = req.body.teamMember;
+            console.log(username);
             const teamMember = req.teamMember._id as Schema.Types.ObjectId;
             const team = req.team._id as Schema.Types.ObjectId;
             const newDirectMessage = await DirectMessageService.createDirectMessage(username, teamMember, team);
@@ -22,7 +23,7 @@ class DirectMessageController {
             } else if ((err as any).message === 'User not found') {
                 res.status(404).json({ error: 'User not found' });
             } else {
-                res.status(500).json({ error: 'Internal server error' });
+                res.status(500).json({ error: 'Internal server error', details: err });
             }
         }
     }
@@ -35,7 +36,7 @@ class DirectMessageController {
                 directMessages: directMessages,
             });
         } catch (err) {
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ error: 'Internal server error', details: err });
         }
     }
 }

@@ -34,9 +34,10 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
       console.log("Cannot send message");
       return;
     }
-    if (selectedDM) {
+    if (selectedDM && selectedTeam) {
       try {
-        await createDirectMessage(selectedDM);
+        console.log(selectedDM);
+        await createDirectMessage(selectedDM, selectedTeam);
       } catch (err: any) {
         if (err.message !== "Direct message already exists") {
           console.error("Failed to create direct message", err);
@@ -61,7 +62,8 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     try {
       if (selectedTeam && selectedDM) {
         const directMessages = await getDirectMessages(selectedTeam, selectedDM!);
-        setMessages(directMessages.map((msg: any) => ({
+        console.log(directMessages);
+        setMessages(directMessages.directMessages.map((msg: any) => ({
           _id: msg._id,
           text: msg.text,
           username: msg.username,

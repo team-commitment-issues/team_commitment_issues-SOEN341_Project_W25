@@ -7,28 +7,33 @@ import { Role } from '../enums';
 import DirectMessage from '../models/DirectMessage';
 
 class DirectMessageService {
-    static async createDirectMessage(username: string, teamMember: Schema.Types.ObjectId, team: Schema.Types.ObjectId) {
-            if (typeof username !== 'string') {
-                throw new Error('Invalid username');
-            }
-            const receiver = await User.findOne({ username: { $eq: username } });
-            if (!receiver) {
-                throw new Error('User not found');
-            }
-            const receiverTeamMember = await TeamMember.findOne({ user: receiver._id, team });
-            if (!receiverTeamMember) {
-                throw new Error('Team member not found');
-            }
-            const teamMembers = [teamMember, receiverTeamMember._id];
-            if (await DirectMessage.findOne({ teamMembers: { $all: teamMembers } })) {
-                throw new Error('Direct message already exists');
-            }
-            const directMessage = new DirectMessage({
-                teamMembers: teamMembers,
-                dmessages: [],
-            });
-            await directMessage.save();
-            return directMessage;
+    static async createDirectMessage(username: string, teamMember: Schema.Types.ObjectId, team: Schema.Types.ObjectId) {       
+        if (typeof username !== 'string') {
+                    throw new Error('Invalid username');
+                }
+                const receiver = await User.findOne({ username: { $eq: username } });
+                if (!receiver) {
+                    throw new Error('User not found');
+                }
+                const receiverTeamMember = await TeamMember.findOne({ user: receiver._id, team });
+                if (!receiverTeamMember) {
+                    throw new Error('Team member not found');
+                }
+                const teamMember1 = await TeamMember.findById(teamMember);
+                if (!teamMember1) {
+                    throw new Error('Team member not found');
+                }
+                const teamMembers = [teamMember, receiverTeamMember._id];
+                if (await DirectMessage.findOne({ teamMembers: { $all: teamMembers } })) {
+                    throw new Error('Direct message already exists');
+                }
+                const directMessage = new DirectMessage({
+                    teamMembers: [teamMember1._id, receiverTeamMember._id],
+                    dmessages: [],
+                });
+                await directMessage.save();
+                console.log(directMessage);
+                return directMessage;
     }
 
     static async getDirectMessages(directMessageId: Types.ObjectId) {

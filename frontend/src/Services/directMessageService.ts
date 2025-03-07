@@ -2,11 +2,11 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/directMessage';
 
-export const createDirectMessage = async (username: string) => {
+export const createDirectMessage = async (teamMember: string, teamName: string) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(`${API_URL}/createDirectMessage`, 
-            { username },
+            { teamMember, teamName },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return response.data;
