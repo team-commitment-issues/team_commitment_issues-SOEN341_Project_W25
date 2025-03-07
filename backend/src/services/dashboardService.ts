@@ -2,7 +2,7 @@ import Team from '../models/Team';
 import Channel from '../models/Channel';
 import User from '../models/User';
 import { Schema, Types } from 'mongoose';
-import { Role } from '../enums';
+import { Role, TeamRole } from '../enums';
 import TeamMember from '../models/TeamMember';
 
 class DashboardService {
@@ -39,9 +39,23 @@ class DashboardService {
     static async listTeamUsers(team: Types.ObjectId): Promise<any> {
         const teamData = await Team.findOne({ _id: team }).select('teamMembers');
         if (!teamData) return [];
-        const userIds = await TeamMember.find({ _id: { $in: teamData.teamMembers } }).distinct('user');
-        const usernames = await User.find({ _id: { $in: userIds } }).select('username -_id');
-        return usernames;
+        const teamMembers = await TeamMember.find({ _id: { $in: teamData.teamMembers } }).select('user role -_id');
+        const userIds = teamMembers.map(member => member.user);
+        const users = await User.find({ _id: { $in: userIds } });
+        
+        const result = users.map(user => {
+            const member = teamMembers.find(member => String(member.user) === String(user._id));
+            return {
+            username: user.username,
+            role: member?.role
+            };
+        }).sort((a, b) => {
+            if (a.role === TeamRole.ADMIN && b.role !== TeamRole.ADMIN) return -1;
+            if (a.role !== TeamRole.ADMIN && b.role === TeamRole.ADMIN) return 1;
+            return 0;
+        });
+
+        return result;
     }
 
     static async listChannelUsers(channel: Types.ObjectId): Promise<any> {

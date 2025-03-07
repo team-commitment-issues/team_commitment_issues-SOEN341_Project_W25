@@ -102,6 +102,7 @@ describe('POST /dashboard/listUsersInChannel', () => {
 
         expect(response.body).toHaveLength(1);
         expect(response.body[0].username).toBe('useruser');
+        expect(response.body[0].role).toBe('MEMBER');
     });
 
     it('should return an error if the user is not authenticated', async () => {

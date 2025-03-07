@@ -41,6 +41,33 @@ export const removeUserFromTeam = async (username: string, teamName: string) => 
     }
 }
 
+export const promoteToAdmin = async (username: string, teamName: string) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/promoteToAdmin`, 
+            { username, teamName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data;
+    } catch (error) {
+        throw new Error((error as any).response?.data?.error || 'Failed to promote user. Please try again.');
+    }
+}
+
+export const demoteToUser = async (username: string, teamName: string) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/demoteToUser`, 
+            { username, teamName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data;
+    }
+    catch (error) {
+        throw new Error((error as any).response?.data?.error || 'Failed to demote user. Please try again.');
+    }
+}
+
 export const deleteTeam = async (teamName: string) => {
     try {
         const token = localStorage.getItem('token');
