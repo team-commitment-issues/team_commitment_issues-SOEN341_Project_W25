@@ -3,6 +3,7 @@ import styles from "../Styles/dashboardStyles";
 import { deleteMessage, getMessages } from "../Services/channelService";
 import { jwtDecode } from "jwt-decode";
 import ContextMenu from "./UI/ContextMenu";
+import { getDirectMessages, createDirectMessage } from "../Services/directMessageService";
 
 interface chatMessage {
   _id: string;
@@ -16,11 +17,11 @@ interface TeamChannelProps {
   selectedChannel: string | null;
   contextMenu: { visible: boolean; x: number; y: number; selected: string };
   setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string; }) => void;
-  // selectedUser: string | null;
-  // setSelectedUser: (arg: string | null) => void;
+  selectedDM: string | null;
+  setSelectedDM: (arg: string | null) => void;
 }
 
-const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel, contextMenu, setContextMenu }) => {
+const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel, contextMenu, setContextMenu, selectedDM, setSelectedDM }) => {
   const [messages, setMessages] = useState<chatMessage[]>([]);
   const [message, setMessage] = useState<string>("");
   const ws = useRef<WebSocket | null>(null);
@@ -44,17 +45,28 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
       return;
     }
     try {
-      const messages = await getMessages(selectedTeam!, selectedChannel!);
-      setMessages(messages.map((msg: any) => ({
-        _id: msg._id,
-        text: msg.text,
-        username: msg.username,
-        createdAt: new Date(msg.createdAt),
-      })));
+      if (selectedTeam && selectedDM) {
+        const directMessages = await getDirectMessages(selectedTeam, selectedDM!);
+        setMessages(directMessages.map((msg: any) => ({
+          _id: msg._id,
+          text: msg.text,
+          username: msg.username,
+          createdAt: new Date(msg.createdAt),
+        })));
+      }
+      else if (selectedTeam && selectedChannel) {
+        const channelMessages = await getMessages(selectedTeam!, selectedChannel!);
+        setMessages(channelMessages.map((msg: any) => ({
+            _id: msg._id,
+            text: msg.text,
+            username: msg.username,
+            createdAt: new Date(msg.createdAt),
+          })));
+      }
     } catch (err) {
       console.error("Failed to fetch messages", err);
     }
-  }, [selectedTeam, selectedChannel]);
+  }, [selectedTeam, selectedChannel, selectedDM]);
 
   const handleDeleteMessage = async () => {
     if (!contextMenu.selected) {
@@ -120,8 +132,10 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
   useEffect(() => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN && selectedChannel) {
       ws.current.send(JSON.stringify({ type: "join", teamName: selectedTeam, channelName: selectedChannel }));
+    } else if (ws.current && ws.current.readyState === WebSocket.OPEN && selectedDM) {
+      ws.current.send(JSON.stringify({ type: "joinDirectMessage", teamName: selectedTeam, username: selectedDM }));
     }
-  }, [selectedChannel, selectedTeam]);
+  }, [selectedChannel, selectedTeam, selectedDM]);
 
   const handleContextMenu = (event: any, messageId: string) => {
     event.preventDefault();
