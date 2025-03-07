@@ -53,7 +53,7 @@ class ChannelService {
         return await teamMember.save();
     }
 
-    static async removeUserFromChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
+    static async removeUserFromChannel(team: Types.ObjectId, channelName: string, username: string, userRole: string): Promise<any> {
         const userToRemove = await User.findOne({ username: { $eq: username }  });
         if (!userToRemove) {
             throw new Error('User not found');
@@ -62,6 +62,11 @@ class ChannelService {
         const teamMember = await TeamMember.findOne({ user: userToRemove._id, team: team });
         if (!teamMember) {
             throw new Error('User not a member of the team');
+        }
+
+        // userRole is the role of the user making the request
+        if (teamMember.role === 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+            throw new Error('Not authorized to remove user from channel');
         }
 
         const channel = await Channel.findOne({ name: channelName });

@@ -39,8 +39,8 @@ function checkTeamPermission(teamRole: TeamRole) {
             return;
         }
 
+        req.teamMember = teamMember;
         if (teamMember.role === teamRole) {
-            req.teamMember = teamMember;
             return next();
         } else if (teamMember.role === TeamRole.ADMIN) {
             return next();

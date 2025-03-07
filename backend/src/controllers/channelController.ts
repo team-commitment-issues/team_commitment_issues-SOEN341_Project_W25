@@ -60,7 +60,7 @@ class ChannelController {
             const { username } = req.body;
             const team = req.team._id as Types.ObjectId;
             const channel = req.channel.name;
-            const result = await ChannelService.removeUserFromChannel(team, channel, username);
+            const result = await ChannelService.removeUserFromChannel(team, channel, username, req.user.role);
 
             res.status(200).json({
                 message: 'User removed from channel successfully',
@@ -74,6 +74,8 @@ class ChannelController {
                 res.status(400).json({ error: 'Team not found' });
             } else if ((err as any).message === 'User not a member of the team') {
                 res.status(403).json({ error: 'User not a member of the team' });
+            } else if ((err as any).message === 'Not authorized to remove user from channel') {
+                res.status(403).json({ error: 'Not authorized to remove user from channel' });
             } else {
                 res.status(500).json({ error: 'Internal server error' });
             }
