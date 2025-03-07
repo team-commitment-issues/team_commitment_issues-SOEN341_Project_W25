@@ -16,6 +16,8 @@ interface TeamChannelProps {
   selectedChannel: string | null;
   contextMenu: { visible: boolean; x: number; y: number; selected: string };
   setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string; }) => void;
+  // selectedUser: string | null;
+  // setSelectedUser: (arg: string | null) => void;
 }
 
 const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel, contextMenu, setContextMenu }) => {
@@ -69,6 +71,21 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     }
   }
 
+  //direct message handling
+  const handleDirectMessage = () => {
+    if (!contextMenu.selected) {
+      console.error("No message selected");
+      return;
+    }
+    const selectedMessage = messages.find((msg) => msg._id === contextMenu.selected);
+    if (selectedMessage) {
+      // Logic to open a direct message interface with the selected user
+      console.log(`Direct messaging user: ${selectedMessage.username}`);
+      // You can set the state or navigate to a direct message component here
+    }
+    setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+  };
+
   useEffect(() => {
     fetchMessages();
   }, [selectedChannel, selectedTeam, fetchMessages]);
@@ -117,6 +134,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
 
   const menuItems = [
     { label: 'Delete Message', onClick: handleDeleteMessage },
+    { label: 'Direct Message', onClick: handleDirectMessage },
   ];
 
   return (
