@@ -6,6 +6,8 @@ import Team from '../models/Team';
 import Channel from '../models/Channel';
 import TeamMember from '../models/TeamMember';
 import TestHelpers from './testHelpers';
+import DirectMessage from '../models/DirectMessage';
+import DMessage from '../models/DMessage';
 
 
 describe("createTestSuperAdmin", () => {
@@ -238,4 +240,80 @@ describe("createTestMessage", () => {
         expect(message.createdAt).toBeDefined();
     });
 });
-        
+
+describe("createTestDirectMessage", () => {
+    it("should create a direct message with the given details", async () => {
+        const teamMembers: mongoose.Types.ObjectId[] = [];
+        const dmessages: mongoose.Types.ObjectId[] = [];
+
+        const directMessage = await TestHelpers.createTestDirectMessage(
+            teamMembers,
+            dmessages
+        );
+
+        expect(directMessage).toBeDefined();
+        expect(directMessage.teamMembers).toEqual(teamMembers);
+        expect(directMessage.dmessages).toEqual(dmessages);
+    });
+
+    it("should save the direct message to the database", async () => {
+        const teamMembers: mongoose.Types.ObjectId[] = [
+            new TeamMember()._id as mongoose.Types.ObjectId,
+        ];
+        const dmessages: mongoose.Types.ObjectId[] = [
+            new DMessage()._id as mongoose.Types.ObjectId,
+        ];
+
+        const directMessage = await TestHelpers.createTestDirectMessage(
+            teamMembers,
+            dmessages
+        );
+
+        const foundDirectMessage = await DirectMessage.findOne({ teamMembers });
+        expect(foundDirectMessage).toBeDefined();
+        expect(foundDirectMessage?.teamMembers).toEqual(teamMembers);
+        expect(foundDirectMessage?.dmessages).toEqual(dmessages);
+    });
+});
+
+describe("createTestDMessage", () => {
+    it("should create a direct message with the given details", async () => {
+        const text = "Test direct message";
+        const username = "testuser";
+        const directMessage = new DirectMessage()._id as mongoose.Types.ObjectId;
+        const user = { username };
+
+        const dMessage = await TestHelpers.createTestDMessage(
+            text,
+            username,
+            directMessage
+        );
+
+        expect(dMessage).toBeDefined();
+        expect(dMessage.text).toBe(text);
+        expect(dMessage.username).toEqual(user.username);
+        expect(dMessage.directMessage).toEqual(directMessage);
+        expect(dMessage.createdAt).toBeDefined();
+    });
+
+    it("should save the direct message to the database", async () => {
+        const text = "Test direct message 2";
+        const username = "testuser";
+        const directMessage = new DirectMessage()._id as mongoose.Types.ObjectId;
+        const user = { username };
+
+        const dMessage = await TestHelpers.createTestDMessage(
+            text,
+            username,
+            directMessage
+        );
+
+        const foundDMessage = await DMessage.findOne({ text });
+
+        expect(foundDMessage).toBeDefined();
+        expect(foundDMessage?.text).toBe(text);
+        expect(foundDMessage?.username).toEqual(user.username);
+        expect(foundDMessage?.directMessage).toEqual(directMessage);
+        expect(foundDMessage?.createdAt).toBeDefined();
+    });
+});

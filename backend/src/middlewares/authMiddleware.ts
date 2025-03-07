@@ -4,6 +4,7 @@ import { ITeam } from '../models/Team';
 import { ITeamMember } from '../models/TeamMember';
 import { IChannel } from '../models/Channel';
 import { IMessage } from '../models/Message';
+import { IDirectMessage } from '../models/DirectMessage';
 import jwt from 'jsonwebtoken';
 
 declare global {
@@ -14,6 +15,7 @@ declare global {
             teamMember: ITeamMember;
             channel: IChannel;
             message: IMessage;
+            dm: IDirectMessage;
         }
     }
 }

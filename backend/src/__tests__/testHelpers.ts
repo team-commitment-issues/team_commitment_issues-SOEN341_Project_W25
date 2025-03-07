@@ -5,8 +5,10 @@ import Team from '../models/Team';
 import Channel from '../models/Channel';
 import jwt from 'jsonwebtoken';
 import TeamMember from '../models/TeamMember';
+import DirectMessage from '../models/DirectMessage';
 import bcrypt from 'bcrypt';
 import { Message } from '../models/Message';
+import DMessage from '../models/DMessage';
 
 class TestHelpers {
     static async createTestSuperAdmin(teamMemberships: mongoose.Types.ObjectId[]): Promise<any> {
@@ -71,6 +73,7 @@ class TestHelpers {
             team,
             role,
             channels,
+            directMessages: [],
         });
         await teamMember.save();
         return teamMember;
@@ -81,6 +84,25 @@ class TestHelpers {
             text,
             username,
             channel
+        });
+        await message.save();
+        return message;
+    }
+
+    static async createTestDirectMessage(teamMembers: mongoose.Types.ObjectId[], dmessages: mongoose.Types.ObjectId[]): Promise<any> {
+        const directMessage = new DirectMessage({
+            teamMembers,
+            dmessages,
+        });
+        await directMessage.save();
+        return directMessage;
+    }
+
+    static async createTestDMessage(text: string, username: string, directMessage: mongoose.Types.ObjectId): Promise<any> {
+        const message = new DMessage({
+            text,
+            username,
+            directMessage
         });
         await message.save();
         return message;

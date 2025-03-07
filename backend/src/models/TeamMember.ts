@@ -31,6 +31,12 @@ interface ITeamMember extends Document {
      * @see {@link Channel}
      */
     channels: Schema.Types.ObjectId[];
+    /**
+     * The DirectMessages the user has access to within the team.
+     * @type {Schema.Types.ObjectId[]}
+     * @see {@link DirectMessage}
+     */
+    directMessages: Schema.Types.ObjectId[];
 }
 
 /**
@@ -58,7 +64,12 @@ const TeamMemberSchema = new Schema<ITeamMember>({
         type: [Schema.Types.ObjectId],
         ref: 'Channel',
         default: [],
-    }
+    },
+    directMessages: {
+        type: [Schema.Types.ObjectId],
+        ref: 'DirectMessage',
+        default: [],
+    },
 });
 
 /**

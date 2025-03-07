@@ -10,6 +10,7 @@ import userRoutes from './routes/userRoutes';
 import channelRoutes from './routes/channelRoutes';
 import superAdminRoutes from './routes/superAdminRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
+import directMessageRoutes from './routes/directMessageRoutes';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 import { setupWebSocketServer } from './webSocketServer';
@@ -40,6 +41,7 @@ backend.use('/user', userRoutes);
 backend.use('/channel', channelRoutes);
 backend.use('/superadmin', superAdminRoutes);
 backend.use('/dashboard', dashboardRoutes);
+backend.use('/directMessage', directMessageRoutes);
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(backend);

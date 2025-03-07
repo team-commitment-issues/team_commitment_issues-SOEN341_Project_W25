@@ -3,6 +3,8 @@ import { TeamRole, Role } from '../enums';
 import TeamMember from '../models/TeamMember';
 import Team from '../models/Team';
 import Channel from '../models/Channel';
+import DirectMessage from '../models/DirectMessage';
+import User from '../models/User';
 
 function checkUserPermission(role: Role) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -78,4 +80,28 @@ function checkChannelPermission() {
     }
 }
 
-export { checkUserPermission, checkTeamPermission, checkChannelPermission };
+function checkDirectMessagePermission() {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        const receiverUsername = req.body.teamMember;
+        const receiverUser = await User.findOne({ username: { $eq: receiverUsername } });
+        if (!receiverUser) {
+            res.status(404).json({'Not Found': 'Receiver not found'});
+            return;
+        }
+        const receiver = await TeamMember.findOne({ user: receiverUser._id, team: req.team._id });
+        if (!receiver) {
+            res.status(404).json({'Not Found': 'Receiver not found'});
+            return;
+        }
+        const dm = await DirectMessage.findOne({ teamMembers: { $all: [req.teamMember._id, receiver._id] } });
+        if (!dm) {
+            res.status(404).json({'Not Found': 'Direct message not found'});
+            return;
+        }
+        req.dm = dm;
+
+        return next();
+    }
+}
+
+export { checkUserPermission, checkTeamPermission, checkChannelPermission, checkDirectMessagePermission };
