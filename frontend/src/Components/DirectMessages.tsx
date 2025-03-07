@@ -107,30 +107,40 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
       return;
     }
 
-    if (ws.current) {
-      ws.current.close();
-    }
-
-    ws.current = new WebSocket(`ws://localhost:5000?token=${token}`);
-
-    ws.current.onopen = () => {
-      console.log("WebSocket connection established");
-      if (selectedChannel) {
-        ws.current?.send(JSON.stringify({ type: "join", teamName: selectedTeam, channelName: selectedChannel }));
-        console.log("FrontEnd: Joined Channel");
-      } else if (selectedDM) {
-        ws.current?.send(JSON.stringify({ type: "joinDirectMessage", teamName: selectedTeam, username: selectedDM }));
-        console.log("FrontEnd: Joined DM");
+    const connectWebSocket = () => {
+      if (ws.current) {
+        ws.current.close();
       }
+
+      ws.current = new WebSocket(`ws://localhost:5000?token=${token}`);
+
+      ws.current.onopen = () => {
+        console.log("WebSocket connection established");
+        if (selectedChannel) {
+          ws.current?.send(JSON.stringify({ type: "join", teamName: selectedTeam, channelName: selectedChannel }));
+          console.log("FrontEnd: Joined Channel");
+        } else if (selectedDM) {
+          ws.current?.send(JSON.stringify({ type: "joinDirectMessage", teamName: selectedTeam, username: selectedDM }));
+          console.log("FrontEnd: Joined DM");
+        }
+      };
+
+      ws.current.onmessage = (event) => {
+        const newMessage = JSON.parse(event.data);
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      };
+
+      ws.current.onclose = () => {
+        console.log("WebSocket connection closed, attempting to reconnect...");
+        setTimeout(connectWebSocket, 1000); // Attempt to reconnect after 1 second
+      };
+
+      ws.current.onerror = (error) => console.error("WebSocket error:", error);
     };
 
-    ws.current.onmessage = (event) => {
-      const newMessage = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-    };
-
-    ws.current.onclose = () => console.log("WebSocket connection closed");
-    ws.current.onerror = (error) => console.error("WebSocket error:", error);
+    if (!ws.current) {
+      connectWebSocket();
+    }
 
     return () => {
       ws.current?.close();
