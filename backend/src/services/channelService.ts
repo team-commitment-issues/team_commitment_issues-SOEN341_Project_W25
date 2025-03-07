@@ -25,7 +25,7 @@ class ChannelService {
     }
 
     static async addUserToChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
-        const userToAdd = await User.findOne({ username });
+        const userToAdd = await User.findOne({ username: { $eq: username } });
         if (!userToAdd) {
             throw new Error('User not found');
         }
@@ -50,6 +50,29 @@ class ChannelService {
         channel.members.push(teamMember._id as Schema.Types.ObjectId);
         await channel.save();
         teamMember.channels.push(channel._id as Schema.Types.ObjectId);
+        return await teamMember.save();
+    }
+
+    static async removeUserFromChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
+        const userToRemove = await User.findOne({ username: { $eq: username } });
+        if (!userToRemove) {
+            throw new Error('User not found');
+        }
+
+        const teamMember = await TeamMember.findOne({ user: userToRemove._id, team: team });
+        if (!teamMember) {
+            throw new Error('User not a member of the team');
+        }
+
+        const channel = await Channel.findOne({ name: channelName });
+        if (!channel) {
+            throw new Error('Channel not found');
+        }
+
+        channel.members = channel.members.filter((memberId) => String(memberId) !== String(teamMember._id));
+        await channel.save();
+
+        teamMember.channels = teamMember.channels.filter((channelId) => String(channelId) !== String(channel._id));
         return await teamMember.save();
     }
 

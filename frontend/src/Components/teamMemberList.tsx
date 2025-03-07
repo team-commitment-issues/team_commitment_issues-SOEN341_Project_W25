@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import styles from "../Styles/dashboardStyles";
 import { getUsersInTeam, getUsersInChannel } from "../Services/dashboardService";
+import { removeUserFromTeam } from "../Services/superAdminService";
+import { removeUserFromChannel } from "../Services/channelService";
+import ContextMenu from "./UI/ContextMenu";
 
 interface User {
     username: string;
@@ -11,9 +14,11 @@ interface TeamMemberListProps {
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
   selectedChannel: string | null;
+  contextMenu: { visible: boolean; x: number; y: number; selected: string };
+  setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string;} ) => void;
 }
 
-const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel}) => {
+const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel, contextMenu, setContextMenu}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState<string>("Users");
@@ -52,6 +57,21 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
     return null;
   }
 
+  const handleContextMenu = (event: any) => {
+    event.preventDefault();
+    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: event.target.value });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+  };
+
+  const menuItems = [
+    { label: 'Remove User from Team', onClick: () => selectedTeam && removeUserFromTeam(contextMenu.selected, selectedTeam) },
+    { label: 'Remove User from Channel', onClick: () => selectedTeam && selectedChannel && removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel) },
+  ];
+  
+
   return (
     <div style={styles.userList}>
       <h3 
@@ -66,6 +86,8 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
           {users.map((user) => (
             <li
               key={user.username}
+              onContextMenu={handleContextMenu}
+              value={user.username}
               style={{
                 ...styles.listItem,
                 backgroundColor: selectedTeamMembers.includes(user.username) ? "#D3E3FC" : "transparent",
@@ -77,6 +99,13 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
             </li>
           ))}
         </ul>
+      )}
+      {contextMenu.visible && (
+        <ContextMenu
+          items={menuItems}
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={handleCloseContextMenu}
+        />
       )}
     </div>
   );

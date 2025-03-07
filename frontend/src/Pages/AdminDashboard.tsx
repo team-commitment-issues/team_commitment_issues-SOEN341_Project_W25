@@ -4,7 +4,6 @@ import UserList from "../Components/userList";
 import TeamList from "../Components/TeamList";
 import ChannelList from "../Components/ChannelList";
 import TeamMessages from "../Components/DirectMessages";
-import AddUserToTeam from "../Components/AddUserToTeam";
 import styles from "../Styles/dashboardStyles";
 import TeamMemberList from "../Components/teamMemberList";
 
@@ -17,6 +16,27 @@ const AdminDashboard: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [usersContextMenu, setUsersContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
+  const [membersContextMenu, setMembersContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
+  // const [messagesContextMenu, setMessagesContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
+
+  const handleContextMenu = (type: string, arg: { visible: boolean; x: number; y: number; selected: string }) => {
+    if (type === "users") {
+      setUsersContextMenu(arg);
+      setMembersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+      // setMessagesContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+    }
+    if (type === "members") {
+      setMembersContextMenu(arg);
+      setUsersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+      // setMessagesContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+    }
+    if (type === "messages") {
+      // setMessagesContextMenu(arg);
+      setUsersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+      setMembersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+    }
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -76,15 +96,17 @@ const AdminDashboard: React.FC = () => {
           selectedChannel={selectedChannel} 
           setSelectedChannel={setSelectedChannel}
           setSelectedTeamMembers={setSelectedTeamMembers}
+          contextMenu={usersContextMenu}
+          setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("users", arg)}
         />
-
-        <AddUserToTeam selectedUsers={selectedUsers} />
         
         <TeamMemberList
           selectedTeamMembers={selectedTeamMembers}
           setSelectedTeamMembers={setSelectedTeamMembers}
           selectedTeam={selectedTeam}
           selectedChannel={selectedChannel} 
+          contextMenu={membersContextMenu}
+          setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("members", arg)}
         />
 
         <div style={styles.middleContainer}>
@@ -112,6 +134,8 @@ const AdminDashboard: React.FC = () => {
         <TeamMessages 
           selectedTeam={selectedTeam} 
           selectedChannel={selectedChannel}
+          // contextMenu={messagesContextMenu}
+          // setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("messages", arg)}
         />
       </div>
     </div>

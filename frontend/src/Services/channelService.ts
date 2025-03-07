@@ -28,6 +28,19 @@ export const addUserToChannel = async (username: string, teamName: string, chann
     }
 }
 
+export const removeUserFromChannel = async (username: string, teamName: string, channelName: string) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/removeUserFromChannel`, 
+            { username, teamName, channelName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data;
+    } catch (error) {
+        throw new Error((error as any).response?.data?.error || 'Failed to remove user from channel. Please try again.');
+    }
+}
+
 export const sendMessage = async (teamName: string, channelName: string, text: string) => {
     try {
         const token = localStorage.getItem('token');
