@@ -34,6 +34,16 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
       console.log("Cannot send message");
       return;
     }
+    if (selectedDM) {
+      try {
+      createDirectMessage(selectedDM);
+      } catch (err: any) {
+        if (err.message !== "Direct message already exists") {
+          console.error("Failed to create direct message", err);
+        }
+      }
+      
+    }
     const newMessage = { type: 'message', text: message, username, teamName: selectedTeam, channelName: selectedChannel, createdAt: new Date() };
     ws.current.send(JSON.stringify(newMessage));
     setMessage("");
