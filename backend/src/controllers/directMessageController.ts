@@ -30,7 +30,6 @@ class DirectMessageController {
         try {
             const dm = req.dm._id as Types.ObjectId;
             const directMessages = await DirectMessageService.getDirectMessages(dm);
-
             res.status(200).json({
                 directMessages: directMessages,
             });

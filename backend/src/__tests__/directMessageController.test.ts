@@ -6,6 +6,11 @@ import { checkTeamPermission, checkUserPermission, checkDirectMessagePermission 
 import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
 import DirectMessage from '../models/DirectMessage';
+import DMessage from '../models/DMessage';
+import e from 'express';
+import User from '../models/User';
+import Team from '../models/Team';
+import TeamMember from '../models/TeamMember';
 
 const app = express();
 app.use(express.json());
@@ -33,6 +38,16 @@ describe('POST /directMessage/getDirectMessages', () => {
         await teamMember.save();
         recipientTeamMember.directMessages.push(directMessage._id);
         await recipientTeamMember.save();
+        const dmessage = new DMessage({ text: 'Test message', username: user.username, directMessage: directMessage._id });
+        await dmessage.save();
+        directMessage.dmessages.push(dmessage._id);
+        await directMessage.save();
+        const dmessage2 = new DMessage({ text: 'Test message 2', username: recipient.username, directMessage: directMessage._id });
+        await dmessage2.save();
+        directMessage.dmessages.push(dmessage2._id);
+        await directMessage.save();
+
+        console.log(directMessage);
 
         const payload = {
             teamName: team.name,
@@ -45,7 +60,16 @@ describe('POST /directMessage/getDirectMessages', () => {
             .send(payload)
             .expect(200);
 
-        expect(response.body).toBeDefined();
-        expect(response.body.directMessages).toBeDefined();
+        expect(response.body.directMessages).toHaveLength(2);
+        const messageTexts = response.body.directMessages.map((m: any) => m.text);
+        expect(messageTexts).toContain('Test message');
+        expect(messageTexts).toContain('Test message 2');
+        const updatedSender = await TeamMember.findById(teamMember._id);
+        const updatedRecipient = await TeamMember.findById(recipientTeamMember._id);
+        expect(updatedSender?.directMessages).toHaveLength(1);
+        expect(updatedRecipient?.directMessages).toHaveLength(1);
+
+        const updatedDirectMessage = await DirectMessage.findById(directMessage._id);
+        expect(updatedDirectMessage?.dmessages).toHaveLength(2);
     });
 });

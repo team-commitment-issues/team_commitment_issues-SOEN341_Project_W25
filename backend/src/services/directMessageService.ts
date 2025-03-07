@@ -29,8 +29,12 @@ class DirectMessageService {
     }
 
     static async getDirectMessages(directMessageId: Types.ObjectId) {
-        const messages = await DMessage.find({ directMessageId });
-        return messages;
+        const directMessage = await DirectMessage.findById(directMessageId);
+        if (!directMessage) {
+            throw new Error('Direct message not found');
+        }
+        const dmessages = await DMessage.find({ directMessage: directMessageId });
+        return dmessages;
     }
 
     static async sendDirectMessage(text: string, username: string, directMessageId: Types.ObjectId) {
