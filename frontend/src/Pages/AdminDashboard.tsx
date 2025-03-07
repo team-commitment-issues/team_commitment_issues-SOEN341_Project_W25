@@ -29,10 +29,10 @@ const AdminDashboard: React.FC = () => {
     if (type === "members") {
       setMembersContextMenu(arg);
       setUsersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
-      setMessagesContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+      // setMessagesContextMenu({ visible: false, x: 0, y: 0, selected: "" });
     }
     if (type === "messages") {
-      setMessagesContextMenu(arg);
+      // setMessagesContextMenu(arg);
       setUsersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
       setMembersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
     }
