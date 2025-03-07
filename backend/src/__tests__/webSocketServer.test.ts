@@ -3,6 +3,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { setupWebSocketServer } from '../webSocketServer';
 import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
+import { create } from 'domain';
 
 let server: Server;
 let wss: WebSocketServer;
@@ -22,13 +23,16 @@ afterAll((done) => {
 describe('WebSocket Server', () => {
     let token: string;
     let user: any;
+    let teamMember: any;
     let team: any;
     let channel: any;
+    let user2: any;
+    let teamMember2: any;
 
     beforeEach(async () => {
         user = await TestHelpers.createTestUser('test@user.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
         team = await TestHelpers.createTestTeam('Test Team', user._id, [], []);
-        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+        teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
         channel = await TestHelpers.createTestChannel('Test Channel', team._id, user._id, [teamMember._id], []);
         user.teamMemberships.push(teamMember._id);
         await user.save();
@@ -38,6 +42,12 @@ describe('WebSocket Server', () => {
         teamMember.channels.push(channel._id);
         await teamMember.save();
         token = await TestHelpers.generateToken(user.username, user.email);
+        user2 = await TestHelpers.createTestUser('test2@user2.com', 'testpassword', 'Test2', 'User2', 'testuser2', Role.USER, []);
+        teamMember2 = await TestHelpers.createTestTeamMember(user2._id, team._id, TeamRole.MEMBER, []);
+        user2.teamMemberships.push(teamMember2._id);
+        await user2.save();
+        team.teamMembers.push(teamMember2._id);
+        await team.save();
     });
 
     it('should connect to the WebSocket server', (done) => {
@@ -156,9 +166,10 @@ describe('WebSocket Server', () => {
             console.log('Test: WebSocket connection opened');
             ws.send(JSON.stringify({
                 type: 'directMessage',
-                username: 'receiverUsername',
+                text: 'Hello, Direct Message!',
+                username: user2.username,
                 teamName: team.name,
-                text: 'Hello, Direct Message!'
+                createdAt: new Date()
             }));
         });
 
