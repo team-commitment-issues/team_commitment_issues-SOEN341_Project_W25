@@ -17,8 +17,6 @@ interface TeamChannelProps {
   selectedChannel: string | null;
   contextMenu: { visible: boolean; x: number; y: number; selected: string };
   setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string; }) => void;
-<<<<<<< HEAD
-<<<<<<< HEAD
   selectedDM: string | null;
   setSelectedDM: (arg: string | null) => void;
 }
