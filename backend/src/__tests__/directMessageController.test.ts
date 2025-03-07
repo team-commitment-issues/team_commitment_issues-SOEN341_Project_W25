@@ -34,7 +34,6 @@ describe('POST /directMessage/getDirectMessages', () => {
         recipientTeamMember.directMessages.push(directMessage._id);
         await recipientTeamMember.save();
 
-
         const payload = {
             teamName: team.name,
             teamMember: recipient.username
@@ -45,5 +44,8 @@ describe('POST /directMessage/getDirectMessages', () => {
             .set('Authorization', `Bearer ${token}`)
             .send(payload)
             .expect(200);
-        });
+
+        expect(response.body).toBeDefined();
+        expect(response.body.directMessages).toBeDefined();
     });
+});
