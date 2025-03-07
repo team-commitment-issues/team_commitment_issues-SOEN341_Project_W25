@@ -61,9 +61,23 @@ class DashboardService {
     static async listChannelUsers(channel: Types.ObjectId): Promise<any> {
         const channelData = await Channel.findOne({ _id: channel }).select('members');
         if (!channelData) return [];
-        const userIds = await TeamMember.find({ _id: { $in: channelData.members } }).distinct('user');
-        const usernames = await User.find({ _id: { $in: userIds } }).select('username -_id');
-        return usernames;
+        const teamMembers = await TeamMember.find({ _id: { $in: channelData.members } }).select('user role -_id');
+        const userIds = teamMembers.map(member => member.user);
+        const users = await User.find({ _id: { $in: userIds } });
+
+        const result = users.map(user => {
+            const member = teamMembers.find(member => String(member.user) === String(user._id));
+            return {
+            username: user.username,
+            role: member?.role
+            };
+        }).sort((a, b) => {
+            if (a.role === TeamRole.ADMIN && b.role !== TeamRole.ADMIN) return -1;
+            if (a.role !== TeamRole.ADMIN && b.role === TeamRole.ADMIN) return 1;
+            return 0;
+        });
+
+        return result;
     }
 }
 
