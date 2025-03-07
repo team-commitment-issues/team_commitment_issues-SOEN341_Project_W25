@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import styles from "../Styles/dashboardStyles";
-import { getMessages } from "../Services/channelService";
+import { deleteMessage, getMessages } from "../Services/channelService";
 import { jwtDecode } from "jwt-decode";
+import ContextMenu from "./UI/ContextMenu";
 
 interface chatMessage {
+  _id: string;
   text: string;
   username: string;
   createdAt: Date;
@@ -12,9 +14,11 @@ interface chatMessage {
 interface TeamChannelProps {
   selectedTeam: string | null;
   selectedChannel: string | null;
+  contextMenu: { visible: boolean; x: number; y: number; selected: string };
+  setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string; }) => void;
 }
 
-const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel }) => {
+const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel, contextMenu, setContextMenu }) => {
   const [messages, setMessages] = useState<chatMessage[]>([]);
   const [message, setMessage] = useState<string>("");
   const ws = useRef<WebSocket | null>(null);
@@ -32,23 +36,40 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     setMessage("");
   };
 
+  const fetchMessages = async () => {
+    if (!selectedChannel) {
+      setMessages([]);
+      return;
+    }
+    try {
+      const messages = await getMessages(selectedTeam!, selectedChannel!);
+      setMessages(messages.map((msg: any) => ({
+        _id: msg._id,
+        text: msg.text,
+        username: msg.username,
+        createdAt: new Date(msg.createdAt),
+      })));
+    } catch (err) {
+      console.error("Failed to fetch messages", err);
+    }
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!contextMenu.selected) {
+      console.error("No message selected");
+      return;
+    }
+    try {
+      if (!selectedTeam || !selectedChannel) return;
+      await deleteMessage(selectedTeam, selectedChannel, contextMenu.selected);
+      setMessages((prevMessages) => prevMessages.filter((msg) => msg._id !== contextMenu.selected));
+      setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+    } catch (err) {
+      console.error("Failed to delete message", err);
+    }
+  }
+
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!selectedChannel) {
-        setMessages([]);
-        return;
-      }
-      try {
-        const messages = await getMessages(selectedTeam!, selectedChannel!);
-        setMessages(messages.map((msg: any) => ({
-          text: msg.text,
-          username: msg.username,
-          createdAt: new Date(msg.createdAt),
-        })));
-      } catch (err) {
-        console.error("Failed to fetch messages", err);
-      }
-    };
     fetchMessages();
   }, [selectedChannel, selectedTeam]);
 
@@ -85,6 +106,19 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     }
   }, [selectedChannel, selectedTeam]);
 
+  const handleContextMenu = (event: any, messageId: string) => {
+    event.preventDefault();
+    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: messageId });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+  };
+
+  const menuItems = [
+    { label: 'Delete Message', onClick: handleDeleteMessage },
+  ];
+
   return (
     <div style={styles.teamMessages}>
       <div style={styles.chatHeader}>Direct Messages</div>
@@ -95,6 +129,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
           messages.map((msg, index) => (
             <div
               key={index}
+              onContextMenu={e => handleContextMenu(e, msg._id)}
               style={{
                 ...styles.chatMessage,
                 alignSelf: msg.username === username ? "flex-end" : "flex-start",
@@ -120,6 +155,13 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
           Send
         </button>
       </div>
+      {contextMenu.visible && (
+        <ContextMenu
+          items={menuItems}
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={handleCloseContextMenu}
+        />
+      )}
     </div>
   );
 };

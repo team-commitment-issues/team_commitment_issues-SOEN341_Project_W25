@@ -102,6 +102,27 @@ class ChannelService {
         return await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
     }
 
+    static async deleteMessage(channel: Types.ObjectId, messageId: Schema.Types.ObjectId): Promise<any> {
+        const message = await Message.findById(messageId);
+        if (!message) {
+            throw new Error('Message not found');
+        }
+        
+        const channelData = await Channel.findById(channel);
+        if (!channelData) {
+            throw new Error('Channel not found');
+        }
+        
+        if (!channelData.messages.includes(messageId)) {
+            throw new Error('Message not found');
+        }
+
+        channelData.messages = channelData.messages.filter((id) => String(id) !== String(message._id));
+        await channelData.save();
+
+        return await message.deleteOne();
+    }
+
     static async deleteChannel(teamId: Types.ObjectId, channelId: Types.ObjectId): Promise<any> {
         const team = await Team.findById(teamId);
         if (!team) {

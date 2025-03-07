@@ -13,5 +13,6 @@ channelRoutes.post('/removeUserFromChannel', authenticate, checkTeamPermission(T
 channelRoutes.post('/sendMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), checkChannelPermission(), ChannelController.sendMessage);
 channelRoutes.post('/deleteChannel', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), ChannelController.deleteChannel);
 channelRoutes.post('/getMessages', authenticate, checkTeamPermission(TeamRole.MEMBER), checkChannelPermission(), ChannelController.getMessages);
+channelRoutes.post('/deleteMessage', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), ChannelController.deleteMessage);
 
 export default channelRoutes;

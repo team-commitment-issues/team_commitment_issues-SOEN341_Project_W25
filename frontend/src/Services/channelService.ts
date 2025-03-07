@@ -54,6 +54,19 @@ export const sendMessage = async (teamName: string, channelName: string, text: s
     }
 }
 
+export const deleteMessage = async (teamName: string, channelName: string, messageId: string) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/deleteMessage`, 
+            { teamName, channelName, messageId },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data;
+    } catch (error) {
+        throw new Error((error as any).response?.data?.error || 'Failed to delete message. Please try again.');
+    }
+}
+
 export const deleteChannel = async (teamName: string, channelName: string) => {
     try {
         const token = localStorage.getItem('token');
