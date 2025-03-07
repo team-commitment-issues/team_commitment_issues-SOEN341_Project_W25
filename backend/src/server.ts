@@ -34,7 +34,7 @@ const limiter = rateLimit({
   max: 100,
 });
 
-backend.use(limiter);
+// backend.use(limiter);
 
 backend.use('/user', userRoutes);
 backend.use('/channel', channelRoutes);
