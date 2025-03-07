@@ -77,6 +77,5 @@ export const getMessages = async (teamName: string, channelName: string) => {
         return response.data;
     } catch (error) {
         throw new Error((error as any).response?.data?.error || 'Failed to fetch messages. Please try again.');
-
     }
 }

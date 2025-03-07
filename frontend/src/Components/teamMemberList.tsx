@@ -74,7 +74,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
   const menuItems = [
     { label: 'Remove User from Team', onClick: async () => selectedTeam && await removeUserFromTeam(contextMenu.selected, selectedTeam).then(fetchUsers) },
     { label: 'Remove User from Channel', onClick: async () => selectedTeam && selectedChannel && await removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel).then(fetchUsers) },
-    { label: 'Direct Message User', onClick: () => console.log("Direct Message User") },
+    { label: 'Direct Message User', onClick: () => async () => {} },
   ];
 
   const adminOptions = [

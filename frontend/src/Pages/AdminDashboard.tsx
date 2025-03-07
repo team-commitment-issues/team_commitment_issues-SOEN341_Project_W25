@@ -144,6 +144,8 @@ const AdminDashboard: React.FC = () => {
           selectedChannel={selectedChannel}
           contextMenu={messagesContextMenu}
           setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("messages", arg)}
+          selectedUser={null}
+          setSelectedUser={() => {}}
         />
       </div>
     </div>
