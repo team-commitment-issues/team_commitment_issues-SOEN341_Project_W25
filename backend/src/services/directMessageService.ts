@@ -7,25 +7,25 @@ import { Role } from '../enums';
 import DirectMessage from '../models/DirectMessage';
 
 class DirectMessageService {
-    static async createDirectMessage(teamMembers: string[]) {
-        try {
-            const teamMember1 = await TeamMember.findOne({ userId: teamMembers[0] });
-            const teamMember2 = await TeamMember.findOne({ userId: teamMembers[1] });
-            if (!teamMember1 || !teamMember2) {
-                throw new Error('Team members not found');
+    static async createDirectMessage(username: string, teamMember: Schema.Types.ObjectId, team: Schema.Types.ObjectId) {
+            const receiver = await User.findOne({ username: username });
+            if (!receiver) {
+                throw new Error('User not found');
             }
+            const receiverTeamMember = await TeamMember.findOne({ user: receiver._id, team });
+            if (!receiverTeamMember) {
+                throw new Error('Team member not found');
+            }
+            const teamMembers = [teamMember, receiverTeamMember._id];
             if (await DirectMessage.findOne({ teamMembers: { $all: teamMembers } })) {
                 throw new Error('Direct message already exists');
             }
             const directMessage = new DirectMessage({
-                teamMembers: [teamMember1._id, teamMember2._id],
-                messages: [],
+                teamMembers: teamMembers,
+                dmessages: [],
             });
             await directMessage.save();
             return directMessage;
-        } catch (error) {
-            throw new Error('Internal server error');
-        }
     }
 
     static async getDirectMessages(directMessageId: Types.ObjectId) {

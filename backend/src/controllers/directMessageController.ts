@@ -6,8 +6,10 @@ class DirectMessageController {
 
     static async createDirectMessage(req: Request, res: Response): Promise<void> {
         try {
-            const teamMembers = req.body.teamMembers;
-            const newDirectMessage = await DirectMessageService.createDirectMessage(teamMembers);
+            const username = req.body.teamMember;
+            const teamMember = req.teamMember._id as Schema.Types.ObjectId;
+            const team = req.team._id as Schema.Types.ObjectId;
+            const newDirectMessage = await DirectMessageService.createDirectMessage(username, teamMember, team);
 
             res.status(201).json({
                 message: 'Direct message created successfully',
@@ -26,8 +28,8 @@ class DirectMessageController {
 
     static async getDirectMessages(req: Request, res: Response): Promise<void> {
         try {
-            const teamMembers = req.body.teamMembers;
-            const directMessages = await DirectMessageService.getDirectMessages(teamMembers);
+            const dm = req.dm._id as Types.ObjectId;
+            const directMessages = await DirectMessageService.getDirectMessages(dm);
 
             res.status(200).json({
                 directMessages: directMessages,

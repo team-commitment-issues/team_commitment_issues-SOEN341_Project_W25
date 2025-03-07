@@ -13,49 +13,6 @@ const app = express();
 app.use(express.json());
 app.use('/channel', authenticate, checkTeamPermission(TeamRole.MEMBER), checkChannelPermission(), channelRoutes);
 
-/* describe('POST /channel/sendMessage', () => {
-    it('should send a message to a channel successfully', async () => {
-        const user = await TestHelpers.createTestUser('test@test.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
-
-        const token = await TestHelpers.generateToken(user.username, user.email);
-
-        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
-
-        const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
-
-        const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
-
-        team.teamMembers.push(teamMember._id);
-        await team.save();
-
-        user.teamMemberships.push(teamMember._id);
-        await user.save();
-
-        const channel = await TestHelpers.createTestChannel('Test Channel', team._id, superAdminUser._id, [teamMember._id], []);
-
-        team.channels.push(channel._id);
-        await team.save();
-
-        teamMember.channels.push(channel._id);
-        await teamMember.save();
-
-        const message = {
-            text: 'Test message',
-            teamName: team.name,
-            channelName: channel.name
-        };
-
-        const response = await request(app)
-            .post(`/channel/sendMessage`)
-            .set('Authorization', `Bearer ${token}`)
-            .send(message)
-            .expect(201);
-
-        const foundChannel = await Channel.findOne({ name: channel.name });
-        expect(foundChannel?.messages).toHaveLength(1);
-    });
-}); */
-
 describe('POST /channel/getMessages', () => {
     it('should return all messages in a channel', async () => {
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);

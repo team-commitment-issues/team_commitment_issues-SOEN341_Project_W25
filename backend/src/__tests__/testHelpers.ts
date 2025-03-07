@@ -88,10 +88,10 @@ class TestHelpers {
         return message;
     }
 
-    static async createTestDirectMessage(teamMembers: mongoose.Types.ObjectId[], messages: mongoose.Types.ObjectId[]): Promise<any> {
+    static async createTestDirectMessage(teamMembers: mongoose.Types.ObjectId[], dmessages: mongoose.Types.ObjectId[]): Promise<any> {
         const directMessage = new DirectMessage({
             teamMembers,
-            messages,
+            dmessages,
         });
         await directMessage.save();
         return directMessage;

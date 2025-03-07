@@ -81,7 +81,8 @@ function checkChannelPermission() {
 
 function checkDirectMessagePermission() {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const receiver = await TeamMember.findOne({ user: req.body.receiverId, team: req.team._id });
+        const receiverUsername = req.body.teamMember;
+        const receiver = await TeamMember.findOne({ user: receiverUsername, team: req.team._id });
         if (!receiver) {
             res.status(404).json({'Not Found': 'Receiver not found'});
             return;

@@ -6,7 +6,7 @@ import { TeamRole } from "../enums";
 
 const directMessageRoutes = Router();
 
-directMessageRoutes.post('/createDirectMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), checkDirectMessagePermission(), DirectMessageController.createDirectMessage);
+directMessageRoutes.post('/createDirectMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), DirectMessageController.createDirectMessage);
 directMessageRoutes.post('/getDirectMessages', authenticate, checkTeamPermission(TeamRole.MEMBER), checkDirectMessagePermission(), DirectMessageController.getDirectMessages);
 directMessageRoutes.post('/sendDirectMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), checkDirectMessagePermission(), DirectMessageController.sendDirectMessage);
 

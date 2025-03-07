@@ -149,8 +149,6 @@ describe('POST /channel/removeUserFromChannel', () => {
             channelName: channel.name
         };
 
-        console.log(channel)
-
         const response = await request(app)
             .post(`/channel/removeUserFromChannel`)
             .set('Authorization', `Bearer ${token}`)
@@ -162,8 +160,6 @@ describe('POST /channel/removeUserFromChannel', () => {
         const updatedChannel = await
             Channel.findOne({ name: channel.name }).populate('members');
         expect(updatedChannel?.members).not.toContain(user._id);
-
-        console.log(updatedChannel)
 
         const updatedTeamMember = await
             TeamMember.findOne({ user: user._id, team: team._id });

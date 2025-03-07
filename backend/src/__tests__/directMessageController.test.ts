@@ -11,46 +11,39 @@ const app = express();
 app.use(express.json());
 app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), checkDirectMessagePermission(), channelRoutes);
 
-describe('POST /directMessage/createDirectMessage', () => {
-    it('should create a direct message successfully', async () => {
-        const user = await TestHelpers.createTestUser('test@test.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
-
+describe('POST /directMessage/getDirectMessages', () => {
+    it('should return all direct messages between two users', async () => {
+        const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);
         const token = await TestHelpers.generateToken(user.username, user.email);
-
-        const superAdminUser = await TestHelpers.createTestSuperAdmin([]);
-
-        const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
-
+        const recipient = await TestHelpers.createTestUser('recipient@user.com', 'testpassword', 'Recipient', 'User', 'recipientuser', Role.USER, []);
+        const team = await TestHelpers.createTestTeam('Test Team', user._id, [], []);
         const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
-
         team.teamMembers.push(teamMember._id);
         await team.save();
-
         user.teamMemberships.push(teamMember._id);
         await user.save();
-
-        const receiver = await TestHelpers.createTestUser('test2@test2.com', 'testpassword', 'Test2', 'User2', 'testuser2', Role.USER, []);
-
-        const receiverTeamMember = await TestHelpers.createTestTeamMember(receiver._id, team._id, TeamRole.MEMBER, []);
-
-        team.teamMembers.push(receiverTeamMember._id);
+        const recipientTeamMember = await TestHelpers.createTestTeamMember(recipient._id, team._id, TeamRole.MEMBER, []);
+        team.teamMembers.push(recipientTeamMember._id);
         await team.save();
+        recipient.teamMemberships.push(recipientTeamMember._id);
+        await recipient.save();
+        const teamMembers = [teamMember._id, recipientTeamMember._id];
+        const directMessage = await TestHelpers.createTestDirectMessage(teamMembers, []);
+        teamMember.directMessages.push(directMessage._id);
+        await teamMember.save();
+        recipientTeamMember.directMessages.push(directMessage._id);
+        await recipientTeamMember.save();
 
-        receiver.teamMemberships.push(receiverTeamMember._id);
-        await receiver.save();
 
-        const directMessage = {
-            teamMembers: [teamMember._id, receiverTeamMember._id],
-            messages: []
+        const payload = {
+            teamName: team.name,
+            teamMember: recipient.username
         };
 
         const response = await request(app)
-            .post(`/directMessage/createDirectMessage`)
+            .post('/directMessage/getDirectMessages')
             .set('Authorization', `Bearer ${token}`)
-            .send(directMessage)
-            .expect(201);
-
-        const foundDirectMessage = await DirectMessage.findOne({ teamMembers: { $all: [teamMember._id, receiverTeamMember._id] } });
-        expect(foundDirectMessage).toBeTruthy();
+            .send(payload)
+            .expect(200);
+        });
     });
-});

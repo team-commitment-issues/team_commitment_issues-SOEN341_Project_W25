@@ -244,35 +244,34 @@ describe("createTestMessage", () => {
 describe("createTestDirectMessage", () => {
     it("should create a direct message with the given details", async () => {
         const teamMembers: mongoose.Types.ObjectId[] = [];
-        const messages: mongoose.Types.ObjectId[] = [];
+        const dmessages: mongoose.Types.ObjectId[] = [];
 
         const directMessage = await TestHelpers.createTestDirectMessage(
             teamMembers,
-            messages
+            dmessages
         );
 
         expect(directMessage).toBeDefined();
         expect(directMessage.teamMembers).toEqual(teamMembers);
-        expect(directMessage.dmessages).toEqual(messages);
+        expect(directMessage.dmessages).toEqual(dmessages);
     });
 
     it("should save the direct message to the database", async () => {
         const teamMembers: mongoose.Types.ObjectId[] = [
             new TeamMember()._id as mongoose.Types.ObjectId,
         ];
-        const messages: mongoose.Types.ObjectId[] = [
+        const dmessages: mongoose.Types.ObjectId[] = [
             new DMessage()._id as mongoose.Types.ObjectId,
         ];
 
         const directMessage = await TestHelpers.createTestDirectMessage(
             teamMembers,
-            messages
+            dmessages
         );
 
         const foundDirectMessage = await DirectMessage.findOne({ teamMembers });
-
         expect(foundDirectMessage).toBeDefined();
         expect(foundDirectMessage?.teamMembers).toEqual(teamMembers);
-        expect(foundDirectMessage?.dmessages).toEqual(messages);
+        expect(foundDirectMessage?.dmessages).toEqual(dmessages);
     });
 });
