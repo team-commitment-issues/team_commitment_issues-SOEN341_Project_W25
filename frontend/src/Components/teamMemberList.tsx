@@ -17,10 +17,11 @@ interface TeamMemberListProps {
   selectedChannel: string | null;
   contextMenu: { visible: boolean; x: number; y: number; selected: string };
   setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string;} ) => void;
+  setSelectedDm: React.Dispatch<React.SetStateAction<string | null>>;
   refreshState: boolean;
 }
 
-const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel, contextMenu, setContextMenu, refreshState}) => {
+const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel, contextMenu, setContextMenu, refreshState, setSelectedDm}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState<string>("Users");
@@ -74,7 +75,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
   const menuItems = [
     { label: 'Remove User from Team', onClick: async () => selectedTeam && await removeUserFromTeam(contextMenu.selected, selectedTeam).then(fetchUsers) },
     { label: 'Remove User from Channel', onClick: async () => selectedTeam && selectedChannel && await removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel).then(fetchUsers) },
-    { label: 'Direct Message User', onClick: () => async () => {} },
+    { label: 'Direct Message User', onClick: () => setSelectedDm(contextMenu.selected) },
   ];
 
   const adminOptions = [

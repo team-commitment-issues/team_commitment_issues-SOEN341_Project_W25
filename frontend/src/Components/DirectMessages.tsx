@@ -29,14 +29,14 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
   const token = localStorage.getItem("token");
   const username = token ? (jwtDecode<any>(token)).username : "";
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
       console.log("Cannot send message");
       return;
     }
     if (selectedDM) {
       try {
-      createDirectMessage(selectedDM);
+      await createDirectMessage(selectedDM);
       } catch (err: any) {
         if (err.message !== "Direct message already exists") {
           console.error("Failed to create direct message", err);
@@ -98,23 +98,23 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
   }
 
   //direct message handling
-  const handleDirectMessage = () => {
-    if (!contextMenu.selected) {
-      console.error("No message selected");
-      return;
-    }
-    const selectedMessage = messages.find((msg) => msg._id === contextMenu.selected);
-    if (selectedMessage) {
-      // Logic to open a direct message interface with the selected user
-      console.log(`Direct messaging user: ${selectedMessage.username}`);
-      // You can set the state or navigate to a direct message component here
-    }
-    setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
-  };
+  // const handleDirectMessage = () => {
+  //   if (!contextMenu.selected) {
+  //     console.error("No message selected");
+  //     return;
+  //   }
+  //   const selectedMessage = messages.find((msg) => msg._id === contextMenu.selected);
+  //   if (selectedMessage) {
+  //     // Logic to open a direct message interface with the selected user
+  //     console.log(`Direct messaging user: ${selectedMessage.username}`);
+  //     // You can set the state or navigate to a direct message component here
+  //   }
+  //   setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+  // };
 
   useEffect(() => {
     fetchMessages();
-  }, [selectedChannel, selectedTeam, fetchMessages]);
+  }, [selectedChannel, selectedTeam, fetchMessages, selectedDM]);
 
   useEffect(() => {
     if (!token) {
@@ -162,7 +162,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
 
   const menuItems = [
     { label: 'Delete Message', onClick: handleDeleteMessage },
-    { label: 'Direct Message', onClick: handleDirectMessage },
+    // { label: 'Direct Message', onClick: handleDirectMessage },
   ];
 
   return (
