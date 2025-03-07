@@ -103,7 +103,7 @@ class ChannelService {
     }
 
     static async deleteMessage(channel: Types.ObjectId, messageId: Schema.Types.ObjectId): Promise<any> {
-        const message = await Message.findById(messageId);
+        const message = await Message.findOne({_id: { $eq: messageId }});
         if (!message) {
             throw new Error('Message not found');
         }

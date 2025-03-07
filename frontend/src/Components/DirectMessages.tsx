@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import styles from "../Styles/dashboardStyles";
 import { deleteMessage, getMessages } from "../Services/channelService";
 import { jwtDecode } from "jwt-decode";
@@ -36,7 +36,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     setMessage("");
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!selectedChannel) {
       setMessages([]);
       return;
@@ -52,7 +52,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     } catch (err) {
       console.error("Failed to fetch messages", err);
     }
-  };
+  }, [selectedTeam, selectedChannel]);
 
   const handleDeleteMessage = async () => {
     if (!contextMenu.selected) {
@@ -71,7 +71,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
 
   useEffect(() => {
     fetchMessages();
-  }, [selectedChannel, selectedTeam]);
+  }, [selectedChannel, selectedTeam, fetchMessages]);
 
   useEffect(() => {
     if (!token) {
