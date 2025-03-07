@@ -16,13 +16,14 @@ interface TeamChannelProps {
   selectedChannel: string | null;
   contextMenu: { visible: boolean; x: number; y: number; selected: string };
   setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string; }) => void;
-  // selectedUser: string | null;
-  // setSelectedUser: (arg: string | null) => void;
+  selectedUser: string | null;
+  setSelectedUser: (arg: string | null) => void;
 }
 
-const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel, contextMenu, setContextMenu }) => {
+const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChannel, contextMenu, setContextMenu, selectedUser, setSelectedUser }) => {
   const [messages, setMessages] = useState<chatMessage[]>([]);
   const [message, setMessage] = useState<string>("");
+  // const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const ws = useRef<WebSocket | null>(null);
 
   const token = localStorage.getItem("token");

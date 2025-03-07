@@ -82,10 +82,13 @@ export const deleteChannel = async (teamName: string, channelName: string) => {
 
 export const getMessages = async (teamName: string, channelName: string) => {
     try {
-        const response = await axios.get(`/api/teams/${teamName}/channels/${channelName}/messages`);
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/getMessages`, 
+            { teamName, channelName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
         return response.data;
     } catch (error) {
-        console.error("Error fetching messages:", error);
-        throw error;
+        throw new Error((error as any).response?.data?.error || 'Failed to fetch messages. Please try again.');
     }
-};
+}
