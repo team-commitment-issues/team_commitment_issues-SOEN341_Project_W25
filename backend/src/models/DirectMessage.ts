@@ -13,11 +13,11 @@ interface IDirectMessage extends Document {
      */
     teamMembers: Schema.Types.ObjectId[];
     /**
-     * The messages in the direct message.
+     * The dmessages in the direct message.
      * @type {Schema.Types.ObjectId[]}
-     * @see {@link Message}
+     * @see {@link DMessage}
     */
-    messages: Schema.Types.ObjectId[];
+    dmessages: Schema.Types.ObjectId[];
 }
 
 /**
@@ -30,9 +30,9 @@ const DirectMessageSchema = new Schema<IDirectMessage>({
         ref: 'TeamMember',
         required: true,
     }],
-    messages: [{
+    dmessages: [{
         type: Schema.Types.ObjectId,
-        ref: 'Message',
+        ref: 'DMessage',
     }],
 });
 

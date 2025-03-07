@@ -7,6 +7,7 @@ import Channel from '../models/Channel';
 import TeamMember from '../models/TeamMember';
 import TestHelpers from './testHelpers';
 import DirectMessage from '../models/DirectMessage';
+import DMessage from '../models/DMessage';
 
 
 describe("createTestSuperAdmin", () => {
@@ -252,7 +253,7 @@ describe("createTestDirectMessage", () => {
 
         expect(directMessage).toBeDefined();
         expect(directMessage.teamMembers).toEqual(teamMembers);
-        expect(directMessage.messages).toEqual(messages);
+        expect(directMessage.dmessages).toEqual(messages);
     });
 
     it("should save the direct message to the database", async () => {
@@ -260,7 +261,7 @@ describe("createTestDirectMessage", () => {
             new TeamMember()._id as mongoose.Types.ObjectId,
         ];
         const messages: mongoose.Types.ObjectId[] = [
-            new Channel()._id as mongoose.Types.ObjectId,
+            new DMessage()._id as mongoose.Types.ObjectId,
         ];
 
         const directMessage = await TestHelpers.createTestDirectMessage(
@@ -272,8 +273,6 @@ describe("createTestDirectMessage", () => {
 
         expect(foundDirectMessage).toBeDefined();
         expect(foundDirectMessage?.teamMembers).toEqual(teamMembers);
-        expect(foundDirectMessage?.messages).toEqual(messages);
+        expect(foundDirectMessage?.dmessages).toEqual(messages);
     });
-}
-);
-        
+});
