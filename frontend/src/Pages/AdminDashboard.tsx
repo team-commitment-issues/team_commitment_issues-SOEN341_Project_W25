@@ -12,6 +12,7 @@ const AdminDashboard: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [refreshState, setRefreshState] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
@@ -20,6 +21,9 @@ const AdminDashboard: React.FC = () => {
   const [membersContextMenu, setMembersContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
   const [messagesContextMenu, setMessagesContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
 
+  const handleRefresh = () => {
+    setRefreshState(!refreshState);
+  };
 
   const handleContextMenu = (type: string, arg: { visible: boolean; x: number; y: number; selected: string }) => {
     if (type === "users") {
@@ -100,6 +104,7 @@ const AdminDashboard: React.FC = () => {
           setSelectedTeamMembers={setSelectedTeamMembers}
           contextMenu={usersContextMenu}
           setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("users", arg)}
+          handleRefresh={handleRefresh}
         />
         
         <TeamMemberList
@@ -109,6 +114,7 @@ const AdminDashboard: React.FC = () => {
           selectedChannel={selectedChannel} 
           contextMenu={membersContextMenu}
           setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("members", arg)}
+          refreshState={refreshState}
         />
 
         <div style={styles.middleContainer}>

@@ -17,9 +17,10 @@ interface TeamMemberListProps {
   selectedChannel: string | null;
   contextMenu: { visible: boolean; x: number; y: number; selected: string };
   setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string;} ) => void;
+  refreshState: boolean;
 }
 
-const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel, contextMenu, setContextMenu}) => {
+const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel, contextMenu, setContextMenu, refreshState}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState<string>("Users");
@@ -46,7 +47,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
 
   useEffect(() => {
     fetchUsers();
-  }, [selectedChannel, selectedTeam, fetchUsers]);
+  }, [selectedChannel, selectedTeam, fetchUsers, refreshState]);
 
   const toggleTeamMemberSelection = (user: string) => {
     setSelectedTeamMembers((previouslySelectedMembers) =>
@@ -71,8 +72,8 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
   };
 
   const menuItems = [
-    { label: 'Remove User from Team', onClick: () => selectedTeam && removeUserFromTeam(contextMenu.selected, selectedTeam) },
-    { label: 'Remove User from Channel', onClick: () => selectedTeam && selectedChannel && removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel) },
+    { label: 'Remove User from Team', onClick: async () => selectedTeam && await removeUserFromTeam(contextMenu.selected, selectedTeam).then(fetchUsers) },
+    { label: 'Remove User from Channel', onClick: async () => selectedTeam && selectedChannel && await removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel).then(fetchUsers) },
   ];
 
   const adminOptions = [

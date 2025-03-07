@@ -19,9 +19,10 @@ interface UserListProps {
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   contextMenu: { visible: boolean; x: number; y: number; selected: string;};
   setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string;} ) => void;
+  handleRefresh: () => void;
 }
 
-const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, selectedTeam, setSelectedTeam, selectedChannel, setSelectedChannel, setSelectedTeamMembers, contextMenu, setContextMenu}) => {
+const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, selectedTeam, setSelectedTeam, selectedChannel, setSelectedChannel, setSelectedTeamMembers, contextMenu, setContextMenu, handleRefresh}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
 
@@ -64,8 +65,8 @@ const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, sel
   };
 
   const menuItems = [
-    { label: 'Add User to Selected Team', onClick: () => selectedTeam && addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER") },
-    { label: 'Add User to Selected Channel', onClick: () => selectedTeam && selectedChannel && addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel) },
+    { label: 'Add User to Selected Team', onClick: async () => selectedTeam && await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER").then(handleRefresh) },
+    { label: 'Add User to Selected Channel', onClick: async () => selectedTeam && selectedChannel && await addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel).then(handleRefresh) },
   ];
 
   return (
