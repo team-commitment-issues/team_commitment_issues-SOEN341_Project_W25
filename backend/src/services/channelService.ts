@@ -25,7 +25,7 @@ class ChannelService {
     }
 
     static async addUserToChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
-        const userToAdd = await User.findOne({ username });
+        const userToAdd = await User.findOne({ username: { $eq: username } });
         if (!userToAdd) {
             throw new Error('User not found');
         }
@@ -54,7 +54,7 @@ class ChannelService {
     }
 
     static async removeUserFromChannel(team: Types.ObjectId, channelName: string, username: string): Promise<any> {
-        const userToRemove = await User.findOne({ username });
+        const userToRemove = await User.findOne({ username: { $eq: username }  });
         if (!userToRemove) {
             throw new Error('User not found');
         }
