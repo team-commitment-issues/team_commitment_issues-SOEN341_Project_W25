@@ -43,10 +43,14 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
         }
       }
       
+      const newMessage = { type: 'directMessage', text: message, username, teamName: selectedTeam };
+      ws.current.send(JSON.stringify(newMessage));
+      setMessage("");
+    } else {
+      const newMessage = { type: 'message', text: message, username, teamName: selectedTeam, channelName: selectedChannel, createdAt: new Date() };
+      ws.current.send(JSON.stringify(newMessage));
+      setMessage("");
     }
-    const newMessage = { type: 'message', text: message, username, teamName: selectedTeam, channelName: selectedChannel, createdAt: new Date() };
-    ws.current.send(JSON.stringify(newMessage));
-    setMessage("");
   };
 
   const fetchMessages = useCallback(async () => {
