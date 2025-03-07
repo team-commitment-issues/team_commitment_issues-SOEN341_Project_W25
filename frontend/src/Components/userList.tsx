@@ -54,9 +54,9 @@ const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, sel
     return null;
   }
 
-  const handleContextMenu = (event: any) => {
+  const handleContextMenu = (event: any, username: string) => {
     event.preventDefault();
-    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: event.target.value });
+    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: username });
   };
 
   const handleCloseContextMenu = () => {
@@ -66,7 +66,6 @@ const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, sel
   const menuItems = [
     { label: 'Add User to Selected Team', onClick: () => selectedTeam && addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER") },
     { label: 'Add User to Selected Channel', onClick: () => selectedTeam && selectedChannel && addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel) },
-    // { label: 'Set to Admin', onClick: () => selectedTeam && addUserToTeam(contextMenu.selectedUser, selectedTeam, "ADMIN") },
   ];
 
   return (
@@ -83,7 +82,7 @@ const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, sel
           {users.map((user) => (
             <li
               key={user.username}
-              onContextMenu={handleContextMenu}
+              onContextMenu={e => handleContextMenu(e, user.username)}
               value={user.username}
               style={{
                 ...styles.listItem,
