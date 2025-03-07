@@ -141,6 +141,47 @@ describe('WebSocket Server', () => {
         });
     });
 
+    it('should send and receive direct messages', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        let doneCalled = false;
+
+        const callDone = (error?: any) => {
+            if (!doneCalled) {
+                doneCalled = true;
+                done(error);
+            }
+        };
+
+        ws.on('open', () => {
+            console.log('Test: WebSocket connection opened');
+            ws.send(JSON.stringify({
+                type: 'directMessage',
+                username: 'receiverUsername',
+                teamName: team.name,
+                text: 'Hello, Direct Message!'
+            }));
+        });
+
+        ws.on('message', (message) => {
+            const parsedMessage = JSON.parse(message.toString());
+            console.log('Test: Received message:', parsedMessage);
+            if (parsedMessage.dmessage === 'Hello, Direct Message!') {
+                expect(parsedMessage.dmessage).toBe('Hello, Direct Message!');
+                ws.close();
+                callDone();
+            }
+        });
+
+        ws.on('error', (error) => {
+            console.log('Test: WebSocket error:', error);
+            callDone(error);
+        });
+
+        ws.on('close', () => {
+            console.log('Test: WebSocket connection closed');
+        });
+    });
+
     it('should handle unauthorized access', (done) => {
         const ws = new WebSocket(`ws://localhost:5001?token=InvalidToken`);
         ws.on('open', () => {

@@ -33,7 +33,7 @@ class DirectMessageService {
         return messages;
     }
 
-    static async sendDirectMessage(directMessageId: Types.ObjectId, dmessage: string) {
+    static async sendDirectMessage(directMessageId: Types.ObjectId, dmessage: string, senderId: Schema.Types.ObjectId) {
         const directMessage = await DirectMessage.findById(directMessageId);
         if (!directMessage) {
             throw new Error('Direct message not found');
@@ -42,7 +42,7 @@ class DirectMessageService {
         const newDMessage = new DMessage({
             directMessage: directMessage._id,
             dmessage,
-            senderId: directMessage.teamMembers[0],
+            senderId,
         });
         await newDMessage.save();
         directMessage.dmessages.push(newDMessage._id as Schema.Types.ObjectId);

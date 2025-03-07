@@ -41,9 +41,10 @@ class DirectMessageController {
 
     static async sendDirectMessage(req: Request, res: Response): Promise<void> {
         try {
-            const teamMembers = req.body.teamMembers;
             const message = req.body.message;
-            const newMessage = await DirectMessageService.sendDirectMessage(teamMembers, message);
+            const directMessageId = req.body.directMessageId as Types.ObjectId;
+            const senderId = req.body.senderId as Schema.Types.ObjectId;
+            const newMessage = await DirectMessageService.sendDirectMessage(directMessageId, message, senderId);
 
             res.status(201).json({
                 message: 'Direct message sent successfully',

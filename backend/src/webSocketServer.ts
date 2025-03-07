@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import jwt from 'jsonwebtoken';
 import { Schema, Types } from 'mongoose';
 import ChannelService from './services/channelService';
+import DirectMessageService from './services/directMessageService';
 import User, { IUser } from './models/User';
 import Team, { ITeam } from './models/Team';
 import TeamMember, { ITeamMember } from './models/TeamMember';
@@ -132,6 +133,37 @@ const handleMessage = async (ws: ExtendedWebSocket, parsedMessage: any, wss: Web
     }
 };
 
+const handleDirectMessage = async (ws: ExtendedWebSocket, parsedMessage: any, wss: WebSocketServer, token: string) => {
+    try {
+        const user = await verifyToken(token);
+        ws.user = user;
+        if (DEBUG) {
+            console.log("ParsedMessage: ", parsedMessage);
+        }
+
+        const { team, teamMember } = await findTeamAndChannel(parsedMessage.teamName, '', user._id as Schema.Types.ObjectId);
+        ws.team = team;
+        ws.teamMember = teamMember;
+        if (!ws.team || !ws.teamMember) throw new Error('Team or team member not found');
+
+        const directMessage = await DirectMessageService.createDirectMessage(parsedMessage.username, teamMember._id as Schema.Types.ObjectId, team._id as Schema.Types.ObjectId);
+        const newMessage = await DirectMessageService.sendDirectMessage(directMessage._id as Types.ObjectId, parsedMessage.text, teamMember._id as Schema.Types.ObjectId);
+
+        wss.clients.forEach((client) => {
+            const extendedClient = client as ExtendedWebSocket;
+            if (extendedClient.readyState === ws.OPEN && extendedClient.user.username === parsedMessage.username) {
+                extendedClient.send(JSON.stringify(newMessage));
+            }
+        });
+    } catch (err) {
+        const errorMessage = (err instanceof Error) ? err.message : 'Unknown error';
+        if (DEBUG) {
+            console.error(`Error sending direct message: ${errorMessage}`);
+        }
+        ws.close(1008, errorMessage);
+    }
+};
+
 export const setupWebSocketServer = (server: any): WebSocketServer => {
     const wss = new WebSocketServer({ server });
 
@@ -160,6 +192,8 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
                     await handleJoinMessage(ws, req, parsedMessage, token);
                 } else if (parsedMessage.type === 'message') {
                     await handleMessage(ws, parsedMessage, wss, token);
+                } else if (parsedMessage.type === 'directMessage') {
+                    await handleDirectMessage(ws, parsedMessage, wss, token);
                 }
             } catch (error) {
                 if (DEBUG) {
