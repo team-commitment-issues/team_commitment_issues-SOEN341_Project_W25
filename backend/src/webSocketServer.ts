@@ -194,12 +194,12 @@ const handleDirectMessage = async (ws: ExtendedWebSocket, parsedMessage: any, ws
         if (!ws.team || !ws.teamMember) throw new Error('Team or team member not found');
         if (!ws.directMessage) throw new Error('Direct message not found');
         
-        const newMessage = await DirectMessageService.sendDirectMessage(parsedMessage.text, parsedMessage.username, directMessage._id as Types.ObjectId);
+        await DirectMessageService.sendDirectMessage(parsedMessage.text, user.username, directMessage._id as Types.ObjectId);
 
         wss.clients.forEach((client) => {
             const extendedClient = client as ExtendedWebSocket;
-            if (extendedClient.readyState === ws.OPEN && extendedClient.user.username === parsedMessage.username) {
-                extendedClient.send(JSON.stringify(newMessage));
+            if (extendedClient.readyState === ws.OPEN && extendedClient.directMessage === ws.directMessage) {
+                extendedClient.send(JSON.stringify(parsedMessage));
             }
         });
     } catch (err) {

@@ -186,8 +186,7 @@ describe('WebSocket Server', () => {
                     type: 'directMessage',
                     text: 'Hello, Direct Message!',
                     username: user2.username,
-                    teamName: team.name,
-                    createdAt: new Date()
+                    teamName: team.name
                 }));
             } else if (parsedJoin.type === 'directMessage') {
                 console.log('Test: Received direct message confirmation:', parsedJoin);
