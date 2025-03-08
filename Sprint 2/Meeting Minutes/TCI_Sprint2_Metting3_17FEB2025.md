@@ -1,4 +1,4 @@
-# 📝 Meeting # Minutes - Sprint 2 Progress Review
+#  Meeting # Minutes - Sprint 2 Progress Review
 
 **Date**: 17 February 2025  
 **Time**: 5:00 PM to 7:00 PM  
@@ -46,12 +46,12 @@
 ---
 
 ## **Action Items**  
-- 🔹 **Brian** → Finalize the frontend implementation for sending and receiving messages by 21 February 2025.  
-- 🔹 **Omar** → Continue refining the product backlog and assist with backend tasks by 21 February 2025.  
-- 🔹 **Mohamed Ali** → Refine both frontend and backend code for Sprint 2 tasks by 21 February 2025.  
-- 🔹 **Fares** → Continue refining user stories and GitHub organization by 21 February 2025.  
-- 🔹 **Kassem** → Complete the "add user to a team" feature and refine code by 21 February 2025.  
-- 🔹 **Sam** → Finalize backend functions and endpoints for the frontend by 21 February 2025.  
+-  **Brian** → Finalize the frontend implementation for sending and receiving messages by 21 February 2025.  
+-  **Omar** → Continue refining the product backlog and assist with backend tasks by 21 February 2025.  
+-  **Mohamed Ali** → Refine both frontend and backend code for Sprint 2 tasks by 21 February 2025.  
+-  **Fares** → Continue refining user stories and GitHub organization by 21 February 2025.  
+-  **Kassem** → Complete the "add user to a team" feature and refine code by 21 February 2025.  
+-  **Sam** → Finalize backend functions and endpoints for the frontend by 21 February 2025.  
 
 ---
 
@@ -62,7 +62,7 @@
 
 ---
 
-] **Usage Instructions**:  
+**Usage Instructions**:  
 - Name the file in this format: `TeamName_Sprint#_Meeting#_Date.md`  
   Example: `TCI_Sprint2_Meeting1_17February2025.md`  
 
