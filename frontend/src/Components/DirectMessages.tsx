@@ -165,7 +165,9 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
 
   return (
     <div style={styles.teamMessages}>
-      <div style={styles.chatHeader}>Direct Messages</div>
+      <div style={styles.chatHeader}>
+        {selectedDM ? `Direct Messages with ${selectedDM}` : `Channel: ${selectedChannel}`}
+      </div>
       <div style={styles.chatBox}>
         {messages.length === 0 ? (
           <p style={styles.chatPlaceholder}>Select a user to chat with.</p>

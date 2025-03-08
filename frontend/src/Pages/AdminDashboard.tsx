@@ -99,7 +99,7 @@ const AdminDashboard: React.FC = () => {
         )}
       </div>
 
-      <h2 style={styles.heading}>Ultimate Admin Dashboard</h2>
+      <h2 style={styles.heading}>Dashboard</h2>
       <p style={styles.text}>Manage users, teams, channels, and messages.</p>
 
       <div style={styles.mainContainer}>
