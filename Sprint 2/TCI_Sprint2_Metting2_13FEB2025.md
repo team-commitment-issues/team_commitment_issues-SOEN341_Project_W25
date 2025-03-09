@@ -1,9 +1,8 @@
 # 📝 Meeting Minutes - ChatHaven Development Progress
 
-**Date**: 2/13/2025  
-**Time**: 5:00 PM - 8:00 PM
-**Location**: [Insert Location]  
-
+Date: 17 February 2025
+Time: 5:00 PM to 7:00 PM
+Location: Discord
 ---
 
 ## Attendees  
@@ -36,8 +35,8 @@
 ---
 
 ## Decisions Made  
-- ✅ Proceed with the current integration strategy for new dashboard features.
-- ✅ Continue to enhance backend security and functionality as planned.
+- Proceed with the current integration strategy for new dashboard features.
+- Continue to enhance backend security and functionality as planned.
 
 ---
 
@@ -50,8 +49,8 @@
 ---
 
 ## Next Meeting  
-📅 **Date**: 2/14/2025
-⏰ **Time**: 5:00 PM - 8:00 PM
-📍 **Location**: Hall Building
+**Date**: 2/14/2025
+**Time**: 5:00 PM - 8:00 PM
+**Location**: Hall Building
 
 ---
