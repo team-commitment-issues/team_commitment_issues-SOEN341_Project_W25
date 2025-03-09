@@ -43,29 +43,25 @@ jobs:
 
       - name: Clean npm cache and node_modules
         run: |
-          cd ChatHavenApp
-          cd backend
+          cd ChatHavenApp/backend
           npm cache clean --force
           rm -rf node_modules
           rm -f package-lock.json
 
       - name: Install dependencies
         run: |
-          cd ChatHavenApp
-          cd backend
+          cd ChatHavenApp/backend
           npm install
 
       - name: Run tests
         run: |
-          cd ChatHavenApp
-          cd backend
+          cd ChatHavenApp/backend
           npm run build
           npm run test
 
       - name: Build backend
         run: |
-          cd ChatHavenApp
-          cd backend
+          cd ChatHavenApp/backend
           npm run build
 
   frontend:
@@ -83,20 +79,17 @@ jobs:
 
       - name: Clean npm cache and node_modules
         run: |
-          cd ChatHavenApp
-          cd frontend
+          cd ChatHavenApp/frontend
           npm cache clean --force
           rm -rf node_modules
           rm -f package-lock.json
 
       - name: Install dependencies
         run: |
-          cd ChatHavenApp
-          cd frontend
+          cd ChatHavenApp/frontend
           npm install --legacy-peer-deps
 
       - name: Build frontend
         run: |
-          cd ChatHavenApp
-          cd frontend
+          cd ChatHavenApp/frontend
           npm run build

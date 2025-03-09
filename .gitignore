@@ -7,9 +7,7 @@
 /ChatHavenApp/backend/node_modules
 /ChatHavenApp/backend/dist/**
 /ChatHavenApp/backend/package-lock.json
-/ChatHavenApp/backend/package.json
 /ChatHavenApp/frontend/package-lock.json
-/ChatHavenApp/frontend/package.json
 /ChatHavenApp/backend/.env
 /ChatHavenApp/backend/.env.test
 
