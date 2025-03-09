@@ -37,7 +37,6 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
         setTitle("Team Members");
         const teamMemberList = await getUsersInTeam(selectedTeam);
         setUsers(teamMemberList);
-        console.log(teamMemberList)
       } else {
         return [];
       }

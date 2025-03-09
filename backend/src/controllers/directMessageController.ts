@@ -6,7 +6,6 @@ class DirectMessageController {
     static async createDirectMessage(req: Request, res: Response): Promise<void> {
         try {
             const username = req.body.teamMember;
-            console.log(username);
             const teamMember = req.teamMember._id as Schema.Types.ObjectId;
             const team = req.team._id as Schema.Types.ObjectId;
             const newDirectMessage = await DirectMessageService.createDirectMessage(username, teamMember, team);

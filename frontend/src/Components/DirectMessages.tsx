@@ -36,7 +36,6 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     }
     if (selectedDM && selectedTeam) {
       try {
-        console.log(selectedDM);
         await createDirectMessage(selectedDM, selectedTeam);
       } catch (err: any) {
         if (err.message !== "Direct message already exists") {
@@ -62,7 +61,6 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
     try {
       if (selectedTeam && selectedDM) {
         const directMessages = await getDirectMessages(selectedTeam, selectedDM!);
-        console.log(directMessages);
         setMessages(directMessages.directMessages.map((msg: any) => ({
           _id: msg._id,
           text: msg.text,
