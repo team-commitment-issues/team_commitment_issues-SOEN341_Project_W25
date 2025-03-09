@@ -30,38 +30,38 @@ jobs:
 
       - name: Create .env.test file
         run: |
-          echo MONGO_URI=mongodb://localhost:27017/testdb > backend/.env.test
-          echo JWT_SECRET=yFFnLrnV4a+Widw1PFEVHrp05etyl34CFbOp2LJFyToVeC3A32kcZH7VIvYW5IUmHzeOKzv4X5He/+UUG2Ieiw== >> backend/.env.test
-          echo NODE_ENV=test >> backend/.env.test
+          echo MONGO_URI=mongodb://localhost:27017/testdb > ChatHavenApp/backend/.env.test
+          echo JWT_SECRET=yFFnLrnV4a+Widw1PFEVHrp05etyl34CFbOp2LJFyToVeC3A32kcZH7VIvYW5IUmHzeOKzv4X5He/+UUG2Ieiw== >> ChatHavenApp/backend/.env.test
+          echo NODE_ENV=test >> ChatHavenApp/backend/.env.test
 
       - name: Create .env file
         run: |
-          echo PORT=5000 > backend/.env
-          echo MONGO_URI=mongodb://localhost:27017/chathavendb >> backend/.env
-          echo JWT_SECRET=8s8PC9N2XVWmbotAnx19ct34boBhzv0pCV7RxcGOtUp9+nGj2Inc0SIyBCYt0t+1o+GT2Oa5ucFCz2xQ8xA8HA== >> backend/.env
-          echo NODE_ENV=development >> backend/.env
+          echo PORT=5000 > ChatHavenApp/backend/.env
+          echo MONGO_URI=mongodb://localhost:27017/chathavendb >> ChatHavenApp/backend/.env
+          echo JWT_SECRET=8s8PC9N2XVWmbotAnx19ct34boBhzv0pCV7RxcGOtUp9+nGj2Inc0SIyBCYt0t+1o+GT2Oa5ucFCz2xQ8xA8HA== >> ChatHavenApp/backend/.env
+          echo NODE_ENV=development >> ChatHavenApp/backend/.env
 
       - name: Clean npm cache and node_modules
         run: |
-          cd backend
+          cd ChatHavenApp/backend
           npm cache clean --force
           rm -rf node_modules
           rm -f package-lock.json
 
       - name: Install dependencies
         run: |
-          cd backend
+          cd ChatHavenApp/backend
           npm install
 
       - name: Run tests
         run: |
-          cd backend
+          cd ChatHavenApp/backend
           npm run build
           npm run test
 
       - name: Build backend
         run: |
-          cd backend
+          cd ChatHavenApp/backend
           npm run build
 
   frontend:
@@ -79,17 +79,17 @@ jobs:
 
       - name: Clean npm cache and node_modules
         run: |
-          cd frontend
+          cd ChatHavenApp/frontend
           npm cache clean --force
           rm -rf node_modules
           rm -f package-lock.json
 
       - name: Install dependencies
         run: |
-          cd frontend
+          cd ChatHavenApp/frontend
           npm install --legacy-peer-deps
 
       - name: Build frontend
         run: |
-          cd frontend
+          cd ChatHavenApp/frontend
           npm run build
