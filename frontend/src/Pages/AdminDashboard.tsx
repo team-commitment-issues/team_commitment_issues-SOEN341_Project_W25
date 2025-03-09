@@ -13,6 +13,7 @@ const AdminDashboard: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [refreshState, setRefreshState] = useState(false);
+  const [selectedDM, setSelectedDM] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
@@ -43,6 +44,14 @@ const AdminDashboard: React.FC = () => {
       setMembersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
     }
   }
+
+  useEffect(() => {
+    setSelectedChannel(null);
+  }, [selectedDM]);
+
+  useEffect(() => {
+    setSelectedDM(null);
+  }, [selectedChannel]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -90,7 +99,7 @@ const AdminDashboard: React.FC = () => {
         )}
       </div>
 
-      <h2 style={styles.heading}>Ultimate Admin Dashboard</h2>
+      <h2 style={styles.heading}>Dashboard</h2>
       <p style={styles.text}>Manage users, teams, channels, and messages.</p>
 
       <div style={styles.mainContainer}>
@@ -114,6 +123,7 @@ const AdminDashboard: React.FC = () => {
           selectedChannel={selectedChannel} 
           contextMenu={membersContextMenu}
           setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("members", arg)}
+          setSelectedDm={setSelectedDM}
           refreshState={refreshState}
         />
 
@@ -144,6 +154,8 @@ const AdminDashboard: React.FC = () => {
           selectedChannel={selectedChannel}
           contextMenu={messagesContextMenu}
           setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("messages", arg)}
+          selectedDM={selectedDM}
+          setSelectedDM={setSelectedDM}
         />
       </div>
     </div>

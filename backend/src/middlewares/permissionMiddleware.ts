@@ -43,6 +43,7 @@ function checkTeamPermission(teamRole: TeamRole) {
         if (teamMember.role === teamRole) {
             return next();
         } else if (teamMember.role === TeamRole.ADMIN) {
+            req.teamMember = teamMember;
             return next();
         }
         else {
@@ -82,25 +83,38 @@ function checkChannelPermission() {
 
 function checkDirectMessagePermission() {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const receiverUsername = req.body.teamMember;
-        const receiverUser = await User.findOne({ username: { $eq: receiverUsername } });
-        if (!receiverUser) {
-            res.status(404).json({'Not Found': 'Receiver not found'});
-            return;
-        }
-        const receiver = await TeamMember.findOne({ user: receiverUser._id, team: req.team._id });
-        if (!receiver) {
-            res.status(404).json({'Not Found': 'Receiver not found'});
-            return;
-        }
-        const dm = await DirectMessage.findOne({ teamMembers: { $all: [req.teamMember._id, receiver._id] } });
-        if (!dm) {
-            res.status(404).json({'Not Found': 'Direct message not found'});
-            return;
-        }
-        req.dm = dm;
+        try {
+            const receiverUsername = req.body.teamMember;
+            const receiverUser = await User.findOne({ username: { $eq: receiverUsername } });
+            if (!receiverUser) {
+                res.status(404).json({'Not Found': 'Receiver not found'});
+                return;
+            }
+            const receiver = await TeamMember.findOne({ user: receiverUser._id, team: req.team._id });
+            if (!receiver) {
+                res.status(404).json({'Not Found': 'Receiver not found'});
+                return;
+            }
+            if (req.user.role === Role.SUPER_ADMIN) {
+                const dm = await DirectMessage.findOne({ teamMembers: { $all: [receiver._id] } });
+                if (!dm) {
+                    res.status(404).json({'Not Found': 'Direct message not found'});
+                    return;
+                }
+                req.dm = dm;
+                return next();
+            }
+            const dm = await DirectMessage.findOne({ teamMembers: { $all: [req.teamMember._id, receiver._id] } });
+            if (!dm) {
+                res.status(404).json({'Not Found': 'Direct message not found'});
+                return;
+            }
+            req.dm = dm;
 
-        return next();
+            return next();
+        } catch (error: any) {
+            res.status(500).json({'Error': 'An error occurred while processing your request', 'Details': error.message});
+        }
     }
 }
 

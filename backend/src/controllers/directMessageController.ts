@@ -3,7 +3,6 @@ import { Schema, Types } from 'mongoose';
 import DirectMessageService from '../services/directMessageService';
 
 class DirectMessageController {
-
     static async createDirectMessage(req: Request, res: Response): Promise<void> {
         try {
             const username = req.body.teamMember;
@@ -20,8 +19,10 @@ class DirectMessageController {
                 res.status(400).json({ error: 'Direct message already exists' });
             } else if ((err as any).message === 'Team member not found') {
                 res.status(404).json({ error: 'Team member not found' });
+            } else if ((err as any).message === 'User not found') {
+                res.status(404).json({ error: 'User not found' });
             } else {
-                res.status(500).json({ error: 'Internal server error' });
+                res.status(500).json({ error: 'Internal server error', details: err });
             }
         }
     }
@@ -34,7 +35,7 @@ class DirectMessageController {
                 directMessages: directMessages,
             });
         } catch (err) {
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ error: 'Internal server error', details: err });
         }
     }
 }

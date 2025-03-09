@@ -102,6 +102,7 @@ const handleJoinDirectMessage = async (ws: ExtendedWebSocket, parsedMessage: any
         if (!directMessage) throw new Error('Direct message not found');
 
         ws.send(JSON.stringify({ type: 'joinDirectMessage', teamName: team.name, username: parsedMessage.username }));
+        console.log(`User ${user.username} joined direct message with ${parsedMessage.username}`);
     } catch (err) {
         const errorMessage = (err instanceof Error) ? err.message : 'Unknown error';
         if (DEBUG) {
