@@ -11,14 +11,53 @@ const Settings: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+
+  const validatePassword = (password: string, oldPassword: string) => {
+    const specialCharRegex = /[!@#$%^&*]/;
+    if (password.length < 8) {
+      return "Password must be at least 8 characters long.";
+    }
+    if (!specialCharRegex.test(password)) {
+      return "Password must include at least one special character (!@#$%^&*).";
+    }
+    if (password === oldPassword) {
+      return "New password cannot be the same as the old password.";
+    }
+    return "";
+  };
+
+  const validateUsername = (newUsername: string, oldUsername: string) => {
+    if (newUsername === oldUsername) {
+      return "New username cannot be the same as the old username.";
+    }
+    return "";
+  };
 
   const handleSave = () => {
-    if (!oldUsername && !oldPassword) {
-      alert(
-        "You must enter at least your old username or old password to make changes."
-      );
-      return;
+    let valid = true;
+
+    if (newUsername) {
+      const usernameValidation = validateUsername(newUsername, oldUsername);
+      if (usernameValidation) {
+        setUsernameError(usernameValidation);
+        valid = false;
+      }
     }
+
+    if (newPassword) {
+      const passwordValidation = validatePassword(newPassword, oldPassword);
+      if (passwordValidation) {
+        setPasswordError(passwordValidation);
+        valid = false;
+      }
+    }
+
+    if (!valid) return;
+
+    setUsernameError("");
+    setPasswordError("");
     alert("Settings saved successfully!");
   };
 
@@ -37,7 +76,10 @@ const Settings: React.FC = () => {
               className="settings-input"
               placeholder="Enter current username"
               value={oldUsername}
-              onChange={(e) => setOldUsername(e.target.value)}
+              onChange={(e) => {
+                setOldUsername(e.target.value);
+                setUsernameError("");
+              }}
             />
           </div>
           <div className="settings-input-group">
@@ -47,8 +89,12 @@ const Settings: React.FC = () => {
               className="settings-input"
               placeholder="Enter new username"
               value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
+              onChange={(e) => {
+                setNewUsername(e.target.value);
+                setUsernameError("");
+              }}
             />
+            {usernameError && <p className="input-error">{usernameError}</p>}
           </div>
         </div>
 
@@ -62,7 +108,10 @@ const Settings: React.FC = () => {
                 className="settings-input password-input"
                 placeholder="Enter current password"
                 value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
+                onChange={(e) => {
+                  setOldPassword(e.target.value);
+                  setPasswordError("");
+                }}
               />
               <span
                 className="password-toggle"
@@ -80,7 +129,10 @@ const Settings: React.FC = () => {
                 className="settings-input password-input"
                 placeholder="Enter new password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setPasswordError("");
+                }}
               />
               <span
                 className="password-toggle"
@@ -89,6 +141,7 @@ const Settings: React.FC = () => {
                 {showNewPassword ? <FaEyeSlash /> : <FaEye />}
               </span>
             </div>
+            {passwordError && <p className="input-error">{passwordError}</p>}
           </div>
         </div>
       </div>

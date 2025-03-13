@@ -14,14 +14,12 @@
   align-items: flex-start;
   margin-bottom: 20px;
 }
-
 .settings-title {
   font-size: 24px;
   font-weight: bold;
   color: #333;
   margin-bottom: 5px;
 }
-
 .settings-section-title {
   font-size: 18px;
   font-weight: bold;
@@ -30,16 +28,12 @@
   margin-bottom: 10px;
   text-align: left;
 }
-
-
 .settings-subtitle {
   color: #666;
   margin-bottom: 20px;
   font-size: 16px;
   max-width: 400px;
 }
-  
-
   .settings-card {
     background: white;
     padding: 20px;
@@ -48,22 +42,16 @@
     width: 300px;
     text-align: center;
   }
-  
-  
   .settings-input-group {
     display: flex;
     flex-direction: column;
     text-align: left;
     margin-bottom: 15px;
   }
-  
-  
   .settings-input-group label {
     font-weight: bold;
     margin-bottom: 5px;
   }
-  
-  
   .settings-input {
     padding: 10px;
     border: 1px solid #ccc;
@@ -83,6 +71,12 @@
 .password-input {
   width: 100%;
   padding-right: 40px; 
+}
+.input-error {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+  text-align: left;
 }
 
 .password-toggle {
