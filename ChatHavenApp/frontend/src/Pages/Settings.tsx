@@ -28,7 +28,6 @@ const Settings: React.FC = () => {
       <p className="settings-subtitle">Manage your account settings.</p>
 
       <div className="settings-boxes">
-        {/* Username Box */}
         <div className="settings-card">
           <div className="settings-section-title">Change Username</div>
           <div className="settings-input-group">
