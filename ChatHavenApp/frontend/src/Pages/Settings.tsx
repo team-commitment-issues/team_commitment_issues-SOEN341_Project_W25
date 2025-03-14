@@ -1,37 +1,78 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../Styles/Settings.css";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaMoon, FaSun } from "react-icons/fa";
+
+const languages = {
+  en: "English",
+  fr: "Français",
+  es: "Español",
+  de: "Deutsch",
+};
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
+
+  // State for username & password
   const [oldUsername, setOldUsername] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  // State for password visibility
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+
+  // State for validation errors
   const [passwordError, setPasswordError] = useState("");
   const [usernameError, setUsernameError] = useState("");
 
+  // Dark mode state
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+
+  // Language state
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "en"
+  );
+
+  // Apply dark mode on load
+  useEffect(() => {
+    document.body.classList.toggle("dark-mode", theme === "dark");
+  }, [theme]);
+
+  // Toggle Dark Mode
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.body.classList.toggle("dark-mode", newTheme === "dark");
+  };
+
+  // Handle Language Change
+  const handleLanguageChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const selectedLanguage = event.target.value;
+    setLanguage(selectedLanguage);
+    localStorage.setItem("language", selectedLanguage);
+  };
+
+  // Password Validation
   const validatePassword = (password: string, oldPassword: string) => {
     const specialCharRegex = /[!@#$%^&*]/;
-    if (password.length < 8) {
+    if (password.length < 8)
       return "Password must be at least 8 characters long.";
-    }
-    if (!specialCharRegex.test(password)) {
+    if (!specialCharRegex.test(password))
       return "Password must include at least one special character (!@#$%^&*).";
-    }
-    if (password === oldPassword) {
+    if (password === oldPassword)
       return "New password cannot be the same as the old password.";
-    }
     return "";
   };
 
+  // Username Validation
   const validateUsername = (newUsername: string, oldUsername: string) => {
-    if (newUsername === oldUsername) {
+    if (newUsername === oldUsername)
       return "New username cannot be the same as the old username.";
-    }
     return "";
   };
 
@@ -69,11 +110,11 @@ const Settings: React.FC = () => {
       <div className="settings-boxes">
         <div className="settings-card">
           <div className="settings-section-title">Change Username</div>
-          <div className="settings-input-group">
+          <div className="username-input-group">
             <label>Old Username</label>
             <input
               type="text"
-              className="settings-input"
+              className="username-input"
               placeholder="Enter current username"
               value={oldUsername}
               onChange={(e) => {
@@ -82,11 +123,11 @@ const Settings: React.FC = () => {
               }}
             />
           </div>
-          <div className="settings-input-group">
+          <div className="username-input-group">
             <label>New Username</label>
             <input
               type="text"
-              className="settings-input"
+              className="username-input"
               placeholder="Enter new username"
               value={newUsername}
               onChange={(e) => {
@@ -143,6 +184,31 @@ const Settings: React.FC = () => {
             </div>
             {passwordError && <p className="input-error">{passwordError}</p>}
           </div>
+        </div>
+      </div>
+
+      <div className="settings-boxes">
+        <div className="settings-card">
+          <div className="settings-section-title">Appearance</div>
+          <button className="toggle-button" onClick={toggleTheme}>
+            {theme === "dark" ? <FaSun /> : <FaMoon />}
+            {theme === "dark" ? " Light Mode" : " Dark Mode"}
+          </button>
+        </div>
+
+        <div className="settings-card">
+          <div className="settings-section-title">Language</div>
+          <select
+            className="language-select"
+            value={language}
+            onChange={handleLanguageChange}
+          >
+            {Object.entries(languages).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
