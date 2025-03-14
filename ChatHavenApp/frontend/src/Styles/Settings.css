@@ -1,24 +1,31 @@
 
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+
 .settings-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  background-color: #f5f5f5;
+ 
+  min-height: 100vh;
   text-align: center;
+  padding: 20px;
 }
 
 
 .settings-title {
   font-size: 24px;
   font-weight: bold;
-  color: #333;
+  color: inherit;
   margin-bottom: 5px;
 }
 
 .settings-subtitle {
-  color: #666;
+  color: inherit;
   margin-bottom: 20px;
   font-size: 16px;
   max-width: 400px;
@@ -31,26 +38,34 @@
   justify-content: center;
   align-items: flex-start;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
+
 .settings-card {
-  background: white;
+  background: #ffffff;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  width: 300px; 
+  width: 300px;
   text-align: center;
+  color: #333;
+}
+
+
+body.dark-mode .settings-card {
+  background: #242424;
+  color: #e0e0e0;
+  border: 1px solid #444;
 }
 
 
 .settings-section-title {
   font-size: 18px;
   font-weight: bold;
-  color: #444;
   margin-bottom: 10px;
   text-align: left;
 }
-
 
 
 .username-input-group {
@@ -61,14 +76,12 @@
   margin-bottom: 15px;
 }
 
-
 .username-input-group label {
   font-weight: bold;
   margin-bottom: 5px;
   width: 100%;
   text-align: left;
 }
-
 
 .username-input {
   padding: 10px;
@@ -88,10 +101,10 @@
   margin-bottom: 15px;
 }
 
-
-.settings-input-group label {
-  font-weight: bold;
-  margin-bottom: 5px;
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .settings-input {
@@ -100,13 +113,7 @@
   border-radius: 5px;
   font-size: 14px;
   width: 100%;
-}
-
-
-.password-container {
-  position: relative;
-  display: flex;
-  align-items: center;
+  box-sizing: border-box;
 }
 
 .password-input {
@@ -132,19 +139,6 @@
   font-size: 14px;
   margin-top: 5px;
   text-align: left;
-}
-
-
-.dark-mode {
-  background-color: #181818;
-  color: white;
-}
-
-
-.dark-mode .settings-card {
-  background: #242424;
-  color: white;
-  border: 1px solid #444;
 }
 
 
@@ -179,9 +173,9 @@
 }
 
 
-.dark-mode .language-select {
+body.dark-mode .language-select {
   background-color: #242424;
-  color: white;
+  color: #e0e0e0;
   border: 1px solid #444;
 }
 

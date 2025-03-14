@@ -13,34 +13,25 @@ const languages = {
 const Settings: React.FC = () => {
   const navigate = useNavigate();
 
-  // State for username & password
   const [oldUsername, setOldUsername] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-
-  // State for password visibility
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-
-  // State for validation errors
   const [passwordError, setPasswordError] = useState("");
   const [usernameError, setUsernameError] = useState("");
 
-  // Dark mode state
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
-  // Language state
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
   );
 
-  // Apply dark mode on load
   useEffect(() => {
     document.body.classList.toggle("dark-mode", theme === "dark");
   }, [theme]);
 
-  // Toggle Dark Mode
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
@@ -48,7 +39,6 @@ const Settings: React.FC = () => {
     document.body.classList.toggle("dark-mode", newTheme === "dark");
   };
 
-  // Handle Language Change
   const handleLanguageChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -57,7 +47,6 @@ const Settings: React.FC = () => {
     localStorage.setItem("language", selectedLanguage);
   };
 
-  // Password Validation
   const validatePassword = (password: string, oldPassword: string) => {
     const specialCharRegex = /[!@#$%^&*]/;
     if (password.length < 8)
@@ -69,7 +58,6 @@ const Settings: React.FC = () => {
     return "";
   };
 
-  // Username Validation
   const validateUsername = (newUsername: string, oldUsername: string) => {
     if (newUsername === oldUsername)
       return "New username cannot be the same as the old username.";
