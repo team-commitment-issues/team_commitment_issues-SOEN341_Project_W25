@@ -6,6 +6,11 @@ body, html {
   color: #333;
 }
 
+body.dark-mode, html.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
 .landing-page {
   display: flex;
   flex-direction: column;
@@ -19,6 +24,11 @@ body, html {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.header.dark-mode {
+  background: linear-gradient(135deg, #333, #444);
+  color: #e0e0e0;
 }
 
 .header h1 {
@@ -48,6 +58,11 @@ nav {
   transition: background-color 0.3s, color 0.3s;
 }
 
+.nav-button.dark-mode {
+  border: 2px solid #e0e0e0;
+  color: #e0e0e0;
+}
+
 .nav-button:hover {
   background-color: white;
   color: #2575fc;
@@ -61,6 +76,11 @@ nav {
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
+}
+
+.main-content.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
 }
 
 .main-content h2 {
@@ -85,6 +105,11 @@ nav {
   transition: background-color 0.3s;
 }
 
+.cta-button.dark-mode {
+  background-color: #333;
+  color: #e0e0e0;
+}
+
 .cta-button:hover {
   background-color: #1a5dc9;
 }
@@ -95,6 +120,11 @@ nav {
   text-align: center;
   padding: 15px 0;
   font-size: 0.9rem;
+}
+
+.footer.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
 }
 
 @media (max-width: 768px) {

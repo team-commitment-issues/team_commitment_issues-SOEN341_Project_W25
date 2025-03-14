@@ -4,6 +4,7 @@ import { getUsersInTeam, getUsersInChannel } from "../Services/dashboardService"
 import { demoteToUser, promoteToAdmin, removeUserFromTeam } from "../Services/superAdminService";
 import { removeUserFromChannel } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
+import { useTheme } from "../Context/ThemeContext";
 
 interface User {
     username: string;
@@ -26,6 +27,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState<string>("Users");
   const [selectedUserRole, setSelectedUserRole] = useState<string>("MEMBER");  
+  const { theme } = useTheme();
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -88,16 +90,16 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
   ];
 
   return (
-    <div style={styles.userList}>
+    <div style={{ ...styles.userList, ...(theme === "dark" && styles.userList["&.dark-mode"]) }}>
       <h3 
         onClick={() => setCollapsed(!collapsed)} 
-        style={styles.listHeader}
+        style={{ ...styles.listHeader, ...(theme === "dark" && styles.listHeader["&.dark-mode"]) }}
       >
         {title} {collapsed ? "▲" : "▼"}
       </h3>
 
       {!collapsed && (
-        <ul style={styles.listContainer}>
+        <ul style={{ ...styles.listContainer, ...(theme === "dark" && styles.listContainer["&.dark-mode"]) }}>
           {users.map((user) => (
             <li
               key={user.username}
@@ -107,6 +109,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
                 ...styles.listItem,
                 backgroundColor: selectedTeamMembers.includes(user.username) ? "#D3E3FC" : "transparent",
                 fontWeight: selectedTeamMembers.includes(user.username) ? "bold" : "normal",
+                ...(theme === "dark" && styles.listItem["&.dark-mode:hover"]),
               }}
               onClick={() => toggleTeamMemberSelection(user.username)}
             >

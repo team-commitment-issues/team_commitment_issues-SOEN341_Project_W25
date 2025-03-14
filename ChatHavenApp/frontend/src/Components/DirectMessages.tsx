@@ -4,6 +4,7 @@ import { deleteMessage, getMessages } from "../Services/channelService";
 import { jwtDecode } from "jwt-decode";
 import ContextMenu from "./UI/ContextMenu";
 import { getDirectMessages, createDirectMessage } from "../Services/directMessageService";
+import { useTheme } from "../Context/ThemeContext";
 
 interface chatMessage {
   _id: string;
@@ -25,6 +26,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
   const [messages, setMessages] = useState<chatMessage[]>([]);
   const [message, setMessage] = useState<string>("");
   const ws = useRef<WebSocket | null>(null);
+  const { theme } = useTheme();
 
   const token = localStorage.getItem("token");
   const username = token ? (jwtDecode<any>(token)).username : "";
@@ -162,13 +164,13 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
   ];
 
   return (
-    <div style={styles.teamMessages}>
-      <div style={styles.chatHeader}>
+    <div style={{ ...styles.teamMessages, ...(theme === "dark" && styles.teamMessages["&.dark-mode"]) }}>
+      <div style={{ ...styles.chatHeader, ...(theme === "dark" && styles.chatHeader["&.dark-mode"]) }}>
         {selectedDM ? `Direct Messages with ${selectedDM}` : `Channel: ${selectedChannel}`}
       </div>
-      <div style={styles.chatBox}>
+      <div style={{ ...styles.chatBox, ...(theme === "dark" && styles.chatBox["&.dark-mode"]) }}>
         {messages.length === 0 ? (
-          <p style={styles.chatPlaceholder}>Select a user to chat with.</p>
+          <p style={{ ...styles.chatPlaceholder, ...(theme === "dark" && styles.chatPlaceholder["&.dark-mode"]) }}>Select a user to chat with.</p>
         ) : (
           messages.map((msg, index) => (
             <div
@@ -178,6 +180,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
                 ...styles.chatMessage,
                 alignSelf: msg.username === username ? "flex-end" : "flex-start",
                 backgroundColor: msg.username === username ? "#DCF8C6" : "#FFF",
+                ...(theme === "dark" && styles.chatMessage["&.dark-mode"]),
               } as React.CSSProperties}
             >
               <div>
@@ -187,15 +190,15 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
           ))
         )}
       </div>
-      <div style={styles.inputBox}>
+      <div style={{ ...styles.inputBox, ...(theme === "dark" && styles.inputBox["&.dark-mode"]) }}>
         <input
           type="text"
           placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          style={styles.inputField}
+          style={{ ...styles.inputField, ...(theme === "dark" && styles.inputField["&.dark-mode"]) }}
         />
-        <button onClick={handleSendMessage} style={styles.sendButton}>
+        <button onClick={handleSendMessage} style={{ ...styles.sendButton, ...(theme === "dark" && styles.sendButton["&.dark-mode"]) }}>
           Send
         </button>
       </div>

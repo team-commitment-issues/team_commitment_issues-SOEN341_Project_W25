@@ -4,6 +4,7 @@ import { getChannels, getTeams } from '../Services/dashboardService';
 import { addUserToTeam } from '../Services/superAdminService';
 import { addUserToChannel } from '../Services/channelService';
 import styles from '../Styles/dashboardStyles';
+import { useTheme } from "../Context/ThemeContext";
 
 interface Team {
   _id: string;
@@ -27,18 +28,17 @@ const ManageTeamMember: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
   const [selectedChannel, setSelectedChannel] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const { theme } = useTheme();
 
- 
   useEffect(() => {
     const fetchTeams = async () => {
       try {
         const response = await getTeams();
         setTeams(response);
-
       } catch (error) {
         console.error('Error fetching teams:', error);
         setErrorMessage('Failed to load teams. Please try again later.');
-        setTeams([]); 
+        setTeams([]);
       }
     };
 
@@ -119,8 +119,8 @@ const ManageTeamMember: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
   if (selectedUsers.length === 0) return null;
 
   return (
-    <div style={styles.addUserToTeamContainer}>
-      <h3 style={styles.addUserToTeamHeading}>Add User(s) to Team</h3>
+    <div style={{ ...styles.addUserToTeamContainer, ...(theme === "dark" && styles.addUserToTeamContainer["&.dark-mode"]) }}>
+      <h3 style={{ ...styles.addUserToTeamHeading, ...(theme === "dark" && styles.addUserToTeamHeading["&.dark-mode"]) }}>Add User(s) to Team</h3>
 
       {errorMessage && (
         <div style={styles.addUserToTeamErrorMessage}>{errorMessage}</div>
@@ -132,7 +132,7 @@ const ManageTeamMember: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
       <select
         value={selectedTeam}
         onChange={(e) => setSelectedTeam(e.target.value)}
-        style={styles.addUserToTeamSelect}
+        style={{ ...styles.addUserToTeamSelect, ...(theme === "dark" && styles.addUserToTeamSelect["&.dark-mode"]) }}
       >
         <option value="">Select a team</option>
         {Array.isArray(teams) && teams.length > 0 ? (
@@ -147,16 +147,16 @@ const ManageTeamMember: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
       </select>
 
       <button
-        style={styles.addUserToTeamButton}
+        style={{ ...styles.addUserToTeamButton, ...(theme === "dark" && styles.addUserToTeamButton["&.dark-mode"]) }}
         onClick={handleAddUserToTeam}
         disabled={!selectedTeam}
       >
         Add
       </button>
 
-      <h3 style={styles.addUserToTeamHeading}>Add User(s) to Channel</h3>
-      <select 
-        style={styles.addUserToTeamSelect}
+      <h3 style={{ ...styles.addUserToTeamHeading, ...(theme === "dark" && styles.addUserToTeamHeading["&.dark-mode"]) }}>Add User(s) to Channel</h3>
+      <select
+        style={{ ...styles.addUserToTeamSelect, ...(theme === "dark" && styles.addUserToTeamSelect["&.dark-mode"]) }}
         value={selectedTeamToChannel}
         onChange={(e) => setSelectedTeamToChannel(e.target.value)}
       >
@@ -174,7 +174,7 @@ const ManageTeamMember: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
       <select
         value={selectedChannel}
         onChange={(e) => setSelectedChannel(e.target.value)}
-        style={styles.addUserToTeamSelect}
+        style={{ ...styles.addUserToTeamSelect, ...(theme === "dark" && styles.addUserToTeamSelect["&.dark-mode"]) }}
       >
         <option value="">Select a channel</option>
         {Array.isArray(channels) && channels.length > 0 ? (
@@ -189,7 +189,7 @@ const ManageTeamMember: React.FC<AddUserToTeamProps> = ({ selectedUsers }) => {
       </select>
 
       <button
-        style={styles.addUserToTeamButton}
+        style={{ ...styles.addUserToTeamButton, ...(theme === "dark" && styles.addUserToTeamButton["&.dark-mode"]) }}
         onClick={() => handleAddUserToChannel()}
         disabled={!selectedChannel}
       >

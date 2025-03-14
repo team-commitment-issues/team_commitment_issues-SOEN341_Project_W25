@@ -1,4 +1,3 @@
-
 body.dark-mode {
   background-color: #121212;
   color: #e0e0e0;
@@ -14,6 +13,11 @@ body.dark-mode {
   min-height: 100vh;
   text-align: center;
   padding: 20px;
+}
+
+body.dark-mode .settings-container {
+  background-color: #121212;
+  color: #e0e0e0;
 }
 
 
@@ -51,7 +55,6 @@ body.dark-mode {
   text-align: center;
   color: #333;
 }
-
 
 body.dark-mode .settings-card {
   background: #242424;
@@ -172,7 +175,6 @@ body.dark-mode .settings-card {
   cursor: pointer;
 }
 
-
 body.dark-mode .language-select {
   background-color: #242424;
   color: #e0e0e0;
@@ -200,6 +202,11 @@ body.dark-mode .language-select {
   color: white;
 }
 
+body.dark-mode .settings-button.save {
+  background-color: #333;
+  color: #e0e0e0;
+}
+
 .settings-button.save:hover {
   background-color: #166FE5;
 }
@@ -207,6 +214,11 @@ body.dark-mode .language-select {
 .settings-button.back {
   background-color: #e0e0e0;
   color: #333;
+}
+
+body.dark-mode .settings-button.back {
+  background-color: #444;
+  color: #e0e0e0;
 }
 
 .settings-button.back:hover {

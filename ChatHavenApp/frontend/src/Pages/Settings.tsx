@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../Styles/Settings.css";
 import { FaEye, FaEyeSlash, FaMoon, FaSun } from "react-icons/fa";
+import { useTheme } from "../Context/ThemeContext";
 
 const languages = {
   en: "English",
@@ -12,6 +13,7 @@ const languages = {
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const [oldUsername, setOldUsername] = useState("");
   const [newUsername, setNewUsername] = useState("");
@@ -22,22 +24,9 @@ const Settings: React.FC = () => {
   const [passwordError, setPasswordError] = useState("");
   const [usernameError, setUsernameError] = useState("");
 
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
-
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
   );
-
-  useEffect(() => {
-    document.body.classList.toggle("dark-mode", theme === "dark");
-  }, [theme]);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.body.classList.toggle("dark-mode", newTheme === "dark");
-  };
 
   const handleLanguageChange = (
     event: React.ChangeEvent<HTMLSelectElement>

@@ -9,8 +9,17 @@ body {
 
   --primary-color:rgb(124, 168, 255);
   --primary-color-hover:rgb(124, 168, 255, 0.8);
+
+  &.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+  }
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+
+  &.dark-mode {
+    color: #e0e0e0;
+  }
 }
