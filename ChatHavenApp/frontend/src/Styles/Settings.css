@@ -1,0 +1,238 @@
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+ 
+  min-height: 100vh;
+  text-align: center;
+  padding: 20px;
+}
+
+body.dark-mode .settings-container {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+
+.settings-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: inherit;
+  margin-bottom: 5px;
+}
+
+.settings-subtitle {
+  color: inherit;
+  margin-bottom: 20px;
+  font-size: 16px;
+  max-width: 400px;
+}
+
+
+.settings-boxes {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+
+.settings-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  text-align: center;
+  color: #333;
+}
+
+body.dark-mode .settings-card {
+  background: #242424;
+  color: #e0e0e0;
+  border: 1px solid #444;
+}
+
+
+.settings-section-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+
+.username-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: left;
+  margin-bottom: 15px;
+}
+
+.username-input-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  width: 100%;
+  text-align: left;
+}
+
+.username-input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  width: 90%;
+  max-width: 100%;
+  display: block;
+}
+
+
+.settings-input-group {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  margin-bottom: 15px;
+}
+
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.settings-input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.password-input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #666;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+
+.input-error {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+  text-align: left;
+}
+
+
+.toggle-button {
+  background-color: #1877F2;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
+.toggle-button:hover {
+  background-color: #166FE5;
+}
+
+
+.language-select {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: white;
+  cursor: pointer;
+}
+
+body.dark-mode .language-select {
+  background-color: #242424;
+  color: #e0e0e0;
+  border: 1px solid #444;
+}
+
+
+.settings-button {
+  width: 300px;
+  max-width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 15px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.settings-button.save {
+  background-color: #1877F2;
+  color: white;
+}
+
+body.dark-mode .settings-button.save {
+  background-color: #333;
+  color: #e0e0e0;
+}
+
+.settings-button.save:hover {
+  background-color: #166FE5;
+}
+
+.settings-button.back {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+body.dark-mode .settings-button.back {
+  background-color: #444;
+  color: #e0e0e0;
+}
+
+.settings-button.back:hover {
+  background-color: #d6d6d6;
+}
+
+
+@media (max-width: 768px) {
+  .settings-boxes {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .settings-card {
+    width: 90%;
+  }
+}

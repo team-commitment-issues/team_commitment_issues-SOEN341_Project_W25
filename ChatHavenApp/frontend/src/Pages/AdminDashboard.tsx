@@ -6,9 +6,11 @@ import ChannelList from "../Components/ChannelList";
 import TeamMessages from "../Components/DirectMessages";
 import styles from "../Styles/dashboardStyles";
 import TeamMemberList from "../Components/teamMemberList";
+import { useTheme } from "../Context/ThemeContext";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -73,34 +75,34 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.menuContainer} ref={dropdownRef}>
+    <div style={{ ...styles.container, ...(theme === "dark" && styles.container["&.dark-mode"]) }}>
+      <div style={{ ...styles.menuContainer, ...(theme === "dark" && styles.menuContainer["&.dark-mode"]) }} ref={dropdownRef}>
         <button
-          style={styles.menuButton}
+          style={{ ...styles.menuButton, ...(theme === "dark" && styles.menuButton["&.dark-mode"]) }}
           onClick={() => setDropdownOpen(!dropdownOpen)}
         >
           ☰ Menu
         </button>
         {dropdownOpen && (
-          <div style={styles.dropdownMenu}>
-            <button onClick={() => navigate("/profile")} style={styles.menuItem}>
+          <div style={{ ...styles.dropdownMenu, ...(theme === "dark" && styles.dropdownMenu["&.dark-mode"]) }}>
+            <button onClick={() => navigate("/profile")} style={{ ...styles.menuItem, ...(theme === "dark" && styles.menuItem["&.dark-mode:hover"]) }}>
               Profile
             </button>
             <button
               onClick={() => navigate("/settings")}
-              style={styles.menuItem}
+              style={{ ...styles.menuItem, ...(theme === "dark" && styles.menuItem["&.dark-mode:hover"]) }}
             >
               Settings
             </button>
-            <button onClick={handleLogout} style={styles.menuItem}>
+            <button onClick={handleLogout} style={{ ...styles.menuItem, ...(theme === "dark" && styles.menuItem["&.dark-mode:hover"]) }}>
               Logout
             </button>
           </div>
         )}
       </div>
 
-      <h2 style={styles.heading}>Dashboard</h2>
-      <p style={styles.text}>Manage users, teams, channels, and messages.</p>
+      <h2 style={{ ...styles.heading, ...(theme === "dark" && styles.heading["&.dark-mode"]) }}>Dashboard</h2>
+      <p style={{ ...styles.text, ...(theme === "dark" && styles.text["&.dark-mode"]) }}>Manage users, teams, channels, and messages.</p>
 
       <div style={styles.mainContainer}>
         <UserList 

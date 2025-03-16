@@ -4,9 +4,10 @@ import { getUsers } from "../Services/dashboardService";
 import ContextMenu from "./UI/ContextMenu";
 import { addUserToTeam } from "../Services/superAdminService";
 import { addUserToChannel } from "../Services/channelService";
+import { useTheme } from "../Context/ThemeContext";
 
 interface User {
-    username: string;
+  username: string;
 }
 
 interface UserListProps {
@@ -17,14 +18,26 @@ interface UserListProps {
   selectedChannel: string | null;
   setSelectedChannel: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
-  contextMenu: { visible: boolean; x: number; y: number; selected: string;};
-  setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string;} ) => void;
+  contextMenu: { visible: boolean; x: number; y: number; selected: string };
+  setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string }) => void;
   handleRefresh: () => void;
 }
 
-const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, selectedTeam, setSelectedTeam, selectedChannel, setSelectedChannel, setSelectedTeamMembers, contextMenu, setContextMenu, handleRefresh}) => {
+const UserList: React.FC<UserListProps> = ({
+  selectedUsers,
+  setSelectedUsers,
+  selectedTeam,
+  setSelectedTeam,
+  selectedChannel,
+  setSelectedChannel,
+  setSelectedTeamMembers,
+  contextMenu,
+  setContextMenu,
+  handleRefresh,
+}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -70,25 +83,26 @@ const UserList: React.FC<UserListProps> = ({selectedUsers, setSelectedUsers, sel
   ];
 
   return (
-    <div style={styles.userList}>
-      <h3 
-        onClick={() => setCollapsed(!collapsed)} 
-        style={styles.listHeader}
+    <div style={{ ...styles.userList, ...(theme === "dark" && styles.userList["&.dark-mode"]) }}>
+      <h3
+        onClick={() => setCollapsed(!collapsed)}
+        style={{ ...styles.listHeader, ...(theme === "dark" && styles.listHeader["&.dark-mode"]) }}
       >
         Users {collapsed ? "▲" : "▼"}
       </h3>
 
       {!collapsed && (
-        <ul style={styles.listContainer}>
+        <ul style={{ ...styles.listContainer, ...(theme === "dark" && styles.listContainer["&.dark-mode"]) }}>
           {users.map((user) => (
             <li
               key={user.username}
-              onContextMenu={e => handleContextMenu(e, user.username)}
+              onContextMenu={(e) => handleContextMenu(e, user.username)}
               value={user.username}
               style={{
                 ...styles.listItem,
                 backgroundColor: selectedUsers.includes(user.username) ? "#D3E3FC" : "transparent",
                 fontWeight: selectedUsers.includes(user.username) ? "bold" : "normal",
+                ...(theme === "dark" && styles.listItem["&.dark-mode:hover"]),
               }}
               onClick={() => toggleUserSelection(user.username)}
             >
