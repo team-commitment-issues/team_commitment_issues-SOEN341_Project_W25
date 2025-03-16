@@ -21,7 +21,7 @@ const styles = {
     },
   },
   menuButton: {
-    backgroundColor: "#1877F2",
+    backgroundColor: "#007bff",
     color: "#fff",
     border: "none",
     borderRadius: "6px",
@@ -31,13 +31,15 @@ const styles = {
     transition: "background 0.3s",
     fontWeight: "bold",
     "&:hover": {
-      backgroundColor: "#145DBF",
+      backgroundColor: "#0056b3",
     },
     "&.dark-mode": {
-      backgroundColor: "#333",
-      color: "#e0e0e0",
+      backgroundColor: "#007bff",
+      border: "1px solid #007bff",
+      color: "#fff",
     },
   },
+
   menuItem: {
     backgroundColor: "transparent",
     border: "none",
@@ -48,11 +50,16 @@ const styles = {
     width: "100%",
     transition: "background 0.3s",
     fontWeight: "500",
+    color: "#fff",
     "&:hover": {
-      backgroundColor: "#E4E6EB",
+      backgroundColor: "#0056b3",
+    },
+    "&.dark-mode": {
+      backgroundColor: "transparent",
+      color: "#fff",
     },
     "&.dark-mode:hover": {
-      backgroundColor: "#333",
+      backgroundColor: "#0056b3",
     },
   },
 
@@ -60,7 +67,7 @@ const styles = {
     position: "absolute" as const,
     top: "30px",
     right: "0",
-    backgroundColor: "#fff",
+    backgroundColor: "#007bff",
     boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
     borderRadius: "8px",
     display: "flex",
@@ -68,12 +75,14 @@ const styles = {
     width: "140px",
     zIndex: 1000,
     padding: "5px 0",
-    border: "1px solid #E4E6EB",
+    border: "1px solid #0056b3",
     "&.dark-mode": {
-      backgroundColor: "#242424",
-      border: "1px solid #444",
+      backgroundColor: "#007bff",
+      border: "1px solid #0056b3",
+      boxShadow: "0px 4px 10px rgba(255, 255, 255, 0.1)",
     },
   },
+
   heading: {
     fontSize: "24px",
     marginTop: "20px",
@@ -195,23 +204,24 @@ const styles = {
   },
   assignUserButton: {
     marginTop: "10px",
-    backgroundColor: "#1877F2",
-    color: "#FFFFFF",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    fontSize: "14px",
+    backgroundColor: "#007bff",
+    color: "#fff",
+    border: "1px solid #007bff",
+    padding: "10px 20px",
+    borderRadius: "5px",
+    fontSize: "16px",
     fontWeight: "bold",
     cursor: "pointer",
-    transition: "background 0.3s",
+    transition: "background-color 0.3s ease",
     width: "100%",
     textAlign: "center" as const,
     "&:hover": {
-      backgroundColor: "#145DBF",
+      backgroundColor: "#0056b3",
     },
     "&.dark-mode": {
-      backgroundColor: "#333",
-      color: "#e0e0e0",
+      backgroundColor: "#007bff",
+      border: "1px solid #007bff",
+      color: "#fff",
     },
   },
   cardContainer: {
@@ -366,8 +376,9 @@ const styles = {
       backgroundColor: "#145DBF",
     },
     "&.dark-mode": {
-      backgroundColor: "#333",
-      color: "#e0e0e0",
+      backgroundColor: "#007bff",
+      border: "1px solid #007bff",
+      color: "#fff",
     },
   },
 
@@ -418,7 +429,7 @@ const styles = {
   },
 
   sendButton: {
-    backgroundColor: "#1877F2",
+    backgroundColor: "#007bff",
     color: "#FFFFFF",
     border: "none",
     padding: "10px 15px",
@@ -428,13 +439,15 @@ const styles = {
     cursor: "pointer",
     transition: "background 0.3s",
     "&:hover": {
-      backgroundColor: "#145DBF",
+      backgroundColor: "#0056b3",
     },
     "&.dark-mode": {
-      backgroundColor: "#333",
-      color: "#e0e0e0",
+      backgroundColor: "#007bff",
+      border: "1px solid #007bff",
+      color: "#fff",
     },
   },
+
   teamHeader: {
     width: "100%",
     padding: "10px",
@@ -535,7 +548,7 @@ const styles = {
     fontSize: "14px",
     verticalAlign: "middle",
     "&.dark-mode": {
-      color: "#e0e0e0",
+      color: "#D9534F",
     },
   },
 
@@ -555,7 +568,7 @@ const styles = {
 
   createChannelButton: {
     marginTop: "10px",
-    backgroundColor: "#1877F2",
+    backgroundColor: "#007bff",
     color: "#FFFFFF",
     border: "none",
     padding: "8px 12px",
@@ -567,11 +580,12 @@ const styles = {
     width: "100%",
     textAlign: "center" as const,
     "&:hover": {
-      backgroundColor: "#145DBF",
+      backgroundColor: "#0056b3",
     },
     "&.dark-mode": {
-      backgroundColor: "#333",
-      color: "#e0e0e0",
+      backgroundColor: "#007bff",
+      border: "1px solid #007bff",
+      color: "#fff",
     },
   },
 
