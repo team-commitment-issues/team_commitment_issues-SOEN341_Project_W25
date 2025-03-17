@@ -6,7 +6,7 @@ export const createDirectMessage = async (teamMember: string, teamName: string) 
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(`${API_URL}/createDirectMessage`, 
-            { teamMember, teamName },
+            { teamName, receiver: teamMember },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return response.data;
@@ -19,7 +19,7 @@ export const getDirectMessages = async (teamName: string, teamMember: string) =>
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(`${API_URL}/getDirectMessages`, 
-            { teamName, teamMember },
+            { teamName, receiver: teamMember },
             { headers: { Authorization: `Bearer ${token}` } }
         );
         return response.data;
