@@ -1,15 +1,15 @@
 import request from 'supertest';
 import express from 'express';
-import channelRoutes from '../routes/directMessageRoutes';
+import directMessageRoutes from '../routes/directMessageRoutes';
 import authenticate from '../middlewares/authMiddleware';
-import { checkTeamPermission, checkUserPermission, checkDirectMessagePermission } from '../middlewares/permissionMiddleware';
+import { checkTeamPermission } from '../middlewares/permissionMiddleware';
 import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
 import DirectMessage from '../models/DirectMessage';
 
 const app = express();
 app.use(express.json());
-app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), channelRoutes);
+app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), directMessageRoutes);
 
 describe('POST /directMessage/createDirectMessage', () => {
     it('should create a direct message successfully', async () => {
@@ -41,7 +41,7 @@ describe('POST /directMessage/createDirectMessage', () => {
 
         const payload = {
             teamName: 'Test Team',
-            teamMember: receiver.username
+            receiver: receiver.username
         };
 
         const response = await request(app)
@@ -50,7 +50,7 @@ describe('POST /directMessage/createDirectMessage', () => {
             .send(payload)
             .expect(201);
 
-        const foundDirectMessage = await DirectMessage.findOne({ teamMembers: { $all: [teamMember._id, receiverTeamMember._id] } });
+        const foundDirectMessage = await DirectMessage.findOne({ users: { $all: [user._id, receiver._id] } });
         expect(foundDirectMessage).toBeTruthy();
     });
 });

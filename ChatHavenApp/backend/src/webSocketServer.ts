@@ -154,6 +154,7 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
         if (DEBUG) {
             console.error(`Error handling ${messageType}: ${errorMessage}`);
         }
+        ws.send(JSON.stringify({ type: 'error', message: errorMessage }));
         ws.close(1008, errorMessage);
     }
 };

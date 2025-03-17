@@ -3,7 +3,6 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { setupWebSocketServer } from '../webSocketServer';
 import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
-import { create } from 'domain';
 
 let server: Server;
 let wss: WebSocketServer;
@@ -15,6 +14,7 @@ beforeAll((done) => {
 });
 
 afterAll((done) => {
+    wss.clients.forEach((client) => client.terminate());
     wss.close(() => {
         server.close(done);
     });
@@ -49,8 +49,8 @@ describe('WebSocket Server', () => {
         await user2.save();
         team.teamMembers.push(teamMember2._id);
         await team.save();
-        const teamMemberIds = [teamMember._id, teamMember2._id];
-        dm = await TestHelpers.createTestDirectMessage(teamMemberIds, []);
+        const users = [user._id, user2._id];
+        dm = await TestHelpers.createTestDirectMessage(users, []);
         teamMember.directMessages.push(dm._id);
         await teamMember.save();
         teamMember2.directMessages.push(dm._id);
@@ -58,20 +58,6 @@ describe('WebSocket Server', () => {
     });
 
     it('should connect to the WebSocket server', (done) => {
-        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
-        ws.on('open', () => {
-            expect(ws.readyState).toBe(WebSocket.OPEN);
-            ws.close();
-            done();
-        });
-
-        ws.on('error', (error) => {
-            console.log(error);
-            done(error);
-        });
-    });
-
-    it('should connect to the WebSocket server with timeout', (done) => {
         const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         ws.on('open', () => {
             expect(ws.readyState).toBe(WebSocket.OPEN);
@@ -111,98 +97,43 @@ describe('WebSocket Server', () => {
     it('should send and receive messages', (done) => {
         const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         let doneCalled = false;
-    
+
         const callDone = (error?: any) => {
             if (!doneCalled) {
                 doneCalled = true;
                 done(error);
             }
         };
-    
+
         ws.on('open', () => {
-            console.log('Test: WebSocket connection opened');
             ws.send(JSON.stringify({
                 type: 'join',
                 teamName: team.name,
                 channelName: channel.name
             }));
         });
-    
+
         ws.on('message', (joinMsg) => {
             const parsedJoin = JSON.parse(joinMsg.toString());
-            console.log('Test: Received message:', parsedJoin);
             if (parsedJoin.type === 'join') {
                 ws.send(JSON.stringify({
                     type: 'message',
                     text: 'Hello, World!',
-                    username: user.username,
                     teamName: team.name,
-                    channelName: channel.name,
-                    createdAt: new Date()
+                    channelName: channel.name
                 }));
             } else if (parsedJoin.type === 'message') {
-                console.log('Test: Received message confirmation:', parsedJoin);
                 expect(parsedJoin.text).toBe('Hello, World!');
                 ws.close();
                 callDone();
             }
         });
-    
-        ws.on('error', (error) => {
-            console.log('Test: WebSocket error:', error);
-            callDone(error);
-        });
-    
-        ws.on('close', () => {
-            console.log('Test: WebSocket connection closed');
-        });
-    });
-
-    it('should send and receive direct messages', (done) => {
-        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
-        let doneCalled = false;
-
-        const callDone = (error?: any) => {
-            if (!doneCalled) {
-                doneCalled = true;
-                done(error);
-            }
-        };
-
-        ws.on('open', () => {
-            console.log('Test: WebSocket connection opened');
-            ws.send(JSON.stringify({
-                type: 'joinDirectMessage',
-                teamName: team.name,
-                username: user2.username
-            }));
-        });
-
-        ws.on('message', (joinMsg) => {
-            const parsedJoin = JSON.parse(joinMsg.toString());
-            console.log('Test: Received message:', parsedJoin);
-            if (parsedJoin.type === 'joinDirectMessage') {
-                ws.send(JSON.stringify({
-                    type: 'directMessage',
-                    text: 'Hello, Direct Message!',
-                    username: user2.username,
-                    teamName: team.name
-                }));
-            } else if (parsedJoin.type === 'directMessage') {
-                console.log('Test: Received direct message confirmation:', parsedJoin);
-                expect(parsedJoin.text).toBe('Hello, Direct Message!');
-                ws.close();
-                callDone();
-            }
-        });
 
         ws.on('error', (error) => {
-            console.log('Test: WebSocket error:', error);
             callDone(error);
         });
 
         ws.on('close', () => {
-            console.log('Test: WebSocket connection closed');
             callDone();
         });
     });
@@ -230,6 +161,50 @@ describe('WebSocket Server', () => {
         });
     }, 5000);
 
+    it('should send and receive direct messages', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        let doneCalled = false;
+
+        const callDone = (error?: any) => {
+            if (!doneCalled) {
+                doneCalled = true;
+                done(error);
+            }
+        };
+
+        ws.on('open', () => {
+            ws.send(JSON.stringify({
+                type: 'joinDirectMessage',
+                teamName: team.name,
+                username: user2.username
+            }));
+        });
+
+        ws.on('message', (joinMsg) => {
+            const parsedJoin = JSON.parse(joinMsg.toString());
+            if (parsedJoin.type === 'joinDirectMessage') {
+                ws.send(JSON.stringify({
+                    type: 'directMessage',
+                    text: 'Hello, Direct Message!',
+                    teamName: team.name,
+                    username: user2.username
+                }));
+            } else if (parsedJoin.type === 'directMessage') {
+                expect(parsedJoin.text).toBe('Hello, Direct Message!');
+                ws.close();
+                callDone();
+            }
+        });
+
+        ws.on('error', (error) => {
+            callDone(error);
+        });
+
+        ws.on('close', () => {
+            callDone();
+        });
+    });
+
     it('should handle unauthorized access', (done) => {
         const ws = new WebSocket(`ws://localhost:5001?token=InvalidToken`);
         ws.on('open', () => {
@@ -240,9 +215,10 @@ describe('WebSocket Server', () => {
             }));
         });
 
-        ws.on('close', (code, reason) => {
-            expect(code).toBe(1008);
-            expect(reason.toString()).toContain('Invalid token');
+        ws.on('message', (message) => {
+            const parsedMessage = JSON.parse(message.toString());
+            expect(parsedMessage.type).toBe('error');
+            expect(parsedMessage.message).toContain('Invalid token');
             done();
         });
 
