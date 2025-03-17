@@ -32,6 +32,8 @@ declare global {
  * - Sends a **401** status with an error message if no token is provided or if the user is not found.
  * - Sends a **403** status with an error message if the token is invalid.
  * 
+ * It populates `req.user` with the authenticated user found in the database.
+ * 
  * @example
  * // Usage in an Express route
  * app.get('/EXAMPLE_ROUTE', authenticate, (req, res) => {
