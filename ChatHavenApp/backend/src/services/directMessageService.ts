@@ -7,7 +7,7 @@ import { Role } from '../enums';
 import DirectMessage from '../models/DirectMessage';
 
 class DirectMessageService {
-    static async createDirectMessage(username: string, teamMember: Schema.Types.ObjectId, team: Schema.Types.ObjectId) {       
+    static async createDirectMessage(username: string, sender: Schema.Types.ObjectId, team: Schema.Types.ObjectId) {       
         if (typeof username !== 'string') {
                     throw new Error('Invalid username');
                 }
@@ -15,20 +15,18 @@ class DirectMessageService {
                 if (!receiver) {
                     throw new Error('User not found');
                 }
-                const receiverTeamMember = await TeamMember.findOne({ user: receiver._id, team });
-                if (!receiverTeamMember) {
-                    throw new Error('Team member not found');
+                if (receiver.role !== Role.SUPER_ADMIN) {
+                    const receiverTeamMember = await TeamMember.findOne({ user: receiver._id, team });
+                    if (!receiverTeamMember) {
+                        throw new Error('Team member not found');
+                    }   
                 }
-                const teamMember1 = await TeamMember.findById(teamMember);
-                if (!teamMember1) {
-                    throw new Error('Team member not found');
-                }
-                const teamMembers = [teamMember, receiverTeamMember._id];
-                if (await DirectMessage.findOne({ teamMembers: { $all: teamMembers } })) {
+                const users = [receiver._id, sender];
+                if (await DirectMessage.findOne({ users: { $all: users } })) {
                     throw new Error('Direct message already exists');
                 }
                 const directMessage = new DirectMessage({
-                    teamMembers: [teamMember1._id, receiverTeamMember._id],
+                    users,
                     dmessages: [],
                 });
                 await directMessage.save();

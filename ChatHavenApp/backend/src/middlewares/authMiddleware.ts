@@ -20,14 +20,23 @@ declare global {
     }
 }
 
+
 /**
- * Middleware to authenticate a user using a JWT token.
- * Make sure user is logged in before accessing protected routes.
+ * Middleware to authenticate a user based on the provided JWT token in the request headers.
  * 
- * @param {Request} req - The request object.
- * @param {Response} res - The response object.
- * @param {NextFunction} next - The next middleware function.
- * @returns {void}
+ * @param req - The request object containing the authorization header with the JWT token.
+ * @param res - The response object used to send back the appropriate HTTP status and error messages.
+ * @param next - The next middleware function to be called if authentication is successful.
+ * 
+ * @returns A promise that resolves to void. 
+ * - Sends a **401** status with an error message if no token is provided or if the user is not found.
+ * - Sends a **403** status with an error message if the token is invalid.
+ * 
+ * @example
+ * // Usage in an Express route
+ * app.get('/EXAMPLE_ROUTE', authenticate, (req, res) => {
+ *   res.send('You are authenticated');
+ * });
  */
 async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
     const token = req.headers.authorization?.split(' ')[1];

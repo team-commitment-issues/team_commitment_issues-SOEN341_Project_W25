@@ -7,11 +7,11 @@ import { Document, Schema, model } from 'mongoose';
  */
 interface IDirectMessage extends Document {
     /**
-     * The teamMembers that the direct message is between.
+     * The users that the direct message is between.
      * @type {Schema.Types.ObjectId[]}
-     * @see {@link TeamMember}
+     * @see {@link User}
      */
-    teamMembers: Schema.Types.ObjectId[];
+    users: Schema.Types.ObjectId[];
     /**
      * The dmessages in the direct message.
      * @type {Schema.Types.ObjectId[]}
@@ -25,9 +25,9 @@ interface IDirectMessage extends Document {
  * @const {Schema<IDirectMessage>}
  */
 const DirectMessageSchema = new Schema<IDirectMessage>({
-    teamMembers: [{
+    users: [{
         type: Schema.Types.ObjectId,
-        ref: 'TeamMember',
+        ref: 'User',
         required: true,
     }],
     dmessages: [{
