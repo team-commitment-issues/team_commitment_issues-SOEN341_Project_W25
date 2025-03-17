@@ -21,6 +21,7 @@ import User from '../models/User';
  * });
  * 
  * @remarks This middleware should only be used after the `authenticate` middleware to ensure the user is authenticated.
+ * @remarks This middleware is unnessary for checking USER permissions as all users have access to all resources.
  */
 function checkUserPermission(role: Role) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -53,11 +54,11 @@ function checkUserPermission(role: Role) {
  * 
  * @example
  * // Usage in an Express route
- * app.get('/EXAMPLE_ROUTE', authenticate, checkUserPermission(Role.USER), checkTeamPermission(TeamRole.ADMIN), (req, res) => {
+ * app.get('/EXAMPLE_ROUTE', authenticate, checkTeamPermission(TeamRole.ADMIN), (req, res) => {
  *  res.send('You have permission to access this resource');
  * });
  * 
- * @remarks This middleware should be used after the `authenticate` and {@link checkUserPermission} middleware to ensure the user is authenticated.
+ * @remarks This middleware should be used after the `authenticate` middleware to ensure the user is authenticated.
  */
 function checkTeamPermission(teamRole: TeamRole) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -108,11 +109,11 @@ function checkTeamPermission(teamRole: TeamRole) {
  * 
  * @example
  * // Usage in an Express route
- * app.get('/EXAMPLE_ROUTE', authenticate, checkUserPermission(Role.USER), checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), (req, res) => {
+ * app.get('/EXAMPLE_ROUTE', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), (req, res) => {
  *  res.send('You have permission to access this resource');
  * });
  * 
- * @remarks This middleware should be used after the `authenticate`, {@link checkUserPermission} and {@link checkTeamPermission} middlewares to ensure the user is authenticated and has access to the team.
+ * @remarks This middleware should be used after the `authenticate` and {@link checkTeamPermission} middlewares to ensure the user is authenticated and has access to the team.
  */
 function checkChannelPermission() {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -155,11 +156,11 @@ function checkChannelPermission() {
  * 
  * @example
  * // Usage in an Express route
- * app.get('/EXAMPLE_ROUTE', authenticate, checkUserPermission(Role.USER), checkTeamPermission(TeamRole.ADMIN), checkDirectMessagePermission(), (req, res) => {
+ * app.get('/EXAMPLE_ROUTE', authenticate, checkTeamPermission(TeamRole.ADMIN), checkDirectMessagePermission(), (req, res) => {
  *  res.send('You have permission to access this resource');
  * });
  * 
- * @remarks This middleware should be used after the `authenticate`, {@link checkUserPermission} and {@link checkTeamPermission} middlewares to ensure the user is authenticated and has access to the team.
+ * @remarks This middleware should be used after the `authenticate` and {@link checkTeamPermission} middlewares to ensure the user is authenticated and has access to the team.
  */
 function checkDirectMessagePermission() {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
