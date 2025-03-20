@@ -39,25 +39,33 @@ const Messaging: React.FC<MessagingProps> = ({
   
   const { theme } = useTheme();
   const token = localStorage.getItem("token");
-  const username = token ? (jwtDecode<any>(token)).username : "";
+  const username = token ? jwtDecode<any>(token).username : "";
 
+  // Helper functions
   const getSelectionTitle = () => {
     if (!selection) return "No selection";
-    
-    if (selection.type === 'channel') {
-      return `Channel: ${selection.channelName}`;
-    } else {
-      return `Direct Messages with ${selection.username}`;
+    return selection.type === 'channel'
+      ? `Channel: ${selection.channelName}`
+      : `Direct Messages with ${selection.username}`;
+  };
+
+  const getStyledComponent = useCallback((baseStyle: any) => ({
+    ...baseStyle,
+    ...(theme === "dark" && baseStyle["&.dark-mode"])
+  }), [theme]);
+
+  const clearHeartbeat = () => {
+    if (heartbeatInterval.current) {
+      clearInterval(heartbeatInterval.current);
+      heartbeatInterval.current = null;
     }
   };
 
   // WebSocket functionality
   const connectWebSocket = useCallback(() => {
-    if (!token) {
-      console.error("No token available");
-      return;
-    }
+    if (!token || !selection) return;
 
+    // Close existing connection if any
     if (ws.current) {
       ws.current.close(1000, "Creating new connection");
       ws.current = null;
@@ -74,41 +82,19 @@ const Messaging: React.FC<MessagingProps> = ({
       setRetryCount(0);
       
       // Set up heartbeat
-      if (heartbeatInterval.current) {
-        clearInterval(heartbeatInterval.current);
-      }
-      
+      clearHeartbeat();
       heartbeatInterval.current = setInterval(() => {
         if (ws.current?.readyState === WebSocket.OPEN) {
-          ws.current.send(JSON.stringify({ 
-            type: "ping", 
-            selection: selection
-          }));
+          ws.current.send(JSON.stringify({ type: "ping", selection }));
         }
       }, HEARTBEAT_INTERVAL_MS);
       
-      // Join appropriate channel/DM based on selection
-      if (selection) {
-        if (selection.type === 'channel') {
-          ws.current?.send(JSON.stringify({ 
-            type: "join", 
-            teamName: selection.teamName, 
-            channelName: selection.channelName 
-          }));
-        } else {
-          ws.current?.send(JSON.stringify({ 
-            type: "joinDirectMessage", 
-            teamName: selection.teamName, 
-            username: selection.username 
-          }));
-        }
-      }
+      // Join appropriate channel/DM
+      sendJoinMessage(selection);
       
       // Send queued messages
       if (messageQueue.length > 0) {
-        messageQueue.forEach(msg => {
-          ws.current?.send(JSON.stringify(msg));
-        });
+        messageQueue.forEach(msg => ws.current?.send(JSON.stringify(msg)));
         setMessageQueue([]);
       }
     };
@@ -141,27 +127,26 @@ const Messaging: React.FC<MessagingProps> = ({
     ws.current.onclose = (event) => {
       if (!isMounted.current) return;
       
-      console.log("WebSocket connection closed with code:", event.code, "reason:", event.reason);
+      console.log("WebSocket connection closed:", event.code, event.reason);
       setConnectionStatus('disconnected');
       ws.current = null;
+      clearHeartbeat();
       
-      if (heartbeatInterval.current) {
-        clearInterval(heartbeatInterval.current);
-      }
-      
-      // Don't reconnect if authentication failed
+      // Don't reconnect in these cases
       if (event.code === 1008) {
         console.error("Authentication failed, not reconnecting");
         return;
       }
+
+      const intentionalClosureReasons = [
+        "Creating new connection",
+        "Component unmounting",
+        "User initiated disconnect",
+        "Switching channels/DMs",
+        "No selection"
+      ];
       
-      // Intentional closure - don't reconnect
-      if (event.code === 1000 && (
-          event.reason === "Creating new connection" || 
-          event.reason === "Component unmounting" ||
-          event.reason === "User initiated disconnect" ||
-          event.reason === "Switching channels/DMs"
-        )) {
+      if (event.code === 1000 && intentionalClosureReasons.includes(event.reason)) {
         console.log("Clean WebSocket closure, no reconnection needed");
         return;
       }
@@ -182,6 +167,26 @@ const Messaging: React.FC<MessagingProps> = ({
     };
   }, [token, selection, messageQueue, retryCount]);
 
+  const sendJoinMessage = (sel: Selection) => {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) return;
+
+    if (!sel) return;
+
+    if (sel.type === 'channel') {
+      ws.current.send(JSON.stringify({ 
+        type: "join", 
+        teamName: sel.teamName, 
+        channelName: sel.channelName 
+      }));
+    } else if (sel.type === 'directMessage') {
+      ws.current.send(JSON.stringify({ 
+        type: "joinDirectMessage", 
+        teamName: sel.teamName, 
+        username: sel.username 
+      }));
+    }
+  };
+
   const sendMessage = useCallback((messageData: any) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(messageData));
@@ -193,33 +198,25 @@ const Messaging: React.FC<MessagingProps> = ({
   }, []);
 
   const handleSendMessage = () => {
-    if (!message.trim() || !selection) {
-      return;
-    }
+    if (!message.trim() || !selection) return;
 
-    let newMessage;
-    
-    if (selection.type === 'directMessage') {
-      newMessage = { 
-        type: 'directMessage', 
-        text: message, 
-        username, 
-        teamName: selection.teamName 
-      };
-    } else {
-      newMessage = { 
-        type: 'message', 
-        text: message, 
-        username, 
-        teamName: selection.teamName, 
-        channelName: selection.channelName 
-      };
-    }
+    const newMessage = selection.type === 'directMessage' 
+      ? { 
+          type: 'directMessage', 
+          text: message, 
+          username, 
+          teamName: selection.teamName 
+        }
+      : { 
+          type: 'message', 
+          text: message, 
+          username, 
+          teamName: selection.teamName, 
+          channelName: selection.channelName 
+        };
 
     const sent = sendMessage(newMessage);
-    if (sent) {
-      setMessage("");
-    }
+    if (sent) setMessage("");
   };
 
   const fetchMessages = useCallback(async () => {
@@ -229,40 +226,35 @@ const Messaging: React.FC<MessagingProps> = ({
     }
 
     try {
+      let fetchedMessages;
+      
       if (selection.type === 'directMessage') {
         const response = await getDirectMessages(selection.teamName, selection.username);
         if (!isMounted.current) return;
-        
-        setMessages(response.directMessages.map((msg: any) => ({
-          _id: msg._id,
-          text: msg.text,
-          username: msg.username,
-          createdAt: new Date(msg.createdAt),
-        })));
+        fetchedMessages = response.directMessages;
       } else {
-        const channelMessages = await getMessages(selection.teamName, selection.channelName);
+        fetchedMessages = await getMessages(selection.teamName, selection.channelName);
         if (!isMounted.current) return;
-        
-        setMessages(channelMessages.map((msg: any) => ({
-          _id: msg._id,
-          text: msg.text,
-          username: msg.username,
-          createdAt: new Date(msg.createdAt),
-        })));
       }
+      
+      setMessages(fetchedMessages.map((msg: any) => ({
+        _id: msg._id,
+        text: msg.text,
+        username: msg.username,
+        createdAt: new Date(msg.createdAt),
+      })));
     } catch (err) {
       console.error("Failed to fetch messages", err);
     }
   }, [selection]);
 
+  // UI event handlers
   const handleDeleteMessage = async () => {
-    if (!contextMenu.selected || !selection || selection.type !== 'channel') {
-      return;
-    }
+    if (!contextMenu.selected || !selection || selection.type !== 'channel') return;
     
     try {
       await deleteMessage(selection.teamName, selection.channelName, contextMenu.selected);
-      setMessages((prevMessages) => prevMessages.filter((msg) => msg._id !== contextMenu.selected));
+      setMessages(prev => prev.filter(msg => msg._id !== contextMenu.selected));
       setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
     } catch (err) {
       console.error("Failed to delete message", err);
@@ -281,12 +273,9 @@ const Messaging: React.FC<MessagingProps> = ({
   // Effects
   useEffect(() => {
     isMounted.current = true;
-    
     return () => {
       isMounted.current = false;
-      if (heartbeatInterval.current) {
-        clearInterval(heartbeatInterval.current);
-      }
+      clearHeartbeat();
     };
   }, []);
 
@@ -294,24 +283,19 @@ const Messaging: React.FC<MessagingProps> = ({
     fetchMessages();
   }, [fetchMessages]);
 
-  // Initial WebSocket setup or close when selection changes completely
+  // WebSocket lifecycle management
   useEffect(() => {
-    // Connect only when we have necessary values
     if (token && selection) {
-      // Check if we need to initialize or reconnect
       if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
         connectWebSocket();
       }
     } else if (!selection && ws.current) {
-      // Close connection if selection becomes empty
       ws.current.close(1000, "No selection");
       ws.current = null;
     }
   
     return () => {
-      if (heartbeatInterval.current) {
-        clearInterval(heartbeatInterval.current);
-      }
+      clearHeartbeat();
       if (ws.current) {
         ws.current.close(1000, "Component unmounting");
         ws.current = null;
@@ -319,49 +303,29 @@ const Messaging: React.FC<MessagingProps> = ({
     };
   }, [token, selection, connectWebSocket]);
 
-  // Handle channel/DM switching when WebSocket is already open
+  // Handle channel/DM switching with existing connection
   useEffect(() => {
-    // Skip if no selection or WebSocket isn't open
-    if (!selection || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
-      return;
-    }
+    if (!selection || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
     
-    // Save current selection to ref to avoid infinite loops
     const prevSelection = currentSelection.current;
     currentSelection.current = selection;
     
-    // Skip initial setup
-    if (!prevSelection) {
-      return;
-    }
+    if (!prevSelection) return;
     
-    // Check if selection has meaningfully changed
     const hasSelectionChanged = 
-      (prevSelection.type !== selection.type) ||
-      (selection.type === 'channel' && prevSelection.type === 'channel' && 
+      prevSelection.type !== selection.type ||
+      (selection.type === 'channel' && 
+       prevSelection.type === 'channel' && 
        (prevSelection.teamName !== selection.teamName || 
         prevSelection.channelName !== selection.channelName)) ||
-      (selection.type === 'directMessage' && prevSelection.type === 'directMessage' && 
+      (selection.type === 'directMessage' && 
+       prevSelection.type === 'directMessage' && 
        (prevSelection.teamName !== selection.teamName || 
         prevSelection.username !== selection.username));
     
-    // If selection has changed, send join message
     if (hasSelectionChanged) {
       console.log("Selection changed, sending join message");
-      
-      if (selection.type === 'channel') {
-        ws.current.send(JSON.stringify({ 
-          type: "join", 
-          teamName: selection.teamName, 
-          channelName: selection.channelName 
-        }));
-      } else {
-        ws.current.send(JSON.stringify({ 
-          type: "joinDirectMessage", 
-          teamName: selection.teamName, 
-          username: selection.username 
-        }));
-      }
+      sendJoinMessage(selection);
     }
   }, [selection]);
 
@@ -369,11 +333,6 @@ const Messaging: React.FC<MessagingProps> = ({
   const menuItems = [
     { label: 'Delete Message', onClick: handleDeleteMessage },
   ];
-
-  const getStyledComponent = (baseStyle: any) => ({
-    ...baseStyle,
-    ...(theme === "dark" && baseStyle["&.dark-mode"])
-  });
 
   return (
     <div style={getStyledComponent(styles.teamMessages)}>
