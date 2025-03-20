@@ -189,10 +189,6 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
-      <button className="settings-button edit-profile" onClick={() => navigate("/edit-profile")}>
-        Edit Profile
-      </button>
-
       <button className="settings-button save" onClick={handleSave}>
         Save Changes
       </button>
