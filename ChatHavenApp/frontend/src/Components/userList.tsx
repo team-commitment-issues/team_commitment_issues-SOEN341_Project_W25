@@ -9,6 +9,7 @@ import { useTheme } from "../Context/ThemeContext";
 interface User {
   username: string;
   onlineStatus: "online" | "offline" | "away";
+  lastSeen: string;
 }
 
 interface UserListProps {
@@ -148,20 +149,33 @@ const UserList: React.FC<UserListProps> = ({
                   : "normal",
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px",
               }}
               onClick={() => toggleUserSelection(user.username)}
             >
+              <div style={{ display: "flex", alignItems: "center" }}></div>
               <span
                 style={{
-                  ...styles.statusIndicator,
-                  ...(user.onlineStatus === "online"
-                    ? styles.online
-                    : user.onlineStatus === "away"
-                    ? styles.away
-                    : styles.offline),
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  marginRight: 8,
+                  backgroundColor:
+                    user.onlineStatus === "online"
+                      ? "green"
+                      : user.onlineStatus === "away"
+                      ? "orange"
+                      : "gray",
                 }}
               />
               {user.username}
+
+              <span style={{ fontSize: "12px", color: "#606770" }}>
+                {user.onlineStatus === "online"
+                  ? "Online"
+                  : `Last seen: ${user.lastSeen}`}
+              </span>
             </li>
           ))}
         </ul>
