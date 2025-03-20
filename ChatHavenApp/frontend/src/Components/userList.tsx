@@ -8,6 +8,7 @@ import { useTheme } from "../Context/ThemeContext";
 
 interface User {
   username: string;
+  onlineStatus: "online" | "offline" | "away";
 }
 
 interface UserListProps {
@@ -19,7 +20,12 @@ interface UserListProps {
   setSelectedChannel: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   contextMenu: { visible: boolean; x: number; y: number; selected: string };
-  setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string }) => void;
+  setContextMenu: (arg: {
+    visible: boolean;
+    x: number;
+    y: number;
+    selected: string;
+  }) => void;
   handleRefresh: () => void;
 }
 
@@ -70,7 +76,12 @@ const UserList: React.FC<UserListProps> = ({
 
   const handleContextMenu = (event: any, username: string) => {
     event.preventDefault();
-    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: username });
+    setContextMenu({
+      visible: true,
+      x: event.clientX,
+      y: event.clientY,
+      selected: username,
+    });
   };
 
   const handleCloseContextMenu = () => {
@@ -78,34 +89,78 @@ const UserList: React.FC<UserListProps> = ({
   };
 
   const menuItems = [
-    { label: 'Add User to Selected Team', onClick: async () => selectedTeam && await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER").then(handleRefresh) },
-    { label: 'Add User to Selected Channel', onClick: async () => selectedTeam && selectedChannel && await addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel).then(handleRefresh) },
+    {
+      label: "Add User to Selected Team",
+      onClick: async () =>
+        selectedTeam &&
+        (await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER").then(
+          handleRefresh
+        )),
+    },
+    {
+      label: "Add User to Selected Channel",
+      onClick: async () =>
+        selectedTeam &&
+        selectedChannel &&
+        (await addUserToChannel(
+          contextMenu.selected,
+          selectedTeam,
+          selectedChannel
+        ).then(handleRefresh)),
+    },
   ];
 
   return (
-    <div style={{ ...styles.userList, ...(theme === "dark" && styles.userList["&.dark-mode"]) }}>
+    <div
+      style={{
+        ...styles.userList,
+        ...(theme === "dark" && styles.userList["&.dark-mode"]),
+      }}
+    >
       <h3
         onClick={() => setCollapsed(!collapsed)}
-        style={{ ...styles.listHeader, ...(theme === "dark" && styles.listHeader["&.dark-mode"]) }}
+        style={{
+          ...styles.listHeader,
+          ...(theme === "dark" && styles.listHeader["&.dark-mode"]),
+        }}
       >
         Users {collapsed ? "▲" : "▼"}
       </h3>
 
       {!collapsed && (
-        <ul style={{ ...styles.listContainer, ...(theme === "dark" && styles.listContainer["&.dark-mode"]) }}>
+        <ul
+          style={{
+            ...styles.listContainer,
+            ...(theme === "dark" && styles.listContainer["&.dark-mode"]),
+          }}
+        >
           {users.map((user) => (
             <li
               key={user.username}
               onContextMenu={(e) => handleContextMenu(e, user.username)}
-              value={user.username}
               style={{
                 ...styles.listItem,
-                backgroundColor: selectedUsers.includes(user.username) ? "#D3E3FC" : "transparent",
-                fontWeight: selectedUsers.includes(user.username) ? "bold" : "normal",
-                ...(theme === "dark" && styles.listItem["&.dark-mode:hover"]),
+                backgroundColor: selectedUsers.includes(user.username)
+                  ? "#D3E3FC"
+                  : "transparent",
+                fontWeight: selectedUsers.includes(user.username)
+                  ? "bold"
+                  : "normal",
+                display: "flex",
+                alignItems: "center",
               }}
               onClick={() => toggleUserSelection(user.username)}
             >
+              <span
+                style={{
+                  ...styles.statusIndicator,
+                  ...(user.onlineStatus === "online"
+                    ? styles.online
+                    : user.onlineStatus === "away"
+                    ? styles.away
+                    : styles.offline),
+                }}
+              />
               {user.username}
             </li>
           ))}

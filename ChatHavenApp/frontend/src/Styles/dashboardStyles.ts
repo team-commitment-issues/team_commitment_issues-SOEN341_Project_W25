@@ -665,6 +665,16 @@ const styles = {
       color: "#e0e0e0",
     },
   },
+  statusIndicator: {
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%",
+    display: "inline-block",
+    marginRight: "8px",
+  },
+  online: { backgroundColor: "green" },
+  away: { backgroundColor: "orange" },
+  offline: { backgroundColor: "gray" },
 };
 
 export default styles;
