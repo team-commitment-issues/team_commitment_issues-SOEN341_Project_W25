@@ -125,11 +125,18 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
             if (!ws.directMessage) throw new Error('Direct message not found');
 
             if (messageType === 'directMessage') {
-                await DirectMessageService.sendDirectMessage(parsedMessage.text, user.username, directMessage._id as Types.ObjectId);
+                const message = await DirectMessageService.sendDirectMessage(parsedMessage.text, user.username, directMessage._id as Types.ObjectId);
+                const formattedMessage = {
+                    type: 'directMessage',
+                    _id: message._id,
+                    text: message.text,
+                    username: message.username,
+                    createdAt: message.createdAt,
+                };
                 wss.clients.forEach((client) => {
                     const extendedClient = client as ExtendedWebSocket;
                     if (extendedClient.readyState === ws.OPEN && extendedClient.directMessage === ws.directMessage) {
-                        extendedClient.send(JSON.stringify(parsedMessage));
+                        extendedClient.send(JSON.stringify(formattedMessage));
                     }
                 });
             } else {
@@ -141,11 +148,23 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
         if (messageType === 'join') {
             ws.send(JSON.stringify({ type: 'join', teamName: ws.team.name, channelName: ws.channel.name }));
         } else if (messageType === 'message') {
-            ChannelService.sendMessage(ws.channel._id as Types.ObjectId, ws.teamMember._id as Types.ObjectId, parsedMessage.text);
+            let message;
+            if (ws.user.role === 'SUPER_ADMIN') {
+                message = await ChannelService.sendMessage(ws.channel._id as Types.ObjectId, ws.user.username as string, parsedMessage.text);
+            } else {
+                message = await ChannelService.sendMessage(ws.channel._id as Types.ObjectId, ws.teamMember._id as Types.ObjectId, parsedMessage.text);
+            }
+            const formattedMessage = {
+                type: 'message',
+                _id: message._id as string,
+                text: message.text as string,
+                username: message.username as string,
+                createdAt: message.createdAt as Date,
+            };
             wss.clients.forEach((client) => {
                 const extendedClient = client as ExtendedWebSocket;
                 if (extendedClient.readyState === ws.OPEN && extendedClient.channel === ws.channel && extendedClient.team === ws.team) {
-                    extendedClient.send(JSON.stringify(parsedMessage));
+                    extendedClient.send(JSON.stringify(formattedMessage));
                 }
             });
         }

@@ -90,7 +90,8 @@ class ChannelService {
             const message = new Message({ text, username: teamMember, channel, createdAt: new Date() });
             await message.save();
             selectedChannel.messages.push(message._id as Schema.Types.ObjectId);
-            return await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
+            await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
+            return message;
         }
         const member = await TeamMember.findById(teamMember);
         if (!member) {
@@ -104,7 +105,8 @@ class ChannelService {
         await message.save();
 
         selectedChannel.messages.push(message._id as Schema.Types.ObjectId);
-        return await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
+        await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });
+        return message;
     }
 
     static async deleteMessage(channel: Types.ObjectId, messageId: Schema.Types.ObjectId): Promise<any> {

@@ -1,7 +1,6 @@
 {
     "jest.runMode": {
         "type": "watch",
-        "onSave": "test-file",
         "jest.showCoverageOnLoad": true,
         "jest.showInlineError": true
     },

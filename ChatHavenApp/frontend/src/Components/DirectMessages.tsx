@@ -49,7 +49,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
       ws.current.send(JSON.stringify(newMessage));
       setMessage("");
     } else {
-      const newMessage = { type: 'message', text: message, username, teamName: selectedTeam, channelName: selectedChannel, createdAt: new Date() };
+      const newMessage = { type: 'message', text: message, username, teamName: selectedTeam, channelName: selectedChannel };
       ws.current.send(JSON.stringify(newMessage));
       setMessage("");
     }
@@ -129,7 +129,14 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
 
       ws.current.onmessage = (event) => {
         const newMessage = JSON.parse(event.data);
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
+        if (newMessage.type === "message" || newMessage.type === "directMessage") {
+          setMessages((prevMessages) => [...prevMessages, {
+            _id: newMessage._id as string,
+            text: newMessage.text as string,
+            username: newMessage.username as string,
+            createdAt: new Date(newMessage.createdAt),
+          }]);
+        }
       };
 
       ws.current.onclose = () => {
@@ -196,6 +203,7 @@ const TeamMessages: React.FC<TeamChannelProps> = ({ selectedTeam, selectedChanne
           placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
           style={{ ...styles.inputField, ...(theme === "dark" && styles.inputField["&.dark-mode"]) }}
         />
         <button onClick={handleSendMessage} style={{ ...styles.sendButton, ...(theme === "dark" && styles.sendButton["&.dark-mode"]) }}>
