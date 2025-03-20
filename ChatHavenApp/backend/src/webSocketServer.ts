@@ -12,11 +12,11 @@ import { Role } from './enums';
 
 interface ExtendedWebSocket extends WebSocket {
     team: ITeam;
-    channel: IChannel;
+    channel?: IChannel;
     user: IUser;
-    teamMember: ITeamMember;
-    receiver: IUser;
-    directMessage: IDirectMessage;
+    teamMember?: ITeamMember;
+    receiver?: IUser;
+    directMessage?: IDirectMessage;
 }
 
 interface DecodedToken {
@@ -24,7 +24,7 @@ interface DecodedToken {
     email: string;
 }
 
-const DEBUG = false;
+const DEBUG = true;
 
 const verifyToken = async (token: string) => {
     try {
@@ -33,7 +33,9 @@ const verifyToken = async (token: string) => {
         if (!user) throw new Error('User not found');
         return user;
     } catch (err) {
-        throw new Error('Invalid token');
+        const error = new Error('Invalid token');
+        error.message = 'InvalidTokenError';
+        throw error;
     }
 };
 
@@ -54,8 +56,13 @@ const findTeamAndChannel = async (teamName: string, channelName: string, userId:
 };
 
 const authorizeUserForChannel = async (ws: ExtendedWebSocket, parsedMessage: any, token: string) => {
-    const user = await verifyToken(token);
-    ws.user = user;
+    let user;
+    try {
+        user = await verifyToken(token);
+        ws.user = user;
+    } catch (err) {
+        throw err;
+    }
 
     const { team, teamMember, channel } = await findTeamAndChannel(parsedMessage.teamName, parsedMessage.channelName, user._id as Schema.Types.ObjectId, user.role);
     ws.team = team;
@@ -76,12 +83,12 @@ const authorizeUserForChannel = async (ws: ExtendedWebSocket, parsedMessage: any
                 teamMemberId: teamMember?._id
             });
         }
-        ws.close(1008, 'Unauthorized');
+        ws.close(3000, 'Unauthorized');
         throw new Error('Unauthorized');
     }
 };
 
-const findTeamAndReceiverAndDirectMessage = async (userId: Schema.Types.ObjectId, teamName: string, username: string) => {
+const findOrCreateDirectMessage = async (userId: Schema.Types.ObjectId, teamName: string, username: string) => {
     const team = await Team.findOne({ name: teamName });
     if (!team) throw new Error(`Team with name "${teamName}" not found`);
 
@@ -99,8 +106,18 @@ const findTeamAndReceiverAndDirectMessage = async (userId: Schema.Types.ObjectId
         if (!teamMember) throw new Error(`Team member with username "${username}" not found in team "${teamName}"`);
     }
 
-    const directMessage = await DirectMessage.findOne({ users: { $all: [user1._id, user2._id] } });
-    if (!directMessage) throw new Error(`Direct message between users "${user1.username}" and "${user2.username}" not found`);
+    // Try to find an existing direct message or create a new one
+    let directMessage = await DirectMessage.findOne({ 
+        users: { $all: [user1._id, user2._id] }
+    });
+    
+    if (!directMessage) {
+        // Create a new direct message
+        if (DEBUG) {
+            console.log(`Creating new direct message between ${user1.username} and ${user2.username}`);
+        }
+        directMessage = await DirectMessageService.createDirectMessage(user1.username, user2._id as Schema.Types.ObjectId, team._id as Schema.Types.ObjectId);
+    }
 
     return { team, receiver: user2, directMessage };
 };
@@ -117,13 +134,11 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
             }
 
             const userId = user._id as Schema.Types.ObjectId;
-            const { team, receiver, directMessage } = await findTeamAndReceiverAndDirectMessage(userId, parsedMessage.teamName, parsedMessage.username);
+            const { team, receiver, directMessage } = await findOrCreateDirectMessage(userId, parsedMessage.teamName, parsedMessage.username);
             ws.team = team;
             ws.receiver = receiver;
             ws.directMessage = directMessage;
-            if (!ws.team || !ws.receiver) throw new Error('Team or receiver not found');
-            if (!ws.directMessage) throw new Error('Direct message not found');
-
+            
             if (messageType === 'directMessage') {
                 const message = await DirectMessageService.sendDirectMessage(parsedMessage.text, user.username, directMessage._id as Types.ObjectId);
                 const formattedMessage = {
@@ -139,20 +154,34 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
                         extendedClient.send(JSON.stringify(formattedMessage));
                     }
                 });
-            } else {
-                ws.send(JSON.stringify({ type: 'joinDirectMessage', teamName: team.name, username: parsedMessage.username }));
-                console.log(`User ${user.username} joined direct message with ${parsedMessage.username}`);
+            } else if (messageType === 'joinDirectMessage') {
+                ws.send(JSON.stringify({ 
+                    type: 'joinDirectMessage', 
+                    teamName: team.name, 
+                    username: parsedMessage.username,
+                    directMessageId: directMessage._id
+                }));
+                if (DEBUG) {
+                    console.log(`User ${user.username} joined direct message with ${parsedMessage.username}`);
+                }
             }
+        } else if (messageType === 'ping') {
+            // Handle ping messages for keeping the connection alive
+            ws.send(JSON.stringify({ type: 'pong' }));
         }
 
         if (messageType === 'join') {
-            ws.send(JSON.stringify({ type: 'join', teamName: ws.team.name, channelName: ws.channel.name }));
+            ws.send(JSON.stringify({ type: 'join', teamName: ws.team.name, channelName: ws.channel?.name }));
         } else if (messageType === 'message') {
+            if (!ws.channel) {
+                throw new Error('No channel selected');
+            }
+            
             let message;
             if (ws.user.role === 'SUPER_ADMIN') {
                 message = await ChannelService.sendMessage(ws.channel._id as Types.ObjectId, ws.user.username as string, parsedMessage.text);
             } else {
-                message = await ChannelService.sendMessage(ws.channel._id as Types.ObjectId, ws.teamMember._id as Types.ObjectId, parsedMessage.text);
+                message = await ChannelService.sendMessage(ws.channel._id as Types.ObjectId, ws.teamMember?._id as Types.ObjectId, parsedMessage.text);
             }
             const formattedMessage = {
                 type: 'message',
@@ -174,7 +203,6 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
             console.error(`Error handling ${messageType}: ${errorMessage}`);
         }
         ws.send(JSON.stringify({ type: 'error', message: errorMessage }));
-        ws.close(1008, errorMessage);
     }
 };
 
@@ -191,9 +219,22 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             if (DEBUG) {
                 console.error('Server: No token provided');
             }
-            ws.close(1008, 'No token provided');
+            ws.close(1000, 'No token provided');
             return;
         }
+
+        // Verify token immediately to catch authentication issues
+        verifyToken(token).then(user => {
+            if (DEBUG) {
+                console.log(`Server: User ${user.username} authenticated successfully`);
+            }
+        }).catch(err => {
+            if (DEBUG) {
+                console.error('Server: Authentication error:', err.message);
+            }
+            ws.send(JSON.stringify({ type: 'error', message: 'Invalid token' }));
+            ws.close(1000, 'Invalid token');
+        });
 
         ws.on('message', async (message) => {
             try {
@@ -202,20 +243,30 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
                     console.log('Server: Received message:', parsedMessage);
                 }
 
-                if (['join', 'message', 'directMessage', 'joinDirectMessage'].includes(parsedMessage.type)) {
+                if (['join', 'message', 'directMessage', 'joinDirectMessage', 'ping'].includes(parsedMessage.type)) {
                     await handleWebSocketMessage(ws, parsedMessage, wss, token, parsedMessage.type);
+                } else {
+                    if (DEBUG) {
+                        console.error('Server: Unknown message type:', parsedMessage.type);
+                    }
                 }
             } catch (error) {
                 if (DEBUG) {
                     console.error('Server: WebSocket message handling error:', error);
                 }
-                ws.close(1011, 'Message handling error');
+                ws.send(JSON.stringify({ type: 'error', message: 'Message handling error' }));
             }
         });
 
-        ws.on('close', () => {
+        ws.on('close', (code, reason) => {
             if (DEBUG) {
-                console.log('Server: WebSocket connection closed');
+                console.log(`Server: WebSocket connection closed with code ${code}, reason: ${reason}`);
+            }
+        });
+        
+        ws.on('error', (error) => {
+            if (DEBUG) {
+                console.error('Server: WebSocket error:', error);
             }
         });
     });
