@@ -1,4 +1,3 @@
-/* ✅ Ensure Full Page Height & Center Content */
 .profile-container {
     min-height: 100vh; /* Ensures the container takes the full screen height */
     display: flex;
@@ -9,7 +8,6 @@
     text-align: center;
   }
   
-  /* ✅ Adjust Profile Boxes for Vertical Centering */
   .profile-boxes {
     display: flex;
     flex-wrap: wrap;
@@ -19,7 +17,6 @@
     margin-bottom: 20px;
   }
   
-  /* ✅ Adjust Profile Cards to Match Centered Layout */
   .profile-card {
     background: white;
     padding: 20px;
@@ -33,7 +30,6 @@
     text-align: center;
   }
   
-  /* ✅ Ensure Input Fields Take Full Width */
   .profile-input-container {
     width: 100%;
   }
@@ -48,7 +44,6 @@
     margin-top: 10px; /* Adds spacing between input and title */
   }
   
-  /* ✅ Fix Profile Picture Alignment */
   .profile-picture-container {
     display: flex;
     flex-direction: column;
@@ -56,7 +51,6 @@
     justify-content: center;
   }
   
-  /* ✅ Profile Picture Styling */
   .profile-preview {
     width: 100px;
     height: 100px;
@@ -65,12 +59,10 @@
     margin-bottom: 10px;
   }
   
-  /* ✅ File Upload Input */
   .file-input {
     margin-top: 10px;
   }
   
-  /* ✅ Buttons */
   .profile-button {
     padding: 10px;
     width: 200px;
@@ -90,21 +82,18 @@
     color: black;
   }
   
-  /* ✅ Apply Dark Mode to Full Page */
   .dark-mode {
     background-color: #121212;
     color: white;
     min-height: 100vh; /* Ensures full screen height is covered */
   }
   
-  /* ✅ Ensure Profile Cards Match Dark Mode */
   .dark-mode .profile-card {
     background: #1e1e1e;
     color: white;
     border: 1px solid #666;
   }
   
-  /* ✅ Dark Mode for Inputs */
   .dark-mode .profile-input {
     background: #333;
     color: white;
