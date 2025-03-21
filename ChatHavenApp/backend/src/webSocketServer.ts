@@ -35,9 +35,7 @@ const verifyToken = async (token: string) => {
         if (!user) throw new Error('User not found');
         return user;
     } catch (err) {
-        const error = new Error('Invalid token');
-        error.message = 'InvalidTokenError';
-        throw error;
+        throw new Error('Invalid token');
     }
 };
 
@@ -85,8 +83,10 @@ const authorizeUserForChannel = async (ws: ExtendedWebSocket, parsedMessage: any
                 teamMemberId: teamMember?._id
             });
         }
-        ws.close(3000, 'Unauthorized');
-        throw new Error('Unauthorized');
+        ws.send(JSON.stringify({ type: 'error', message: 'Unauthorized access' }), () => {
+            ws.close(3000, 'Unauthorized');
+        });
+        throw new Error('Unauthorized access');
     }
 };
 
@@ -375,8 +375,9 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             if (DEBUG) {
                 console.error('Server: Authentication error:', err.message);
             }
-            ws.send(JSON.stringify({ type: 'error', message: 'Invalid token' }));
-            ws.close(1000, 'Invalid token');
+            ws.send(JSON.stringify({ type: 'error', message: 'Invalid token' }), () => {
+                ws.close(1000, 'Invalid token');
+            });
         });
 
         ws.on('message', async (message) => {
