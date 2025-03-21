@@ -38,7 +38,7 @@ class UserService {
     }
 
     static async updateUsername(oldUsername: string, newUsername: string, password: string): Promise<any> {
-        const user = await User.findOne({ username: oldUsername });
+        const user = await User.findOne({ username: { $eq: oldUsername } });
         if (!user) {
             throw new Error('User not found');
         }
