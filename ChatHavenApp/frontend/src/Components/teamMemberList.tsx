@@ -42,12 +42,10 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const { theme } = useTheme();
   const { refreshStatuses, subscribeToTeamStatuses, subscribeToChannelStatuses } = useOnlineStatus();
 
-  // Helper function to get the current channel from the selection
   const getCurrentChannel = () => {
     return selection?.type === 'channel' ? selection.channelName : null;
   };
 
-  // Helper function to set a DM selection
   const setSelectedDm = (username: string | null) => {
     if (username && selectedTeam) {
       setSelection({
@@ -86,7 +84,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
   useEffect(() => {
     fetchUsers();
-  }, [selection, selectedTeam, fetchUsers, refreshState]);
+  }, [selection, selectedTeam, refreshState, fetchUsers]);
 
   const toggleTeamMemberSelection = (user: string) => {
     setSelectedTeamMembers((previouslySelectedMembers) =>

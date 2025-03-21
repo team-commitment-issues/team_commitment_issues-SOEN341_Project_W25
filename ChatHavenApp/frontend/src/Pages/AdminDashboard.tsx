@@ -21,10 +21,8 @@ const AdminDashboard: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   
-  // Unified selection for channels and DMs
   const [selection, setSelection] = useState<Selection>(null);
   
-  // Context menu states
   const [usersContextMenu, setUsersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
   const [membersContextMenu, setMembersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
   const [messagesContextMenu, setMessagesContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
@@ -51,7 +49,6 @@ const AdminDashboard: React.FC = () => {
     }
   }
 
-  // Update team selection to also clear the selection
   const handleTeamChange = (teamName: string | null) => {
     setSelectedTeam(teamName);
     setSelection(null);
@@ -70,7 +67,6 @@ const AdminDashboard: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // When team changes, clear the selection
   useEffect(() => {
     setSelection(null);
   }, [selectedTeam]);

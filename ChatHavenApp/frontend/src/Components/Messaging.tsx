@@ -59,7 +59,6 @@ const Messaging: React.FC<MessagingProps> = ({
     if (selection.type === 'channel') {
       return `Channel: ${selection.channelName}`;
     } else {
-      // For direct messages, also show the online status
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>Direct Messages with {selection.username}</span>
@@ -85,7 +84,6 @@ const Messaging: React.FC<MessagingProps> = ({
     }
   };
 
-  // Typing indicator functions
   const sendTypingStatus = (isTyping: boolean) => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN || !selection) return;
     
@@ -129,11 +127,9 @@ const Messaging: React.FC<MessagingProps> = ({
     }, 3000);
   };
 
-  // WebSocket functionality
   const connectWebSocket = useCallback(() => {
     if (!token || !selection) return;
 
-    // Close existing connection if any
     if (ws.current) {
       ws.current.close(1000, "Creating new connection");
       ws.current = null;
@@ -161,10 +157,8 @@ const Messaging: React.FC<MessagingProps> = ({
         }
       }, HEARTBEAT_INTERVAL_MS);
       
-      // Join appropriate channel/DM
       sendJoinMessage(selection);
       
-      // Send queued messages
       if (messageQueue.length > 0) {
         messageQueue.forEach(msg => ws.current?.send(JSON.stringify(msg)));
         setMessageQueue([]);
@@ -177,7 +171,6 @@ const Messaging: React.FC<MessagingProps> = ({
       try {
         const data = JSON.parse(event.data) as WebSocketMessage;
         
-        // Handle different types of messages
         switch (data.type) {
           case "message":
           case "directMessage":
@@ -237,7 +230,6 @@ const Messaging: React.FC<MessagingProps> = ({
       ws.current = null;
       clearHeartbeat();
       
-      // Don't reconnect in these cases
       if (event.code === 1008) {
         console.error("Authentication failed, not reconnecting");
         return;
@@ -373,7 +365,6 @@ const Messaging: React.FC<MessagingProps> = ({
     }
   }, [selection]);
 
-  // UI event handlers
   const handleDeleteMessage = async () => {
     if (!contextMenu.selected || !selection || selection.type !== 'channel') return;
     
@@ -395,7 +386,6 @@ const Messaging: React.FC<MessagingProps> = ({
     setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
   };
   
-  // Effects
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -469,7 +459,6 @@ const Messaging: React.FC<MessagingProps> = ({
     }
   }, [isTyping, selection]);
 
-  // Context menu configuration
   const menuItems = [
     { label: 'Delete Message', onClick: handleDeleteMessage },
   ];

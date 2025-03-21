@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styles from "../Styles/dashboardStyles";
 import { getUsers } from "../Services/dashboardService";
 import ContextMenu from "./UI/ContextMenu";
@@ -38,26 +38,32 @@ const UserList: React.FC<UserListProps> = ({
   const [users, setUsers] = useState<User[]>([]);
   const { theme } = useTheme();
   const { refreshStatuses, getUserStatus } = useOnlineStatus();
+  const [hasPermission, setHasPermission] = useState(true);
 
-  // Helper function to get the current channel from selection
   const getCurrentChannel = () => {
     return selection?.type === 'channel' ? selection.channelName : null;
   };
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const usersList = await getUsers();
-        setUsers(usersList);
-        
-        await refreshStatuses(usersList.map((user: { username: any; }) => user.username));
-      } catch (err) {
+  const fetchUsers = useCallback(async () => {
+    if (!hasPermission) return;
+
+    try {
+      const usersList = await getUsers();
+      setUsers(usersList);
+      
+      await refreshStatuses(usersList.map((user: { username: any; }) => user.username));
+    } catch (err: any) {
+      if (err.message.includes('Forbidden')) {
+        setHasPermission(false);
+      } else {
         setUsers([]);
       }
-    };
+    }
+  }, [hasPermission, refreshStatuses]);
 
+  useEffect(() => {
     fetchUsers();
-  }, [refreshStatuses]);
+  }, [hasPermission, fetchUsers]);
 
   const toggleUserSelection = (user: string) => {
     setSelectedUsers((prevSelectedUsers) =>

@@ -15,13 +15,10 @@ const UserStatusIndicator: React.FC<UserStatusIndicatorProps> = ({
     const { getUserStatus } = useOnlineStatus();
     const userStatus = getUserStatus(username);
     
-    // Default to offline if no status is found
     const status = userStatus?.status || 'offline';
     
-    // Calculate size in pixels
     const sizeInPx = size === 'small' ? 8 : size === 'medium' ? 12 : 16;
     
-    // Get color based on status
     const getStatusColor = () => {
         switch (status) {
             case 'online': return '#4CAF50'; // Green

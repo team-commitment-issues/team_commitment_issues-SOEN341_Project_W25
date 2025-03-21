@@ -249,12 +249,10 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
             
             const { status } = parsedMessage;
             
-            // Validate status
             if (!['online', 'away', 'busy', 'offline'].includes(status)) {
                 throw new Error('Invalid status value');
             }
             
-            // Update user status
             const userStatus = await OnlineStatusService.setUserStatus(
                 user._id as Schema.Types.ObjectId, 
                 user.username, 

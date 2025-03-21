@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { getUserOnlineStatus, subscribeToOnlineStatus } from '../Services/onlineStatusService';
 
 type StatusType = 'online' | 'away' | 'busy' | 'offline';
@@ -36,19 +36,19 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
     const [onlineUsers, setOnlineUsers] = useState<Record<string, UserStatus>>({});
     const wsRef = useRef<WebSocket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-
-    const getUserStatus = (username: string): UserStatus | undefined => {
+    
+    const getUserStatus = useCallback((username: string): UserStatus | undefined => {
         return onlineUsers[username];
-    };
+    }, [onlineUsers]);
 
-    const updateUserStatus = (username: string, status: StatusType, lastSeen?: Date) => {
+    const updateUserStatus = useCallback((username: string, status: StatusType, lastSeen?: Date) => {
         setOnlineUsers(prev => ({
             ...prev,
             [username]: { username, status, lastSeen }
         }));
-    };
+    }, []);
 
-    const refreshStatuses = async (usernames: string[]) => {
+    const refreshStatuses = useCallback(async (usernames: string[]) => {
         if (!usernames.length) return;
         
         try {
@@ -66,14 +66,12 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         } catch (error) {
             console.error('Failed to refresh online statuses:', error);
         }
-    };
+    }, []);
 
-    // Setup WebSocket connection
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        // Create WebSocket connection (reuse existing socket from messaging if possible)
         const connectWebSocket = () => {
             if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
                 setIsConnected(true);
@@ -106,7 +104,7 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
             wsRef.current.onclose = () => {
                 console.log("Status WebSocket connection closed");
                 setIsConnected(false);
-                setTimeout(connectWebSocket, 5000); // Reconnect after 5 seconds
+                setTimeout(connectWebSocket, 5000);
             };
             
             wsRef.current.onerror = (error) => {
@@ -122,31 +120,38 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
                 wsRef.current = null;
             }
         };
-    }, []);
+    }, [updateUserStatus]);
     
-    // Subscribe to status updates for a team when connected
-    const subscribeToTeamStatuses = (teamName: string) => {
+    const subscribeToTeamStatuses = useCallback((teamName: string) => {
         if (wsRef.current && isConnected) {
             subscribeToOnlineStatus(wsRef.current, teamName);
         }
-    };
+    }, [isConnected]);
 
-    // Subscribe to status updates for a channel when connected
-    const subscribeToChannelStatuses = (teamName: string, channelName: string) => {
+    const subscribeToChannelStatuses = useCallback((teamName: string, channelName: string) => {
         if (wsRef.current && isConnected) {
             subscribeToOnlineStatus(wsRef.current, teamName, channelName);
         }
-    };
+    }, [isConnected]);
+
+    const contextValue = React.useMemo(() => ({
+        onlineUsers,
+        getUserStatus,
+        updateUserStatus,
+        refreshStatuses,
+        subscribeToTeamStatuses,
+        subscribeToChannelStatuses
+    }), [
+        onlineUsers,
+        getUserStatus,
+        updateUserStatus,
+        refreshStatuses,
+        subscribeToTeamStatuses,
+        subscribeToChannelStatuses
+    ]);
 
     return (
-        <OnlineStatusContext.Provider value={{
-            onlineUsers,
-            getUserStatus,
-            updateUserStatus,
-            refreshStatuses,
-            subscribeToTeamStatuses,
-            subscribeToChannelStatuses // Added to context
-        }}>
+        <OnlineStatusContext.Provider value={contextValue}>
             {children}
         </OnlineStatusContext.Provider>
     );
