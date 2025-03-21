@@ -11,9 +11,11 @@ import channelRoutes from './routes/channelRoutes';
 import superAdminRoutes from './routes/superAdminRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import directMessageRoutes from './routes/directMessageRoutes';
+import onlineStatusRoutes from './routes/onlineStatusRoutes';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 import { setupWebSocketServer } from './webSocketServer';
+import scheduleStatusCleanup from './statusCleanup';
 
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chathavendb';
@@ -42,12 +44,15 @@ backend.use('/channel', channelRoutes);
 backend.use('/superadmin', superAdminRoutes);
 backend.use('/dashboard', dashboardRoutes);
 backend.use('/directMessage', directMessageRoutes);
+backend.use('/onlineStatus', onlineStatusRoutes);
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(backend);
 
 server.listen(PORT, () => {
     console.log('Backend is listening on port ' + PORT);
+
+    scheduleStatusCleanup();
 });
 
 backend.get("*", (req, res) => {

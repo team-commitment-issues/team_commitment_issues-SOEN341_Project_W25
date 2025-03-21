@@ -5,7 +5,14 @@ import { getDirectMessages } from "../Services/directMessageService";
 import { jwtDecode } from "jwt-decode";
 import ContextMenu from "./UI/ContextMenu";
 import { useTheme } from "../Context/ThemeContext";
-import { Selection, ContextMenuState, ChatMessage } from "../types/shared";
+import { useOnlineStatus } from "../Context/OnlineStatusContext";
+import UserStatusIndicator from "./UI/UserStatusIndicator";
+import { 
+  Selection, 
+  ContextMenuState, 
+  ChatMessage, 
+  WebSocketMessage,
+} from "../types/shared";
 
 const MAX_RETRY_COUNT = 5;
 const BASE_RETRY_MS = 1000;
@@ -29,24 +36,41 @@ const Messaging: React.FC<MessagingProps> = ({
   const [message, setMessage] = useState<string>("");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [retryCount, setRetryCount] = useState(0);
-  const [messageQueue, setMessageQueue] = useState<any[]>([]);
+  const [messageQueue, setMessageQueue] = useState<WebSocketMessage[]>([]);
+  const [typingIndicator, setTypingIndicator] = useState<{username: string, isTyping: boolean} | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
   
   // Refs
   const ws = useRef<WebSocket | null>(null);
   const isMounted = useRef(true);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const currentSelection = useRef<Selection | null>(null);
+  const typingTimeout = useRef<NodeJS.Timeout | null>(null);
   
   const { theme } = useTheme();
+  const { updateUserStatus } = useOnlineStatus();
   const token = localStorage.getItem("token");
   const username = token ? jwtDecode<any>(token).username : "";
 
   // Helper functions
   const getSelectionTitle = () => {
     if (!selection) return "No selection";
-    return selection.type === 'channel'
-      ? `Channel: ${selection.channelName}`
-      : `Direct Messages with ${selection.username}`;
+    
+    if (selection.type === 'channel') {
+      return `Channel: ${selection.channelName}`;
+    } else {
+      // For direct messages, also show the online status
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>Direct Messages with {selection.username}</span>
+          <UserStatusIndicator 
+            username={selection.username} 
+            showStatusText={true} 
+            size="medium"
+          />
+        </div>
+      );
+    }
   };
 
   const getStyledComponent = useCallback((baseStyle: any) => ({
@@ -59,6 +83,50 @@ const Messaging: React.FC<MessagingProps> = ({
       clearInterval(heartbeatInterval.current);
       heartbeatInterval.current = null;
     }
+  };
+
+  // Typing indicator functions
+  const sendTypingStatus = (isTyping: boolean) => {
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN || !selection) return;
+    
+    const typingMessage: WebSocketMessage = selection.type === 'channel' 
+      ? { 
+          type: "typing", 
+          isTyping, 
+          username,
+          teamName: selection.teamName, 
+          channelName: selection.channelName 
+        }
+      : { 
+          type: "typing", 
+          isTyping, 
+          username,
+          teamName: selection.teamName, 
+          receiverUsername: selection.username 
+        };
+        
+    ws.current.send(JSON.stringify(typingMessage));
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value);
+    
+    // Send typing indicator
+    if (!isTyping) {
+      setIsTyping(true);
+      sendTypingStatus(true);
+    }
+    
+    // Clear previous timeout
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+    }
+    
+    // Set new timeout
+    typingTimeout.current = setTimeout(() => {
+      setIsTyping(false);
+      sendTypingStatus(false);
+    }, 3000);
   };
 
   // WebSocket functionality
@@ -85,7 +153,11 @@ const Messaging: React.FC<MessagingProps> = ({
       clearHeartbeat();
       heartbeatInterval.current = setInterval(() => {
         if (ws.current?.readyState === WebSocket.OPEN) {
-          ws.current.send(JSON.stringify({ type: "ping", selection }));
+          const pingMessage: WebSocketMessage = { 
+            type: "ping", 
+            selection 
+          };
+          ws.current.send(JSON.stringify(pingMessage));
         }
       }, HEARTBEAT_INTERVAL_MS);
       
@@ -103,21 +175,54 @@ const Messaging: React.FC<MessagingProps> = ({
       if (!isMounted.current) return;
       
       try {
-        const newMessage = JSON.parse(event.data);
-        if (newMessage.type === "message" || newMessage.type === "directMessage") {
-          setMessages((prevMessages) => {
-            // Avoid duplicate messages
-            if (prevMessages.some(msg => msg._id === newMessage._id)) {
-              return prevMessages;
-            }
+        const data = JSON.parse(event.data) as WebSocketMessage;
+        
+        // Handle different types of messages
+        switch (data.type) {
+          case "message":
+          case "directMessage":
+            setMessages((prevMessages) => {
+              // Avoid duplicate messages
+              if (prevMessages.some(msg => msg._id === data._id)) {
+                return prevMessages;
+              }
+              
+              return [...prevMessages, {
+                _id: data._id,
+                text: data.text,
+                username: data.username,
+                createdAt: new Date(data.createdAt),
+              }];
+            });
+            break;
             
-            return [...prevMessages, {
-              _id: newMessage._id,
-              text: newMessage.text,
-              username: newMessage.username,
-              createdAt: new Date(newMessage.createdAt),
-            }];
-          });
+          case "typing":
+            if (data.username !== username) {
+              setTypingIndicator({
+                username: data.username,
+                isTyping: data.isTyping
+              });
+              
+              // Clear typing indicator after 5 seconds if no update is received
+              if (data.isTyping) {
+                setTimeout(() => {
+                  setTypingIndicator(current => 
+                    current?.username === data.username ? null : current
+                  );
+                }, 5000);
+              } else {
+                setTypingIndicator(null);
+              }
+            }
+            break;
+            
+          case "statusUpdate":
+            updateUserStatus(
+              data.username, 
+              data.status, 
+              data.lastSeen ? new Date(data.lastSeen) : undefined
+            );
+            break;
         }
       } catch (error) {
         console.error("Failed to parse incoming message:", error);
@@ -165,29 +270,27 @@ const Messaging: React.FC<MessagingProps> = ({
       if (!isMounted.current) return;
       console.error("WebSocket error:", error);
     };
-  }, [token, selection, messageQueue, retryCount]);
+  }, [token, selection, messageQueue, retryCount, username, updateUserStatus]);
 
   const sendJoinMessage = (sel: Selection) => {
-    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) return;
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN || !sel) return;
 
-    if (!sel) return;
-
-    if (sel.type === 'channel') {
-      ws.current.send(JSON.stringify({ 
-        type: "join", 
-        teamName: sel.teamName, 
-        channelName: sel.channelName 
-      }));
-    } else if (sel.type === 'directMessage') {
-      ws.current.send(JSON.stringify({ 
-        type: "joinDirectMessage", 
-        teamName: sel.teamName, 
-        username: sel.username 
-      }));
-    }
+    const joinMessage: WebSocketMessage = sel.type === 'channel'
+      ? { 
+          type: "join", 
+          teamName: sel.teamName, 
+          channelName: sel.channelName 
+        }
+      : { 
+          type: "joinDirectMessage", 
+          teamName: sel.teamName, 
+          username: sel.username 
+        };
+        
+    ws.current.send(JSON.stringify(joinMessage));
   };
 
-  const sendMessage = useCallback((messageData: any) => {
+  const sendMessage = useCallback((messageData: WebSocketMessage) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(messageData));
       return true;
@@ -204,23 +307,41 @@ const Messaging: React.FC<MessagingProps> = ({
       return;
     }
     
-    const newMessage = selection.type === 'directMessage' 
+    const newMessage: WebSocketMessage = selection.type === 'directMessage' 
       ? { 
           type: 'directMessage', 
           text: message, 
           username, 
-          teamName: selection.teamName 
+          teamName: selection.teamName,
+          receiverUsername: selection.username,
+          _id: '', // Will be assigned by server
+          createdAt: new Date().toISOString()
         }
       : { 
           type: 'message', 
           text: message, 
           username, 
           teamName: selection.teamName, 
-          channelName: selection.channelName 
+          channelName: selection.channelName,
+          _id: '', // Will be assigned by server
+          createdAt: new Date().toISOString()
         };
 
     const sent = sendMessage(newMessage);
-    if (sent) setMessage("");
+    if (sent) {
+      setMessage("");
+      
+      // Clear typing indicator when sending a message
+      if (isTyping) {
+        setIsTyping(false);
+        sendTypingStatus(false);
+        
+        if (typingTimeout.current) {
+          clearTimeout(typingTimeout.current);
+          typingTimeout.current = null;
+        }
+      }
+    }
   };
 
   const fetchMessages = useCallback(async () => {
@@ -280,6 +401,11 @@ const Messaging: React.FC<MessagingProps> = ({
     return () => {
       isMounted.current = false;
       clearHeartbeat();
+      
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+        typingTimeout.current = null;
+      }
     };
   }, []);
 
@@ -330,8 +456,18 @@ const Messaging: React.FC<MessagingProps> = ({
     if (hasSelectionChanged) {
       console.log("Selection changed, sending join message");
       sendJoinMessage(selection);
+      
+      // Reset typing indicator when changing conversations
+      setTypingIndicator(null);
+      if (isTyping) {
+        setIsTyping(false);
+        if (typingTimeout.current) {
+          clearTimeout(typingTimeout.current);
+          typingTimeout.current = null;
+        }
+      }
     }
-  }, [selection]);
+  }, [isTyping, selection]);
 
   // Context menu configuration
   const menuItems = [
@@ -372,6 +508,19 @@ const Messaging: React.FC<MessagingProps> = ({
             </div>
           ))
         )}
+        
+        {/* Typing indicator */}
+        {typingIndicator?.isTyping && (
+          <div style={{
+            padding: '8px 12px',
+            margin: '4px 0',
+            fontSize: '14px',
+            color: '#555',
+            fontStyle: 'italic'
+          }}>
+            {typingIndicator.username} is typing...
+          </div>
+        )}
       </div>
       
       <div style={getStyledComponent(styles.inputBox)}>
@@ -379,7 +528,7 @@ const Messaging: React.FC<MessagingProps> = ({
           type="text"
           placeholder="Type a message..."
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
           style={getStyledComponent(styles.inputField)}
           disabled={connectionStatus !== 'connected' || !selection}

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import UserList from "../Components/userList";
 import TeamList from "../Components/TeamList";
@@ -8,6 +8,7 @@ import styles from "../Styles/dashboardStyles";
 import TeamMemberList from "../Components/teamMemberList";
 import { useTheme } from "../Context/ThemeContext";
 import { Selection, ContextMenuState } from "../types/shared";
+import StatusSelector from "../Components/UI/StatusSelector";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -80,35 +81,43 @@ const AdminDashboard: React.FC = () => {
     navigate("/login");
   };
 
+  const getStyledComponent = useCallback((baseStyle: any) => ({
+      ...baseStyle,
+      ...(theme === "dark" && baseStyle["&.dark-mode"])
+    }), [theme]);
+
   return (
-    <div style={{ ...styles.container, ...(theme === "dark" && styles.container["&.dark-mode"]) }}>
-      <div style={{ ...styles.menuContainer, ...(theme === "dark" && styles.menuContainer["&.dark-mode"]) }} ref={dropdownRef}>
+    <div style={getStyledComponent(styles.container)}>
+      <div style={getStyledComponent(styles.menuContainer)} ref={dropdownRef}>
         <button
-          style={{ ...styles.menuButton, ...(theme === "dark" && styles.menuButton["&.dark-mode"]) }}
+          style={getStyledComponent(styles.menuButton)}
           onClick={() => setDropdownOpen(!dropdownOpen)}
         >
           ☰ Menu
         </button>
         {dropdownOpen && (
-          <div style={{ ...styles.dropdownMenu, ...(theme === "dark" && styles.dropdownMenu["&.dark-mode"]) }}>
-            <button onClick={() => navigate("/profile")} style={{ ...styles.menuItem, ...(theme === "dark" && styles.menuItem["&.dark-mode:hover"]) }}>
+          <div style={getStyledComponent(styles.dropdownMenu)}>
+            <div style={{ padding: '8px 12px', borderBottom: '1px solid #ccc' }}>
+              <StatusSelector />
+            </div>
+            <button onClick={() => navigate("/profile")} style={getStyledComponent(styles.menuItem)}>
               Profile
             </button>
             <button
               onClick={() => navigate("/settings")}
-              style={{ ...styles.menuItem, ...(theme === "dark" && styles.menuItem["&.dark-mode:hover"]) }}
+              style={getStyledComponent(styles.menuItem)}
             >
               Settings
             </button>
-            <button onClick={handleLogout} style={{ ...styles.menuItem, ...(theme === "dark" && styles.menuItem["&.dark-mode:hover"]) }}>
+            <button onClick={handleLogout} style={getStyledComponent(styles.menuItem)}>
               Logout
             </button>
           </div>
         )}
       </div>
 
-      <h2 style={{ ...styles.heading, ...(theme === "dark" && styles.heading["&.dark-mode"]) }}>Dashboard</h2>
-      <p style={{ ...styles.text, ...(theme === "dark" && styles.text["&.dark-mode"]) }}>Manage users, teams, channels, and messages.</p>
+      <h2 style={getStyledComponent(styles.heading)}>Dashboard</h2>
+      <p style={getStyledComponent(styles.text)}>Manage users, teams, channels, and messages.</p>
 
       <div style={styles.mainContainer}>
         <UserList 

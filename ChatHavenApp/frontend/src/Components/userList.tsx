@@ -5,12 +5,12 @@ import ContextMenu from "./UI/ContextMenu";
 import { addUserToTeam } from "../Services/superAdminService";
 import { addUserToChannel } from "../Services/channelService";
 import { useTheme } from "../Context/ThemeContext";
+import { useOnlineStatus } from "../Context/OnlineStatusContext";
+import UserStatusIndicator from "./UI/UserStatusIndicator";
 import { Selection, ContextMenuState } from "../types/shared";
 
 interface User {
   username: string;
-  onlineStatus: "online" | "offline" | "away";
-  lastSeen: string;
 }
 
 interface UserListProps {
@@ -37,6 +37,7 @@ const UserList: React.FC<UserListProps> = ({
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const { theme } = useTheme();
+  const { refreshStatuses, getUserStatus } = useOnlineStatus();
 
   // Helper function to get the current channel from selection
   const getCurrentChannel = () => {
@@ -48,13 +49,15 @@ const UserList: React.FC<UserListProps> = ({
       try {
         const usersList = await getUsers();
         setUsers(usersList);
+        
+        await refreshStatuses(usersList.map((user: { username: any; }) => user.username));
       } catch (err) {
         setUsers([]);
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [refreshStatuses]);
 
   const toggleUserSelection = (user: string) => {
     setSelectedUsers((prevSelectedUsers) =>
@@ -69,7 +72,7 @@ const UserList: React.FC<UserListProps> = ({
     return null;
   }
 
-  const handleContextMenu = (event: any, username: string) => {
+  const handleContextMenu = (event: React.MouseEvent, username: string) => {
     event.preventDefault();
     setContextMenu({
       visible: true,
@@ -81,6 +84,22 @@ const UserList: React.FC<UserListProps> = ({
 
   const handleCloseContextMenu = () => {
     setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+  };
+
+  const formatLastSeen = (lastSeen?: Date) => {
+    if (!lastSeen) return 'Unknown';
+    
+    const now = new Date();
+    const diffMs = now.getTime() - lastSeen.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    
+    return lastSeen.toLocaleDateString();
   };
 
   const menuItems = [
@@ -122,49 +141,52 @@ const UserList: React.FC<UserListProps> = ({
             ...(theme === "dark" && styles.listContainer["&.dark-mode"]),
           }}
         >
-          {users.map((user) => (
-            <li
-              key={user.username}
-              onContextMenu={(e) => handleContextMenu(e, user.username)}
-              style={{
-                ...styles.listItem,
-                backgroundColor: selectedUsers.includes(user.username)
-                  ? "#D3E3FC"
-                  : "transparent",
-                fontWeight: selectedUsers.includes(user.username)
-                  ? "bold"
-                  : "normal",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "8px",
-              }}
-              onClick={() => toggleUserSelection(user.username)}
-            >
-              <div style={{ display: "flex", alignItems: "center" }}></div>
-              <span
+          {users.map((user) => {
+            const userStatus = getUserStatus(user.username);
+            const status = userStatus?.status || 'offline';
+            
+            return (
+              <li
+                key={user.username}
+                onContextMenu={(e) => handleContextMenu(e, user.username)}
                 style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  marginRight: 8,
-                  backgroundColor:
-                    user.onlineStatus === "online"
-                      ? "green"
-                      : user.onlineStatus === "away"
-                      ? "orange"
-                      : "gray",
+                  ...styles.listItem,
+                  backgroundColor: selectedUsers.includes(user.username)
+                    ? (theme === "dark" ? "#3A3F44" : "#D3E3FC")
+                    : "transparent",
+                  fontWeight: selectedUsers.includes(user.username)
+                    ? "bold"
+                    : "normal",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "8px",
+                  color: theme === "dark" ? "#FFF" : "inherit",
                 }}
-              />
-              {user.username}
+                onClick={() => toggleUserSelection(user.username)}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <UserStatusIndicator username={user.username} size="small" />
+                  <span>{user.username}</span>
+                </div>
 
-              <span style={{ fontSize: "12px", color: "#606770" }}>
-                {user.onlineStatus === "online"
-                  ? "Online"
-                  : `Last seen: ${user.lastSeen}`}
-              </span>
-            </li>
-          ))}
+                <span style={{ 
+                  fontSize: "12px", 
+                  color: theme === "dark" ? "#AAA" : "#606770",
+                  marginLeft: "auto"
+                }}>
+                  {status === 'online'
+                    ? "Online"
+                    : status === 'away'
+                      ? "Away"
+                      : status === 'busy'
+                        ? "Busy"
+                        : `Last seen: ${formatLastSeen(userStatus?.lastSeen)}`
+                  }
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
       {contextMenu.visible && (

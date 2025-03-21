@@ -1,5 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 import { Role } from '../enums';
+import { StatusType } from '../services/onlineStatusService';
 
 /**
  * Interface representing a User document in MongoDB.
@@ -48,6 +49,18 @@ interface IUser extends Document {
      * @type {Schema.Types.ObjectId[]}
      */
     teamMemberships: Schema.Types.ObjectId[];
+
+    /**
+     * The user's status.
+     * @type {StatusType}
+     */
+    status: StatusType;
+
+    /**
+     * The date the user was last seen.
+     * @type {Date}
+     */
+    lastSeen: Date;
 }
 
 /**
@@ -87,7 +100,16 @@ const UserSchema = new Schema<IUser>({
         type: [Schema.Types.ObjectId],
         ref: 'TeamMember',
         default: [],
-    }
+    },
+    status: {
+        type: String,
+        enum: ['online', 'away', 'busy', 'offline'],
+        default: 'offline',
+    },
+    lastSeen: {
+        type: Date,
+        default: Date.now,
+    },
 });
 
 /**

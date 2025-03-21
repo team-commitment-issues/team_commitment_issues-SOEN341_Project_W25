@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { Schema, Types } from 'mongoose';
 import ChannelService from './services/channelService';
 import DirectMessageService from './services/directMessageService';
+import OnlineStatusService, { StatusType } from './services/onlineStatusService';
 import User, { IUser } from './models/User';
 import Team, { ITeam } from './models/Team';
 import TeamMember, { ITeamMember } from './models/TeamMember';
@@ -17,6 +18,7 @@ interface ExtendedWebSocket extends WebSocket {
     teamMember?: ITeamMember;
     receiver?: IUser;
     directMessage?: IDirectMessage;
+    subscribedTeams?: Set<string>;
 }
 
 interface DecodedToken {
@@ -122,6 +124,43 @@ const findOrCreateDirectMessage = async (userId: Schema.Types.ObjectId, teamName
     return { team, receiver: user2, directMessage };
 };
 
+// New function to broadcast status updates
+const broadcastStatusUpdate = async (wss: WebSocketServer, username: string, status: StatusType, lastSeen: Date) => {
+    const user = await User.findOne({ username });
+    if (!user) return;
+    
+    // Get all teams this user belongs to
+    const teamIds = await OnlineStatusService.getUserTeams(user._id as Schema.Types.ObjectId);
+    
+    // For each team, get subscribers and send the status update
+    const subscribers = new Set<string>();
+    
+    for (const teamId of teamIds) {
+        const teamSubscribers = await OnlineStatusService.getTeamSubscribers(teamId);
+        teamSubscribers.forEach(sub => subscribers.add(sub));
+    }
+    
+    // Format the status update
+    const statusUpdate = {
+        type: 'statusUpdate',
+        username,
+        status,
+        lastSeen: lastSeen.toISOString()
+    };
+    
+    // Send to all connected clients who are subscribed
+    wss.clients.forEach((client) => {
+        const extendedClient = client as ExtendedWebSocket;
+        
+        if (extendedClient.readyState === WebSocket.OPEN && 
+            extendedClient.user && 
+            subscribers.has(extendedClient.user.username)) {
+            
+            extendedClient.send(JSON.stringify(statusUpdate));
+        }
+    });
+};
+
 const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any, wss: WebSocketServer, token: string, messageType: string) => {
     try {
         if (messageType === 'join' || messageType === 'message') {
@@ -168,6 +207,104 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
         } else if (messageType === 'ping') {
             // Handle ping messages for keeping the connection alive
             ws.send(JSON.stringify({ type: 'pong' }));
+        } 
+        // New message types for online status
+        else if (messageType === 'subscribeOnlineStatus') {
+            const user = await verifyToken(token);
+            ws.user = user;
+            
+            // Initialize the set if not already done
+            if (!ws.subscribedTeams) {
+                ws.subscribedTeams = new Set();
+            }
+            
+            const { teamName } = parsedMessage;
+            const team = await Team.findOne({ name: teamName });
+            
+            if (!team) {
+                throw new Error(`Team with name "${teamName}" not found`);
+            }
+            
+            // Add to subscribed teams
+            ws.subscribedTeams.add(teamName);
+            
+            // Get members of this team
+            const members = await OnlineStatusService.getTeamSubscribers(team._id as Schema.Types.ObjectId);
+            
+            // Get status for all team members
+            const statuses = await OnlineStatusService.getUserOnlineStatus(members);
+            
+            // Send current status to client
+            for (const status of statuses) {
+                ws.send(JSON.stringify({
+                    type: 'statusUpdate',
+                    username: status.username,
+                    status: status.status,
+                    lastSeen: status.lastSeen.toISOString()
+                }));
+            }
+        } else if (messageType === 'setStatus') {
+            const user = await verifyToken(token);
+            ws.user = user;
+            
+            const { status } = parsedMessage;
+            
+            // Validate status
+            if (!['online', 'away', 'busy', 'offline'].includes(status)) {
+                throw new Error('Invalid status value');
+            }
+            
+            // Update user status
+            const userStatus = await OnlineStatusService.setUserStatus(
+                user._id as Schema.Types.ObjectId, 
+                user.username, 
+                status as StatusType
+            );
+            
+            // Broadcast to all subscribers
+            await broadcastStatusUpdate(wss, user.username, status as StatusType, userStatus.lastSeen);
+        } else if (messageType === 'typing') {
+            // Forward typing indicators
+            const user = await verifyToken(token);
+            
+            if (parsedMessage.channelName) {
+                // Channel typing indicator
+                wss.clients.forEach((client) => {
+                    const extendedClient = client as ExtendedWebSocket;
+                    if (extendedClient.readyState === WebSocket.OPEN && 
+                        extendedClient.channel && 
+                        extendedClient.channel.name === parsedMessage.channelName &&
+                        extendedClient.team && 
+                        extendedClient.team.name === parsedMessage.teamName) {
+                        
+                        extendedClient.send(JSON.stringify({
+                            type: 'typing',
+                            username: user.username,
+                            isTyping: parsedMessage.isTyping,
+                            teamName: parsedMessage.teamName,
+                            channelName: parsedMessage.channelName
+                        }));
+                    }
+                });
+            } else if (parsedMessage.receiverUsername) {
+                // Direct message typing indicator
+                wss.clients.forEach((client) => {
+                    const extendedClient = client as ExtendedWebSocket;
+                    if (extendedClient.readyState === WebSocket.OPEN && 
+                        extendedClient.user &&
+                        (extendedClient.user.username === parsedMessage.receiverUsername || 
+                         extendedClient.user.username === user.username)) {
+                        
+                        extendedClient.send(JSON.stringify({
+                            type: 'typing',
+                            username: user.username,
+                            isTyping: parsedMessage.isTyping,
+                            teamName: parsedMessage.teamName,
+                            receiverUsername: parsedMessage.receiverUsername
+                        }));
+                    }
+                });
+            }
         }
 
         if (messageType === 'join') {
@@ -223,11 +360,19 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             return;
         }
 
-        // Verify token immediately to catch authentication issues
+        // Initialize status tracking
         verifyToken(token).then(user => {
             if (DEBUG) {
                 console.log(`Server: User ${user.username} authenticated successfully`);
             }
+            
+            // Track that this user is now connected
+            OnlineStatusService.trackUserConnection(user._id as Schema.Types.ObjectId, user.username);
+            
+            // Broadcast the online status to other users
+            const now = new Date();
+            broadcastStatusUpdate(wss, user.username, 'online', now);
+            
         }).catch(err => {
             if (DEBUG) {
                 console.error('Server: Authentication error:', err.message);
@@ -243,7 +388,16 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
                     console.log('Server: Received message:', parsedMessage);
                 }
 
-                if (['join', 'message', 'directMessage', 'joinDirectMessage', 'ping'].includes(parsedMessage.type)) {
+                if ([
+                    'join', 
+                    'message', 
+                    'directMessage', 
+                    'joinDirectMessage', 
+                    'ping', 
+                    'subscribeOnlineStatus', 
+                    'setStatus',
+                    'typing'
+                ].includes(parsedMessage.type)) {
                     await handleWebSocketMessage(ws, parsedMessage, wss, token, parsedMessage.type);
                 } else {
                     if (DEBUG) {
@@ -262,6 +416,20 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             if (DEBUG) {
                 console.log(`Server: WebSocket connection closed with code ${code}, reason: ${reason}`);
             }
+            
+            // If user was authenticated, mark them as offline
+            if (ws.user) {
+                OnlineStatusService.trackUserDisconnection(ws.user._id as Schema.Types.ObjectId, ws.user.username);
+                
+                // After a short delay (to handle reconnections), check if user is still offline
+                setTimeout(async () => {
+                    const user = await User.findById(ws.user._id);
+                    if (user && user.status === 'offline') {
+                        // Broadcast the offline status
+                        broadcastStatusUpdate(wss, ws.user.username, 'offline', new Date());
+                    }
+                }, 5000);
+            }
         });
         
         ws.on('error', (error) => {
@@ -271,5 +439,10 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
         });
     });
 
+    // Set up periodic cleaning of stale users
+    setInterval(() => {
+        OnlineStatusService.clearStaleUsers();
+    }, 24 * 60 * 60 * 1000); // Run daily
+    
     return wss;
 };
