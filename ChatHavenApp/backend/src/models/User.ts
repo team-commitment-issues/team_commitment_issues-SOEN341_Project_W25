@@ -44,6 +44,12 @@ interface IUser extends Document {
     role: Role;
 
     /**
+   * Profile picture URL of the user.
+   * @type {string}
+   */
+  profilePicture?: string;
+
+    /**
      * List of team memberships for the user.
      * @type {Schema.Types.ObjectId[]}
      */
@@ -83,6 +89,10 @@ const UserSchema = new Schema<IUser>({
         default: Role.USER,
         required: true,
     },
+    profilePicture: {
+        type: String,
+        default: "", //default to an empty string
+      },
     teamMemberships: {
         type: [Schema.Types.ObjectId],
         ref: 'TeamMember',
