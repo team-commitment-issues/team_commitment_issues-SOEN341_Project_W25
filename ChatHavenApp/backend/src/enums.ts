@@ -19,13 +19,13 @@ export enum TeamRole {
 }
 
 /**
- * Represents the status types available in the application.
+ * Represents the status available in the application.
  * @property {string} ONLINE - Represents the online status.
  * @property {string} AWAY - Represents the away status.
  * @property {string} BUSY - Represents the busy status.
  * @property {string} OFFLINE - Represents the offline status.
 */
-export enum StatusType {
+export enum Status {
   ONLINE = 'online',
   AWAY = 'away',
   BUSY = 'busy',

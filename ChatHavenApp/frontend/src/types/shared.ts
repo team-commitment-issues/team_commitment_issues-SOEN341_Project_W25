@@ -22,18 +22,18 @@ export interface ChatMessage {
     createdAt: Date;
 }
 
-export type StatusType = 'online' | 'away' | 'busy' | 'offline';
+export type Status = 'online' | 'away' | 'busy' | 'offline';
 
 export interface UserStatus {
     username: string;
-    status: StatusType;
+    status: Status;
     lastSeen?: Date;
 }
 
 export type WebSocketMessage = 
     | { type: 'message'; text: string; username: string; _id: string; createdAt: string; teamName: string; channelName: string }
     | { type: 'directMessage'; text: string; username: string; receiverUsername: string; _id: string; createdAt: string; teamName: string }
-    | { type: 'statusUpdate'; username: string; status: StatusType; lastSeen?: string }
+    | { type: 'statusUpdate'; username: string; status: Status; lastSeen?: string }
     | { type: 'typing'; username: string; isTyping: boolean; teamName: string; channelName?: string; receiverUsername?: string }
     | { type: 'join'; teamName: string; channelName: string }
     | { type: 'joinDirectMessage'; teamName: string; username: string }

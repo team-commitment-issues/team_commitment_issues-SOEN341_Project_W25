@@ -3,21 +3,21 @@ import { setUserStatus } from '../../Services/onlineStatusService';
 import { useTheme } from '../../Context/ThemeContext';
 import styles from '../../Styles/StatusSelector.module.css';
 
-type StatusType = 'online' | 'away' | 'busy' | 'offline';
+type Status = 'online' | 'away' | 'busy' | 'offline';
 
 const StatusSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<StatusType>('online');
+  const [currentStatus, setCurrentStatus] = useState<Status>('online');
   const { theme } = useTheme();
   
-  const statuses: { type: StatusType; label: string; color: string }[] = [
+  const statuses: { type: Status; label: string; color: string }[] = [
       { type: 'online', label: 'Online', color: '#4CAF50' },
       { type: 'away', label: 'Away', color: '#FFC107' },
       { type: 'busy', label: 'Busy', color: '#F44336' },
       { type: 'offline', label: 'Appear Offline', color: '#9E9E9E' }
     ];
   
-  const handleStatusChange = async (status: StatusType) => {
+  const handleStatusChange = async (status: Status) => {
     try {
       await setUserStatus(status);
       setCurrentStatus(status);

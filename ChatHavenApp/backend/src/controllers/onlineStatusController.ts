@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
 import { Schema, Types } from 'mongoose';
 import OnlineStatusService from '../services/onlineStatusService';
-
-type StatusType = 'online' | 'away' | 'busy' | 'offline';
+import { Status } from '../enums';
 
 class OnlineStatusController {
     static async getUserOnlineStatus(req: Request, res: Response): Promise<void> {
@@ -31,18 +30,23 @@ class OnlineStatusController {
 
     static async setUserStatus(req: Request, res: Response): Promise<void> {
         try {
-            const status = req.body.status as StatusType;
+            const status = req.body.status;
             const userId = req.user._id as Schema.Types.ObjectId;
 
-            if (!status || !['online', 'away', 'busy', 'offline'].includes(status)) {
-                res.status(400).json({ error: 'Invalid status. Must be one of: online, away, busy, offline' });
+            if (!status) {
+                res.status(400).json({ error: 'Invalid request. Expected status field.' });
+                return;
+            }
+
+            if (!Object.values(Status).includes(status as Status)) {
+                res.status(400).json({ error: 'Invalid status value.' });
                 return;
             }
 
             const updatedStatus = await OnlineStatusService.setUserStatus(
                 userId,
                 req.user.username,
-                status as StatusType
+                status as Status
             );
 
             res.status(200).json({

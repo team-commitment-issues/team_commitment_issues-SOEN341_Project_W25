@@ -3,13 +3,14 @@ import jwt from 'jsonwebtoken';
 import { Schema, Types } from 'mongoose';
 import ChannelService from './services/channelService';
 import DirectMessageService from './services/directMessageService';
-import OnlineStatusService, { StatusType } from './services/onlineStatusService';
+import OnlineStatusService from './services/onlineStatusService';
 import User, { IUser } from './models/User';
 import Team, { ITeam } from './models/Team';
 import TeamMember, { ITeamMember } from './models/TeamMember';
 import Channel, { IChannel } from './models/Channel';
 import DirectMessage, { IDirectMessage } from './models/DirectMessage';
-import { Role } from './enums';
+import { Role, Status } from './enums';
+import { setTimeout } from 'timers/promises';
 
 interface ExtendedWebSocket extends WebSocket {
     team: ITeam;
@@ -27,6 +28,24 @@ interface DecodedToken {
 }
 
 const DEBUG = true;
+
+const handleDisconnection = async (userId: Schema.Types.ObjectId, username: string, wss: WebSocketServer) => {
+    try {
+        // Wait for 5 seconds to check if the user reconnects
+        await setTimeout(5000);
+
+        // Re-check the user's status
+        const user = await User.findById(userId);
+        if (user && user.status === Status.OFFLINE) {
+            // Broadcast the offline status
+            await broadcastStatusUpdate(wss, username, Status.OFFLINE, new Date());
+        }
+    } catch (error) {
+        if (DEBUG) {
+            console.error('Error handling disconnection:', error);
+        }
+    }
+};
 
 const verifyToken = async (token: string) => {
     try {
@@ -125,7 +144,7 @@ const findOrCreateDirectMessage = async (userId: Schema.Types.ObjectId, teamName
 };
 
 // New function to broadcast status updates
-const broadcastStatusUpdate = async (wss: WebSocketServer, username: string, status: StatusType, lastSeen: Date) => {
+const broadcastStatusUpdate = async (wss: WebSocketServer, username: string, status: Status, lastSeen: Date) => {
     const user = await User.findOne({ username });
     if (!user) return;
     
@@ -248,19 +267,19 @@ const handleWebSocketMessage = async (ws: ExtendedWebSocket, parsedMessage: any,
             ws.user = user;
             
             const { status } = parsedMessage;
-            
-            if (!['online', 'away', 'busy', 'offline'].includes(status)) {
-                throw new Error('Invalid status value');
+            // make sure the status is valid
+            if (!Object.values(Status).includes(status)) {
+                throw new Error('Invalid status');
             }
             
             const userStatus = await OnlineStatusService.setUserStatus(
                 user._id as Schema.Types.ObjectId, 
                 user.username, 
-                status as StatusType
+                status as Status
             );
             
             // Broadcast to all subscribers
-            await broadcastStatusUpdate(wss, user.username, status as StatusType, userStatus.lastSeen);
+            await broadcastStatusUpdate(wss, user.username, status as Status, userStatus.lastSeen);
         } else if (messageType === 'typing') {
             // Forward typing indicators
             const user = await verifyToken(token);
@@ -369,7 +388,7 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             
             // Broadcast the online status to other users
             const now = new Date();
-            broadcastStatusUpdate(wss, user.username, 'online', now);
+            broadcastStatusUpdate(wss, user.username, Status.ONLINE, now);
             
         }).catch(err => {
             if (DEBUG) {
@@ -412,21 +431,14 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
 
         ws.on('close', (code, reason) => {
             if (DEBUG) {
-                console.log(`Server: WebSocket connection closed with code ${code}, reason: ${reason}`);
+                console.log(`WebSocket connection closed with code ${code}, reason: ${reason}`);
             }
-            
-            // If user was authenticated, mark them as offline
+        
             if (ws.user) {
                 OnlineStatusService.trackUserDisconnection(ws.user._id as Schema.Types.ObjectId, ws.user.username);
-                
-                // After a short delay (to handle reconnections), check if user is still offline
-                setTimeout(async () => {
-                    const user = await User.findById(ws.user._id);
-                    if (user && user.status === 'offline') {
-                        // Broadcast the offline status
-                        broadcastStatusUpdate(wss, ws.user.username, 'offline', new Date());
-                    }
-                }, 5000);
+        
+                // Handle disconnection with a delay
+                handleDisconnection(ws.user._id as Schema.Types.ObjectId, ws.user.username, wss);
             }
         });
         
@@ -436,11 +448,11 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             }
         });
     });
-
+/*
     // Set up periodic cleaning of stale users
     setInterval(() => {
         OnlineStatusService.clearStaleUsers();
     }, 24 * 60 * 60 * 1000); // Run daily
-    
+*/
     return wss;
 };

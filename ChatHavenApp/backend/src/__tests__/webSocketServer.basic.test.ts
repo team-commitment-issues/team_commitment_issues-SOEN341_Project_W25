@@ -3,33 +3,11 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { setupWebSocketServer } from '../webSocketServer';
 import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
-import OnlineStatusService from '../services/onlineStatusService';
+
 
 let server: Server;
 let wss: WebSocketServer;
 
-// Mock OnlineStatusService methods
-jest.mock('../services/onlineStatusService', () => ({
-    trackUserConnection: jest.fn(),
-    trackUserDisconnection: jest.fn(),
-    getUserOnlineStatus: jest.fn().mockImplementation(async (usernames) => {
-        return usernames.map((username: any) => ({
-            username,
-            status: 'offline',
-            userId: 'mock-id',
-            lastSeen: new Date()
-        }));
-    }),
-    setUserStatus: jest.fn().mockImplementation(async (userId, username, status) => ({
-        userId,
-        username,
-        status,
-        lastSeen: new Date()
-    })),
-    getUserTeams: jest.fn().mockReturnValue([]),
-    getTeamSubscribers: jest.fn().mockImplementation(() => Promise.resolve([])),
-    clearStaleUsers: jest.fn()
-}));
 
 beforeAll((done) => {
     server = createServer();
@@ -44,7 +22,7 @@ afterAll((done) => {
     });
 });
 
-describe('WebSocket Server - Basic Functionality', () => {
+describe('WebSocket Server', () => {
     let token: string;
     let user: any;
     let teamMember: any;
@@ -80,8 +58,8 @@ describe('WebSocket Server - Basic Functionality', () => {
         teamMember2.directMessages.push(dm._id);
         await teamMember2.save();
 
-        // Reset mock calls before each test
-        jest.clearAllMocks();
+
+
     });
 
     it('should connect to the WebSocket server', (done) => {
@@ -110,6 +88,9 @@ describe('WebSocket Server - Basic Functionality', () => {
 
         ws.on('message', (message) => {
             const parsedMessage = JSON.parse(message.toString());
+            if (parsedMessage.type === 'statusUpdate') { // Ignore status updates
+                return;
+            }
             expect(parsedMessage.type).toBe('join');
             ws.close();
             done();
@@ -177,6 +158,9 @@ describe('WebSocket Server - Basic Functionality', () => {
 
         ws.on('message', (message) => {
             const parsedMessage = JSON.parse(message.toString());
+            if (parsedMessage.type === 'statusUpdate') { // Ignore status updates
+                return;
+            }
             expect(parsedMessage.type).toBe('joinDirectMessage');
             ws.close();
             done();

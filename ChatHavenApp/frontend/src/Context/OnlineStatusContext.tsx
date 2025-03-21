@@ -1,18 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { getUserOnlineStatus, subscribeToOnlineStatus } from '../Services/onlineStatusService';
 
-type StatusType = 'online' | 'away' | 'busy' | 'offline';
+type Status = 'online' | 'away' | 'busy' | 'offline';
 
 interface UserStatus {
     username: string;
-    status: StatusType;
+    status: Status;
     lastSeen?: Date;
 }
 
 interface OnlineStatusContextType {
     onlineUsers: Record<string, UserStatus>;
     getUserStatus: (username: string) => UserStatus | undefined;
-    updateUserStatus: (username: string, status: StatusType, lastSeen?: Date) => void;
+    updateUserStatus: (username: string, status: Status, lastSeen?: Date) => void;
     refreshStatuses: (usernames: string[]) => Promise<void>;
     subscribeToTeamStatuses: (teamName: string) => void;
     subscribeToChannelStatuses: (teamName: string, channelName: string) => void;
@@ -41,7 +41,7 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         return onlineUsers[username];
     }, [onlineUsers]);
 
-    const updateUserStatus = useCallback((username: string, status: StatusType, lastSeen?: Date) => {
+    const updateUserStatus = useCallback((username: string, status: Status, lastSeen?: Date) => {
         setOnlineUsers(prev => ({
             ...prev,
             [username]: { username, status, lastSeen }

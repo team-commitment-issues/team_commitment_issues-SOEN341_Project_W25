@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { StatusType } from '../types/shared';
+import { Status } from '../types/shared';
 
 const API_URL = 'http://localhost:5000/onlineStatus';
 
@@ -30,7 +30,7 @@ export const subscribeToOnlineStatus = (ws: WebSocket, teamName: string, channel
     return false;
 };
 
-export const setUserStatus = async (status: StatusType) => {
+export const setUserStatus = async (status: Status) => {
     try {
         const token = localStorage.getItem('token');
         const response = await axios.post(

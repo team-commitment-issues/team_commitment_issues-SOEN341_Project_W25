@@ -34,7 +34,7 @@ jest.mock('../services/onlineStatusService', () => ({
 beforeAll((done) => {
     server = createServer();
     wss = setupWebSocketServer(server);
-    server.listen(5002, done);
+    server.listen(5001, done);
 });
 
 afterAll((done) => {
@@ -44,7 +44,7 @@ afterAll((done) => {
     });
 });
 
-describe('WebSocket Server - Online Status Features', () => {
+describe('WebSocket Server', () => {
     let token: string;
     let user: any;
     let teamMember: any;
@@ -84,19 +84,190 @@ describe('WebSocket Server - Online Status Features', () => {
         jest.clearAllMocks();
     });
 
+    it('should connect to the WebSocket server', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        ws.on('open', () => {
+            expect(ws.readyState).toBe(WebSocket.OPEN);
+            ws.close();
+            done();
+        });
+        ws.on('error', (error) => {
+            console.log(error);
+            done(error);
+        });
+    });
+
+    it('should join a channel', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({
+                type: 'join',
+                teamName: team.name,
+                channelName: channel.name
+            }));
+        });
+
+        ws.on('message', (message) => {
+            const parsedMessage = JSON.parse(message.toString());
+            expect(parsedMessage.type).toBe('join');
+            ws.close();
+            done();
+        });
+
+        ws.on('error', (error) => {
+            console.log(error);
+            done(error);
+        });
+    }, 5000);
+
+    it('should send and receive messages', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        let doneCalled = false;
+
+        const callDone = (error?: any) => {
+            if (!doneCalled) {
+                doneCalled = true;
+                done(error);
+            }
+        };
+
+        ws.on('open', () => {
+            ws.send(JSON.stringify({
+                type: 'join',
+                teamName: team.name,
+                channelName: channel.name
+            }));
+        });
+
+        ws.on('message', (joinMsg) => {
+            const parsedJoin = JSON.parse(joinMsg.toString());
+            if (parsedJoin.type === 'join') {
+                ws.send(JSON.stringify({
+                    type: 'message',
+                    text: 'Hello, World!',
+                    teamName: team.name,
+                    channelName: channel.name
+                }));
+            } else if (parsedJoin.type === 'message') {
+                expect(parsedJoin.text).toBe('Hello, World!');
+                ws.close();
+                callDone();
+            }
+        });
+
+        ws.on('error', (error) => {
+            callDone(error);
+        });
+
+        ws.on('close', () => {
+            callDone();
+        });
+    });
+
+    it('should join a direct message', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({
+                type: 'joinDirectMessage',
+                teamName: team.name,
+                username: user2.username
+            }));
+        });
+
+        ws.on('message', (message) => {
+            const parsedMessage = JSON.parse(message.toString());
+            expect(parsedMessage.type).toBe('joinDirectMessage');
+            ws.close();
+            done();
+        });
+
+        ws.on('error', (error) => {
+            console.log(error);
+            done(error);
+        });
+    }, 5000);
+
+    it('should send and receive direct messages', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
+        let doneCalled = false;
+
+        const callDone = (error?: any) => {
+            if (!doneCalled) {
+                doneCalled = true;
+                done(error);
+            }
+        };
+
+        ws.on('open', () => {
+            ws.send(JSON.stringify({
+                type: 'joinDirectMessage',
+                teamName: team.name,
+                username: user2.username
+            }));
+        });
+
+        ws.on('message', (joinMsg) => {
+            const parsedJoin = JSON.parse(joinMsg.toString());
+            if (parsedJoin.type === 'joinDirectMessage') {
+                ws.send(JSON.stringify({
+                    type: 'directMessage',
+                    text: 'Hello, Direct Message!',
+                    teamName: team.name,
+                    username: user2.username
+                }));
+            } else if (parsedJoin.type === 'directMessage') {
+                expect(parsedJoin.text).toBe('Hello, Direct Message!');
+                ws.close();
+                callDone();
+            }
+        });
+
+        ws.on('error', (error) => {
+            callDone(error);
+        });
+
+        ws.on('close', () => {
+            callDone();
+        });
+    });
+
+    it('should handle unauthorized access', (done) => {
+        const ws = new WebSocket(`ws://localhost:5001?token=InvalidToken`);
+        ws.on('open', () => {
+            ws.send(JSON.stringify({
+                type: 'join',
+                teamName: team.name,
+                channelName: channel.name
+            }));
+        });
+
+        ws.on('message', (message) => {
+            const parsedMessage = JSON.parse(message.toString());
+            expect(parsedMessage.type).toBe('error');
+            expect(parsedMessage.message).toContain('Invalid token');
+            done();
+        });
+
+        ws.on('error', (error) => {
+            console.log(error);
+            done(error);
+        });
+    }, 5000);
+
     // Test online status tracking on connection
     it('should track user connections', (done) => {
-        const ws = new WebSocket(`ws://localhost:5002?token=${token}`);
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         
         ws.on('open', () => {
-            (OnlineStatusService.trackUserConnection as jest.Mock).mockImplementationOnce(() => {
+            // Wait a bit to ensure verifyToken promise resolves
+            setTimeout(() => {
                 expect(OnlineStatusService.trackUserConnection).toHaveBeenCalledWith(
                     expect.anything(), // userId
                     user.username      // username
                 );
                 ws.close();
                 done();
-            });
+            }, 100);
         });
 
         ws.on('error', (error) => {
@@ -117,10 +288,10 @@ describe('WebSocket Server - Online Status Features', () => {
             }
         };
         
-        const ws = new WebSocket(`ws://localhost:5002?token=${token}`);
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         
         ws.on('open', () => {
-            
+            // Wait a bit for the connection to be fully established and authenticated
             setTimeout(() => {
                 ws.send(JSON.stringify({
                     type: 'subscribeOnlineStatus',
@@ -167,7 +338,7 @@ describe('WebSocket Server - Online Status Features', () => {
 
     // Test manual status setting
     it('should set user status manually', (done) => {
-        const ws = new WebSocket(`ws://localhost:5002?token=${token}`);
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         
         ws.on('open', () => {
             ws.send(JSON.stringify({
@@ -195,7 +366,7 @@ describe('WebSocket Server - Online Status Features', () => {
 
     // Test typing indicators
     it('should handle typing indicators in channels', (done) => {
-        const ws = new WebSocket(`ws://localhost:5002?token=${token}`);
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         let joinDone = false;
         
         ws.on('open', () => {
@@ -254,7 +425,7 @@ describe('WebSocket Server - Online Status Features', () => {
         };
         
         // First establish the connection and fully authenticate
-        const ws = new WebSocket(`ws://localhost:5002?token=${token}`);
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         
         // Track user identity for debugging
         let verifiedUsername = '';
@@ -335,7 +506,7 @@ describe('WebSocket Server - Online Status Features', () => {
 
     // Test invalid status rejection
     it('should reject invalid status values', (done) => {
-        const ws = new WebSocket(`ws://localhost:5002?token=${token}`);
+        const ws = new WebSocket(`ws://localhost:5001?token=${token}`);
         
         ws.on('open', () => {
             ws.send(JSON.stringify({

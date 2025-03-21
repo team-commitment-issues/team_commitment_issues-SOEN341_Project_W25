@@ -1,12 +1,12 @@
 import { Schema, Types } from 'mongoose';
 import User from '../models/User';
-
-export type StatusType = 'online' | 'away' | 'busy' | 'offline';
+import { Status } from '../enums';
+import TeamMember from '../models/TeamMember';
 
 interface UserStatus {
     userId: Schema.Types.ObjectId;
     username: string;
-    status: StatusType;
+    status: Status;
     lastSeen: Date;
 }
 
@@ -35,7 +35,7 @@ class OnlineStatusService {
                     const status: UserStatus = {
                         userId: user._id as Schema.Types.ObjectId,
                         username,
-                        status: 'offline',
+                        status: user.status || Status.OFFLINE,
                         lastSeen: user.lastSeen || new Date()
                     };
                     
@@ -53,11 +53,11 @@ class OnlineStatusService {
     /**
      * Set a user's status explicitly
      */
-    static async setUserStatus(userId: Schema.Types.ObjectId, username: string, status: StatusType): Promise<UserStatus> {
+    static async setUserStatus(userId: Schema.Types.ObjectId, username: string, status: Status): Promise<UserStatus> {
         // Update the database
         await User.findByIdAndUpdate(userId, { 
             lastSeen: new Date(),
-            status: { $eq: status }
+            status: status.toString()
         });
         
         // Update our in-memory cache
@@ -82,7 +82,7 @@ class OnlineStatusService {
         
         // If this is the first connection, set status to online
         if (connections === 0) {
-            this.setUserStatus(userId, username, 'online');
+            this.setUserStatus(userId, username, Status.ONLINE);
         }
     }
 
@@ -95,7 +95,7 @@ class OnlineStatusService {
         if (connections <= 1) {
             // This was the last connection, set to offline
             this.userConnections.delete(username);
-            await this.setUserStatus(userId, username, 'offline');
+            await this.setUserStatus(userId, username, Status.OFFLINE);
         } else {
             // User still has other connections
             this.userConnections.set(username, connections - 1);
@@ -107,13 +107,8 @@ class OnlineStatusService {
      * This returns all members of a team
      */
     static async getTeamSubscribers(teamId: Schema.Types.ObjectId): Promise<string[]> {
-        // This would typically query your TeamMember collection
-        // to find all members of a team
-        const TeamMember = require('../models/TeamMember').default;
-        
         const members = await TeamMember.find({ team: teamId })
-            .populate('user', 'username')
-            .lean();
+            .populate('user', 'username');
             
         return members.map((member: any) => member.user.username);
     }
@@ -122,11 +117,8 @@ class OnlineStatusService {
      * Get all team IDs a user belongs to
      */
     static async getUserTeams(userId: Schema.Types.ObjectId): Promise<Schema.Types.ObjectId[]> {
-        const TeamMember = require('../models/TeamMember').default;
-        
         const memberships = await TeamMember.find({ user: userId })
-            .select('team')
-            .lean();
+            .select('team');
             
         return memberships.map((membership: any) => membership.team);
     }
@@ -140,7 +132,7 @@ class OnlineStatusService {
         
         for (const [username, status] of this.onlineUsers.entries()) {
             // Only consider offline users
-            if (status.status === 'offline') {
+            if (status.status === Status.OFFLINE) {
                 const lastSeen = status.lastSeen;
                 
                 if (now.getTime() - lastSeen.getTime() > ONE_MONTH_MS) {
