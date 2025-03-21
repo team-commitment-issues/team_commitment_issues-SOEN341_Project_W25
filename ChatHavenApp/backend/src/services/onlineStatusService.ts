@@ -30,7 +30,7 @@ class OnlineStatusService {
                 statuses.push(this.onlineUsers.get(username)!);
             } else {
                 // Otherwise, fetch from database
-                const user = await User.findOne({ username });
+                const user = await User.findOne({ username: { $eq: username } });
                 if (user) {
                     const status: UserStatus = {
                         userId: user._id as Schema.Types.ObjectId,
