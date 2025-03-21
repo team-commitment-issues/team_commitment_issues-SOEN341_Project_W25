@@ -665,6 +665,26 @@ const styles = {
       color: "#e0e0e0",
     },
   },
+  userItem: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "8px",
+  },
+  statusIndicator: {
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%",
+    display: "inline-block",
+    marginRight: "8px",
+  },
+  online: { backgroundColor: "green" },
+  away: { backgroundColor: "orange" },
+  offline: { backgroundColor: "gray" },
+  lastSeen: {
+    fontSize: "12px",
+    color: "#606770",
+  },
 };
 
 export default styles;
