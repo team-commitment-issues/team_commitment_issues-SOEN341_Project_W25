@@ -9,5 +9,5 @@ module.exports = {
 
     verbose: true,
     testTimeout: 10000,
-    maxWorkers: '50%',
+    maxWorkers: '75%',
 };
