@@ -57,7 +57,7 @@ class OnlineStatusService {
         // Update the database
         await User.findByIdAndUpdate(userId, { 
             lastSeen: new Date(),
-            status
+            status: { $eq: status }
         });
         
         // Update our in-memory cache
