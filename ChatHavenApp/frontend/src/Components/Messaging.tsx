@@ -199,7 +199,11 @@ const Messaging: React.FC<MessagingProps> = ({
 
   const handleSendMessage = () => {
     if (!message.trim() || !selection) return;
-
+    else if (message.length > 500) {
+      alert("Message too long, max 500 characters allowed");
+      return;
+    }
+    
     const newMessage = selection.type === 'directMessage' 
       ? { 
           type: 'directMessage', 
