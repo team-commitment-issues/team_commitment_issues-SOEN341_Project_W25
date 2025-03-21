@@ -31,11 +31,11 @@ backend.use(cors());
 backend.use(express.static(path.join(__dirname, '../', '../', './frontend', './build')));
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 30 * 1000,
+  max: 30 * 5,
 });
 
-// backend.use(limiter);
+backend.use(limiter);
 
 backend.use('/user', userRoutes);
 backend.use('/channel', channelRoutes);
