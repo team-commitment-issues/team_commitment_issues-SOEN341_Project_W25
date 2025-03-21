@@ -11,14 +11,8 @@ const app = express();
 app.use(express.json());
 app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), directMessageRoutes);
 
-TestHelpers.addConnectionHooks(describe);
-
 beforeAll(async () => {
-    await TestHelpers.cleanDatabase();
-});
-
-afterAll(async () => {
-    await TestHelpers.disconnectMongoose();
+    await TestHelpers.ensureDbConnection();
 });
 
 describe('POST /directMessage/createDirectMessage', () => {

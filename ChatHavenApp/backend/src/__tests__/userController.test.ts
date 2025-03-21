@@ -8,14 +8,8 @@ const app = express();
 app.use(express.json());
 app.use('/user', userRoutes);
 
-TestHelpers.addConnectionHooks(describe);
-
 beforeAll(async () => {
-    await TestHelpers.cleanDatabase();
-});
-
-afterAll(async () => {
-    await TestHelpers.disconnectMongoose();
+    await TestHelpers.ensureDbConnection();
 });
 
 describe('POST /user/login', () => {

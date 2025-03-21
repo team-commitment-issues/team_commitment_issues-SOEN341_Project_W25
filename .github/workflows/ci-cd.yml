@@ -13,6 +13,11 @@ jobs:
     name: Backend CI
     runs-on: ubuntu-latest
 
+    services:
+      mongo:
+        image: mongo:4.4
+        ports:
+          - 27017:27017
 
     steps:
       - name: Checkout code
@@ -22,8 +27,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16'
-          cache: 'npm'
-          cache-dependency-path: 'ChatHavenApp/backend/package-lock.json'
 
       - name: Create .env.test file
         run: |
@@ -38,25 +41,23 @@ jobs:
           echo JWT_SECRET=8s8PC9N2XVWmbotAnx19ct34boBhzv0pCV7RxcGOtUp9+nGj2Inc0SIyBCYt0t+1o+GT2Oa5ucFCz2xQ8xA8HA== >> ChatHavenApp/backend/.env
           echo NODE_ENV=development >> ChatHavenApp/backend/.env
 
+      - name: Clean npm cache and node_modules
+        run: |
+          cd ChatHavenApp/backend
+          npm cache clean --force
+          rm -rf node_modules
+          rm -f package-lock.json
+
       - name: Install dependencies
         run: |
           cd ChatHavenApp/backend
-          npm ci # Use ci instead of install for more reliable installations
+          npm install
 
-      - name: Run tests with increased resources
+      - name: Run tests
         run: |
           cd ChatHavenApp/backend
           npm run build
-          NODE_OPTIONS="--max-old-space-size=4096" npm run test -- --runInBand
-        env:
-          NODE_ENV: test
-          DEBUG: mongodb-memory-server*,mongoose*
-
-      - name: Retry failed tests
-        if: failure()
-        run: |
-          cd ChatHavenApp/backend
-          NODE_OPTIONS="--max-old-space-size=4096" npm run test -- --runInBand --detectOpenHandles --forceExit
+          npm run test
 
       - name: Build backend
         run: |
@@ -75,13 +76,18 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16'
-          cache: 'npm'
-          cache-dependency-path: 'ChatHavenApp/frontend/package-lock.json'
+
+      - name: Clean npm cache and node_modules
+        run: |
+          cd ChatHavenApp/frontend
+          npm cache clean --force
+          rm -rf node_modules
+          rm -f package-lock.json
 
       - name: Install dependencies
         run: |
           cd ChatHavenApp/frontend
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
 
       - name: Build frontend
         run: |

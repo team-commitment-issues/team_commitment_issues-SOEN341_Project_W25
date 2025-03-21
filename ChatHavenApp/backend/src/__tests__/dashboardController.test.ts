@@ -10,14 +10,8 @@ const app = express();
 app.use(express.json());
 app.use('/dashboard', authenticate, dashboardRoutes);
 
-TestHelpers.addConnectionHooks(describe);
-
 beforeAll(async () => {
-    await TestHelpers.cleanDatabase();
-});
-
-afterAll(async () => {
-    await TestHelpers.disconnectMongoose();
+    await TestHelpers.ensureDbConnection();
 });
 
 describe('GET /dashboard/listTeams', () => {
