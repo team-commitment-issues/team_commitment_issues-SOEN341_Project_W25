@@ -30,20 +30,14 @@ interface DecodedToken {
 const DEBUG = true;
 
 const handleDisconnection = async (userId: Schema.Types.ObjectId, username: string, wss: WebSocketServer) => {
-    try {
-        // Wait for 5 seconds to check if the user reconnects
-        await setTimeout(5000);
+    // Wait for 5 seconds to check if the user reconnects
+    await setTimeout(5000);
 
-        // Re-check the user's status
-        const user = await User.findById(userId);
-        if (user && user.status === Status.OFFLINE) {
-            // Broadcast the offline status
-            await broadcastStatusUpdate(wss, username, Status.OFFLINE, new Date());
-        }
-    } catch (error) {
-        if (DEBUG) {
-            console.error('Error handling disconnection:', error);
-        }
+    // Re-check the user's status
+    const user = await User.findById(userId);
+    if (user && user.status === Status.OFFLINE) {
+        // Broadcast the offline status
+        await broadcastStatusUpdate(wss, username, Status.OFFLINE, new Date());
     }
 };
 
@@ -437,8 +431,14 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             if (ws.user) {
                 OnlineStatusService.trackUserDisconnection(ws.user._id as Schema.Types.ObjectId, ws.user.username);
         
-                // Handle disconnection with a delay
-                handleDisconnection(ws.user._id as Schema.Types.ObjectId, ws.user.username, wss);
+                try {
+                    handleDisconnection(ws.user._id as Schema.Types.ObjectId, ws.user.username, wss);
+                } catch (error) {
+                    if (DEBUG) {
+                        console.error('Error handling disconnection:', error);
+                    }
+                    ws.send(JSON.stringify({ type: 'error', message: 'Error handling disconnection' }));
+                }
             }
         });
         
@@ -446,6 +446,7 @@ export const setupWebSocketServer = (server: any): WebSocketServer => {
             if (DEBUG) {
                 console.error('Server: WebSocket error:', error);
             }
+            ws.send(JSON.stringify({ type: 'error', message: 'WebSocket error' }));
         });
     });
 /*

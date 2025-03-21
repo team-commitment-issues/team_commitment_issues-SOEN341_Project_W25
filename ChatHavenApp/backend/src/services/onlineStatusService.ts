@@ -107,10 +107,9 @@ class OnlineStatusService {
      * This returns all members of a team
      */
     static async getTeamSubscribers(teamId: Schema.Types.ObjectId): Promise<string[]> {
-        const members = await TeamMember.find({ team: teamId })
-            .populate('user', 'username');
-            
-        return members.map((member: any) => member.user.username);
+        const members = await TeamMember.find({ team: teamId });
+        const subscribers = members.map((member: any) => User.findById(member.user));
+        return subscribers.map((subscriber: any) => subscriber.username);
     }
 
     /**
