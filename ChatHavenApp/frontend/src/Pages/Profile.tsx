@@ -11,8 +11,10 @@ const EditProfile: React.FC = () => {
   const [email, setEmail] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const [bio, setBio] = useState("");
+  const [dateJoined, setDateJoined] = useState("");
 
-  const USER_ID = "12345"; // Replace with actual logged-in user ID
+  const USER_ID = "12345";
 
   useEffect(() => {
     fetch(`/api/users/profile/${USER_ID}`)
@@ -21,6 +23,12 @@ const EditProfile: React.FC = () => {
         setName(data.firstName + " " + data.lastName);
         setEmail(data.email);
         setProfilePreview(data.profilePicture);
+        setBio(data.bio || "");
+        if (data.dateJoined) {
+          setDateJoined(new Date(data.dateJoined).toLocaleDateString());
+        } else {
+          setDateJoined("N/A");
+        }
       })
       .catch((error) => console.error("Error fetching profile:", error));
   }, []);
@@ -39,6 +47,7 @@ const EditProfile: React.FC = () => {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("email", email);
+    formData.append("bio", bio);
     if (profilePicture) formData.append("profilePicture", profilePicture);
 
     try {
@@ -49,7 +58,7 @@ const EditProfile: React.FC = () => {
 
       if (response.ok) {
         alert("Profile updated successfully!");
-        navigate("/dashboard");                      //Redirect to dashboard after successful update
+        navigate("/dashboard");
       } else {
         alert("Failed to update profile");
       }
@@ -68,15 +77,33 @@ const EditProfile: React.FC = () => {
           <div className="profile-section-title">Edit Profile Picture</div>
           <div className="profile-picture-container">
             {profilePreview ? (
-              <img src={profilePreview} alt="Profile Preview" className="profile-preview" />
+              <img
+                src={profilePreview}
+                alt="Profile Preview"
+                className="profile-preview"
+              />
             ) : (
               <p>No profile picture selected</p>
             )}
-            <input type="file" className="file-input" onChange={handleFileChange} />
+            <input
+              type="file"
+              className="file-input"
+              onChange={handleFileChange}
+            />
           </div>
         </div>
       </div>
-      
+      <div className="profile-card">
+        <div className="profile-section-title">Bio</div>
+        <textarea
+          className="profile-input"
+          placeholder="Tell us a bit about yourself"
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          rows={3}
+        />
+      </div>
+
       <p className="profile-subtitle">Update your profile details.</p>
 
       {/* Edit Name & Email */}
@@ -104,15 +131,20 @@ const EditProfile: React.FC = () => {
         </div>
       </div>
 
-      
-
-      {/* Save & Back Buttons */}
       <button className="profile-button save" onClick={handleSave}>
         Save Changes
       </button>
-      <button className="profile-button back" onClick={() => navigate("/dashboard")}>
+      <button
+        className="profile-button back"
+        onClick={() => navigate("/dashboard")}
+      >
         Back to Dashboard
       </button>
+
+      <div className="profile-date-container">
+        <span className="profile-section-title">Date Joined:</span>{" "}
+        <span className="profile-date">{dateJoined}</span>
+      </div>
     </div>
   );
 };

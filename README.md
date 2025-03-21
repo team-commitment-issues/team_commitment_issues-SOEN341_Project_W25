@@ -1,18 +1,21 @@
 # ChatHaven - Team Commitment Issues
 
-Welcome to the official GitHub repository for Team Commitment Issues' ChatHaven project, part of the SOEN 341 course at Concordia University. This repository tracks our progress throughout the development phases of ChatHaven, a chat application designed to connect users through a seamless and secure communication platform.
+Welcome to the official GitHub repository for Team Commitment Issues' ChatHaven project, part of the SOEN341 course at Concordia University. This repository tracks our progress throughout the development phases of ChatHaven, a chat application designed to connect users through a seamless and secure communication platform.
 
 ChatHaven is a versatile communication platform designed for real-time interaction via text channels and direct messaging. It enables teams, communities, and individuals to communicate efficiently in a secure and structured environment.
 
 ## Project Overview
 
-Key Features (Sprint 1 & 2)
+Key Features (Sprint 1, 2 and 3)
 ✔️ User Authentication & Management (Completed in Sprint 1)
 ✔️ Text Channels for Group Communication
 ✔️ Direct Messaging (DM) Between Users
 ✔️ Role-Based Permissions (Admin & Member)
 ✔️ Message Moderation (Admin Feature)
 ✔️ Customizable User Experience
+✔️ User Presence & Status
+✔️ Emoji support
+✔️ Message quoting functionality
 
 Future Sprint features will be added as the project progresses.
 
@@ -47,7 +50,6 @@ The project scope includes:
 - Implementing direct messaging capabilities between users.
 - Creating role-based user permissions for admins and members.
 - Designing a clean and intuitive user interface.
-  
 
 ## Team Members
 
@@ -58,7 +60,6 @@ The project scope includes:
 - **Mohamad Ali Taha - 40200580** - _FullStack_
 - **Samuel Blanchette - 40280883** - _FullStack_
 
-
 ---
 
-This README serves as a primary document for understanding the purpose, structure, and management of the ChatHaven project. Further documentation and detailed updates can be found within the project's wiki and issues sections. 
+This README serves as a primary document for understanding the purpose, structure, and management of the ChatHaven project. Further documentation and detailed updates can be found within the project's wiki and issues sections.
