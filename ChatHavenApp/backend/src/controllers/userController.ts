@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import UserService from '../services/userService';
 import { Role } from '../enums';
+import jwt from 'jsonwebtoken';
 
 class UserController {
     static async signUp(req: Request, res: Response): Promise<void> {
@@ -36,6 +37,56 @@ class UserController {
             const token = await UserService.userAuth(username, password);
             
             res.status(200).json({ message: 'User logged in successfully', token });
+        } catch (err) {
+            if ((err as any).message === 'User not found') {
+                res.status(404).json({ error: 'User not found' });
+            } else if ((err as any).message === 'Incorrect password') {
+                res.status(400).json({ error: 'Incorrect password' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
+
+    static async updateUsername(req: Request, res: Response): Promise<void> {
+        try {
+            const { oldUsername, newUsername, password } = req.body;
+            
+            const updatedUser = await UserService.updateUsername(oldUsername, newUsername, password);
+            
+            try {
+                const token = jwt.sign({ 
+                    username: newUsername, 
+                    email: updatedUser.email 
+                }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+                
+                res.status(200).json({ 
+                    message: 'Username updated successfully',
+                    token: token
+                });
+            } catch (err) {
+                res.status(500).json({ error: 'Error generating new token' });
+            }
+        } catch (err) {
+            if ((err as any).message === 'User not found') {
+                res.status(404).json({ error: 'User not found' });
+            } else if ((err as any).message === 'Incorrect password') {
+                res.status(400).json({ error: 'Incorrect password' });
+            } else if ((err as any).message === 'Username already exists') {
+                res.status(400).json({ error: 'Username already exists' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
+
+    static async updatePassword(req: Request, res: Response): Promise<void> {
+        try {
+            const { oldPassword, newPassword } = req.body;
+            
+            await UserService.updatePassword(req.user.username, oldPassword, newPassword);
+            
+            res.status(200).json({ message: 'Password updated successfully' });
         } catch (err) {
             if ((err as any).message === 'User not found') {
                 res.status(404).json({ error: 'User not found' });
