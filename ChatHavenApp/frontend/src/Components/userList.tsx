@@ -5,6 +5,7 @@ import ContextMenu from "./UI/ContextMenu";
 import { addUserToTeam } from "../Services/superAdminService";
 import { addUserToChannel } from "../Services/channelService";
 import { useTheme } from "../Context/ThemeContext";
+import { Selection, ContextMenuState } from "../types/shared";
 
 interface User {
   username: string;
@@ -16,17 +17,10 @@ interface UserListProps {
   selectedUsers: string[];
   setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
-  setSelectedTeam: React.Dispatch<React.SetStateAction<string | null>>;
-  selectedChannel: string | null;
-  setSelectedChannel: React.Dispatch<React.SetStateAction<string | null>>;
+  selection: Selection;
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
-  contextMenu: { visible: boolean; x: number; y: number; selected: string };
-  setContextMenu: (arg: {
-    visible: boolean;
-    x: number;
-    y: number;
-    selected: string;
-  }) => void;
+  contextMenu: ContextMenuState;
+  setContextMenu: (arg: ContextMenuState) => void;
   handleRefresh: () => void;
 }
 
@@ -34,9 +28,7 @@ const UserList: React.FC<UserListProps> = ({
   selectedUsers,
   setSelectedUsers,
   selectedTeam,
-  setSelectedTeam,
-  selectedChannel,
-  setSelectedChannel,
+  selection,
   setSelectedTeamMembers,
   contextMenu,
   setContextMenu,
@@ -46,6 +38,11 @@ const UserList: React.FC<UserListProps> = ({
   const [users, setUsers] = useState<User[]>([]);
   const { theme } = useTheme();
 
+  // Helper function to get the current channel from selection
+  const getCurrentChannel = () => {
+    return selection?.type === 'channel' ? selection.channelName : null;
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -53,7 +50,6 @@ const UserList: React.FC<UserListProps> = ({
         setUsers(usersList);
       } catch (err) {
         setUsers([]);
-        //console.error("Failed to fetch users", err);
       }
     };
 
@@ -66,8 +62,6 @@ const UserList: React.FC<UserListProps> = ({
         ? prevSelectedUsers.filter((u) => u !== user)
         : [...prevSelectedUsers, user]
     );
-    // setSelectedTeam(null);
-    // setSelectedChannel(null);
     setSelectedTeamMembers([]);
   };
 
@@ -90,24 +84,17 @@ const UserList: React.FC<UserListProps> = ({
   };
 
   const menuItems = [
-    {
-      label: "Add User to Selected Team",
-      onClick: async () =>
-        selectedTeam &&
-        (await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER").then(
-          handleRefresh
-        )),
+    { 
+      label: 'Add User to Selected Team', 
+      onClick: async () => selectedTeam && await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER").then(handleRefresh) 
     },
-    {
-      label: "Add User to Selected Channel",
-      onClick: async () =>
-        selectedTeam &&
-        selectedChannel &&
-        (await addUserToChannel(
-          contextMenu.selected,
-          selectedTeam,
-          selectedChannel
-        ).then(handleRefresh)),
+    { 
+      label: 'Add User to Selected Channel', 
+      onClick: async () => {
+        const selectedChannel = getCurrentChannel();
+        return selectedTeam && selectedChannel && 
+          await addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel).then(handleRefresh);
+      }
     },
   ];
 

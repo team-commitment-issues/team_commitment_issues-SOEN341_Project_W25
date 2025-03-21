@@ -5,6 +5,7 @@ import { demoteToUser, promoteToAdmin, removeUserFromTeam } from "../Services/su
 import { removeUserFromChannel } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
 import { useTheme } from "../Context/ThemeContext";
+import { Selection, ContextMenuState } from "../types/shared";
 
 interface User {
     username: string;
@@ -15,22 +16,51 @@ interface TeamMemberListProps {
   selectedTeamMembers: string[];
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
-  selectedChannel: string | null;
-  contextMenu: { visible: boolean; x: number; y: number; selected: string };
-  setContextMenu: (arg: { visible: boolean; x: number; y: number; selected: string;} ) => void;
-  setSelectedDm: React.Dispatch<React.SetStateAction<string | null>>;
+  selection: Selection;
+  setSelection: React.Dispatch<React.SetStateAction<Selection>>;
+  contextMenu: ContextMenuState;
+  setContextMenu: (arg: ContextMenuState) => void;
   refreshState: boolean;
 }
 
-const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, setSelectedTeamMembers, selectedTeam, selectedChannel, contextMenu, setContextMenu, refreshState, setSelectedDm}) => {
+const TeamMemberList: React.FC<TeamMemberListProps> = ({
+  selectedTeamMembers, 
+  setSelectedTeamMembers, 
+  selectedTeam, 
+  selection,
+  setSelection,
+  contextMenu, 
+  setContextMenu, 
+  refreshState
+}) => {
   const [collapsed, setCollapsed] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [title, setTitle] = useState<string>("Users");
   const [selectedUserRole, setSelectedUserRole] = useState<string>("MEMBER");  
   const { theme } = useTheme();
 
+  // Helper function to get the current channel from the selection
+  const getCurrentChannel = () => {
+    return selection?.type === 'channel' ? selection.channelName : null;
+  };
+
+  // Helper function to set a DM selection
+  const setSelectedDm = (username: string | null) => {
+    if (username && selectedTeam) {
+      setSelection({
+        type: 'directMessage',
+        teamName: selectedTeam,
+        username
+      });
+    } else {
+      setSelection(null);
+    }
+  };
+
   const fetchUsers = useCallback(async () => {
     try {
+      const selectedChannel = selection?.type === 'channel' ? selection.channelName : null;
+      
       if (selectedChannel && selectedTeam) {
         setTitle("Channel Members");
         const channelMemberList = await getUsersInChannel(selectedTeam, selectedChannel);
@@ -45,11 +75,11 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
     } catch (err) {
       console.error("Failed to fetch users", err);
     }
-  }, [selectedChannel, selectedTeam]);
+  }, [selection, selectedTeam]);
 
   useEffect(() => {
     fetchUsers();
-  }, [selectedChannel, selectedTeam, fetchUsers, refreshState]);
+  }, [selection, selectedTeam, fetchUsers, refreshState]);
 
   const toggleTeamMemberSelection = (user: string) => {
     setSelectedTeamMembers((previouslySelectedMembers) =>
@@ -72,6 +102,8 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({selectedTeamMembers, set
   const handleCloseContextMenu = () => {
     setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
   };
+
+  const selectedChannel = getCurrentChannel();
 
   const menuItems = [
     { label: 'Remove User from Team', onClick: async () => selectedTeam && await removeUserFromTeam(contextMenu.selected, selectedTeam).then(fetchUsers) },

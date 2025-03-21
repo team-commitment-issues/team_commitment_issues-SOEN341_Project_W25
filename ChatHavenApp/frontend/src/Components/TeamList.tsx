@@ -16,22 +16,14 @@ interface Team {
 
 interface TeamListProps {
   selectedUsers: string[];
-  setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
-  setSelectedTeam: React.Dispatch<React.SetStateAction<string | null>>;
-  selectedChannel: string | null;
-  setSelectedChannel: React.Dispatch<React.SetStateAction<string | null>>;
-  setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedTeam: (teamName: string | null) => void;
 }
 
 const TeamList: React.FC<TeamListProps> = ({
   selectedUsers,
-  setSelectedUsers,
   selectedTeam,
   setSelectedTeam,
-  selectedChannel,
-  setSelectedChannel,
-  setSelectedTeamMembers,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -42,9 +34,9 @@ const TeamList: React.FC<TeamListProps> = ({
     try {
       await deleteTeam(team.name);
       setTeams((prevTeams) => prevTeams.filter((t) => t.name !== team.name));
-      setSelectedTeam((prevSelectedTeam) =>
-        prevSelectedTeam === team.name ? null : prevSelectedTeam
-      );
+      if (selectedTeam === team.name) {
+        setSelectedTeam(null);
+      }
     } catch (err) {
       console.error("Failed to delete team", err);
     }
@@ -63,15 +55,6 @@ const TeamList: React.FC<TeamListProps> = ({
     fetchTeams();
   }, []);
 
-  const toggleTeamSelection = (team: string) => {
-    setSelectedTeam((prevSelectedTeam) =>
-      prevSelectedTeam === team ? null : team
-    );
-    setSelectedUsers([]);
-    setSelectedChannel(null);
-    setSelectedTeamMembers([]);
-  };
-
   return (
     <div style={{ ...styles.teamList, ...(theme === "dark" && styles.teamList["&.dark-mode"]) }}>
       <h3 onClick={() => setCollapsed(!collapsed)} style={{ ...styles.listHeader, ...(theme === "dark" && styles.listHeader["&.dark-mode"]) }}>
@@ -88,7 +71,7 @@ const TeamList: React.FC<TeamListProps> = ({
                 fontWeight: selectedTeam === team.name ? "bold" : "normal",
                 ...(theme === "dark" && styles.listItem["&.dark-mode:hover"]),
               }}
-              onClick={() => toggleTeamSelection(team.name)}
+              onClick={() => setSelectedTeam(team.name)}
             >
               {team.name}
               <button

@@ -1,0 +1,14 @@
+{
+    "jest.runMode": {
+        "type": "watch",
+        "jest.showCoverageOnLoad": true,
+        "jest.showInlineError": true
+    },
+    "jest.jestCommandLine": "npm test --",
+    "jest.coverageColors": {
+        "uncovered": "rgba(255,99,71,0.2)",
+        "partially-covered": "rgba(255,215,0,0.2)",
+        "covered": "rgba(73,204,144,0.2)"
+    },
+    "jest.rootPath": "ChatHavenApp/backend"
+}

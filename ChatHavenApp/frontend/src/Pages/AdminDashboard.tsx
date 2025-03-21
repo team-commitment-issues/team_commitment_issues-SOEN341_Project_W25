@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import UserList from "../Components/userList";
 import TeamList from "../Components/TeamList";
 import ChannelList from "../Components/ChannelList";
-import TeamMessages from "../Components/DirectMessages";
+import Messaging from "../Components/Messaging";
 import styles from "../Styles/dashboardStyles";
 import TeamMemberList from "../Components/teamMemberList";
 import { useTheme } from "../Context/ThemeContext";
+import { Selection, ContextMenuState } from "../types/shared";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -15,25 +16,27 @@ const AdminDashboard: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [refreshState, setRefreshState] = useState(false);
-  const [selectedDM, setSelectedDM] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
-  const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
-  const [usersContextMenu, setUsersContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
-  const [membersContextMenu, setMembersContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
-  const [messagesContextMenu, setMessagesContextMenu] = useState<{ visible: boolean; x: number; y: number; selected: string }>({ visible: false, x: 0, y: 0, selected: "" });
+  
+  // Unified selection for channels and DMs
+  const [selection, setSelection] = useState<Selection>(null);
+  
+  // Context menu states
+  const [usersContextMenu, setUsersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
+  const [membersContextMenu, setMembersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
+  const [messagesContextMenu, setMessagesContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
 
   const handleRefresh = () => {
     setRefreshState(!refreshState);
   };
 
-  const handleContextMenu = (type: string, arg: { visible: boolean; x: number; y: number; selected: string }) => {
+  const handleContextMenu = (type: string, arg: ContextMenuState) => {
     if (type === "users") {
       setUsersContextMenu(arg);
       setMembersContextMenu({ visible: false, x: 0, y: 0, selected: "" });
       setMessagesContextMenu({ visible: false, x: 0, y: 0, selected: "" });
-
     }
     if (type === "members") {
       setMembersContextMenu(arg);
@@ -47,13 +50,11 @@ const AdminDashboard: React.FC = () => {
     }
   }
 
-  useEffect(() => {
-    setSelectedChannel(null);
-  }, [selectedDM]);
-
-  useEffect(() => {
-    setSelectedDM(null);
-  }, [selectedChannel]);
+  // Update team selection to also clear the selection
+  const handleTeamChange = (teamName: string | null) => {
+    setSelectedTeam(teamName);
+    setSelection(null);
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -67,6 +68,11 @@ const AdminDashboard: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // When team changes, clear the selection
+  useEffect(() => {
+    setSelection(null);
+  }, [selectedTeam]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -109,55 +115,42 @@ const AdminDashboard: React.FC = () => {
           selectedUsers={selectedUsers}
           setSelectedUsers={setSelectedUsers}
           selectedTeam={selectedTeam}
-          setSelectedTeam={setSelectedTeam}
-          selectedChannel={selectedChannel} 
-          setSelectedChannel={setSelectedChannel}
+          selection={selection}
           setSelectedTeamMembers={setSelectedTeamMembers}
           contextMenu={usersContextMenu}
-          setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("users", arg)}
+          setContextMenu={(arg: ContextMenuState) => handleContextMenu("users", arg)}
           handleRefresh={handleRefresh}
         />
         
         <TeamMemberList
+          selectedTeam={selectedTeam}
           selectedTeamMembers={selectedTeamMembers}
           setSelectedTeamMembers={setSelectedTeamMembers}
-          selectedTeam={selectedTeam}
-          selectedChannel={selectedChannel} 
+          selection={selection}
+          setSelection={setSelection}
           contextMenu={membersContextMenu}
-          setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("members", arg)}
-          setSelectedDm={setSelectedDM}
+          setContextMenu={(arg: ContextMenuState) => handleContextMenu("members", arg)}
           refreshState={refreshState}
         />
 
         <div style={styles.middleContainer}>
           <TeamList
-            selectedUsers={selectedUsers} 
-            setSelectedUsers={setSelectedUsers}
+            selectedUsers={selectedUsers}
             selectedTeam={selectedTeam}
-            setSelectedTeam={setSelectedTeam} 
-            selectedChannel={selectedChannel} 
-            setSelectedChannel={setSelectedChannel}
-            setSelectedTeamMembers={setSelectedTeamMembers}
+            setSelectedTeam={handleTeamChange}
           />
           <ChannelList
-            selectedUsers={selectedUsers} 
-            setSelectedUsers={setSelectedUsers}
-            selectedTeam={selectedTeam} 
-            setSelectedTeam={setSelectedTeam} 
-            selectedChannel={selectedChannel} 
-            setSelectedChannel={setSelectedChannel}
+            selectedTeam={selectedTeam}
             selectedTeamMembers={selectedTeamMembers}
-            setSelectedTeamMembers={setSelectedTeamMembers}
+            selection={selection}
+            setSelection={setSelection}
           />
         </div>
         
-        <TeamMessages 
-          selectedTeam={selectedTeam} 
-          selectedChannel={selectedChannel}
+        <Messaging
+          selection={selection}
           contextMenu={messagesContextMenu}
-          setContextMenu={(arg: { visible: boolean; x: number; y: number; selected: string }) => handleContextMenu("messages", arg)}
-          selectedDM={selectedDM}
-          setSelectedDM={setSelectedDM}
+          setContextMenu={(arg: ContextMenuState) => handleContextMenu("messages", arg)}
         />
       </div>
     </div>
