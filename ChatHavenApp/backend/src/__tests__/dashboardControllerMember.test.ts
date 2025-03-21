@@ -11,8 +11,14 @@ const app = express();
 app.use(express.json());
 app.use('/dashboard', authenticate, checkTeamPermission(TeamRole.MEMBER), dashboardRoutes);
 
+TestHelpers.addConnectionHooks(describe);
+
 beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
+    await TestHelpers.cleanDatabase();
+});
+
+afterAll(async () => {
+    await TestHelpers.disconnectMongoose();
 });
 
 describe('POST /dashboard/listChannels', () => {

@@ -13,8 +13,14 @@ const app = express();
 app.use(express.json());
 app.use('/channel', authenticate, checkTeamPermission(TeamRole.MEMBER), checkChannelPermission(), channelRoutes);
 
+TestHelpers.addConnectionHooks(describe);
+
 beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
+    await TestHelpers.cleanDatabase();
+});
+
+afterAll(async () => {
+    await TestHelpers.disconnectMongoose();
 });
 
 describe('POST /channel/getMessages', () => {

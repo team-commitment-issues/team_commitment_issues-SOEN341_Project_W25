@@ -13,8 +13,14 @@ const app = express();
 app.use(express.json());
 app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), checkDirectMessagePermission(), directMessageRoutes);
 
+TestHelpers.addConnectionHooks(describe);
+
 beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
+    await TestHelpers.cleanDatabase();
+});
+
+afterAll(async () => {
+    await TestHelpers.disconnectMongoose();
 });
 
 describe('POST /directMessage/getDirectMessages', () => {

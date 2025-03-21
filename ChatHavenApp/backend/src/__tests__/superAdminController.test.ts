@@ -14,8 +14,14 @@ const app = express();
 app.use(express.json());
 app.use('/superadmin', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), superAdminRoutes);
 
+TestHelpers.addConnectionHooks(describe);
+
 beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
+    await TestHelpers.cleanDatabase();
+});
+
+afterAll(async () => {
+    await TestHelpers.disconnectMongoose();
 });
 
 describe('POST /superadmin/addUserToTeam', () => {

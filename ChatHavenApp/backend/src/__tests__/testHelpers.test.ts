@@ -9,8 +9,14 @@ import TestHelpers from './testHelpers';
 import DirectMessage from '../models/DirectMessage';
 import DMessage from '../models/DMessage';
 
+TestHelpers.addConnectionHooks(describe);
+
 beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
+    await TestHelpers.cleanDatabase();
+});
+
+afterAll(async () => {
+    await TestHelpers.disconnectMongoose();
 });
 
 describe("createTestSuperAdmin", () => {
