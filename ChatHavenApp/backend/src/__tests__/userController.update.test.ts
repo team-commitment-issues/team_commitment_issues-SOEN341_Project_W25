@@ -11,10 +11,6 @@ const app = express();
 app.use(express.json());
 app.use('/user', authenticate, userRoutes);
 
-beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
-});
-
 describe('POST /user/update-username', () => {
     it('should update the username for the authenticated user', async () => {
         const user = await TestHelpers.createTestUser(

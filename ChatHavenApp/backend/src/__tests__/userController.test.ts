@@ -8,10 +8,6 @@ const app = express();
 app.use(express.json());
 app.use('/user', userRoutes);
 
-beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
-});
-
 describe('POST /user/login', () => {
     it('should register a new user successfully', async () => {
         const newUser = {

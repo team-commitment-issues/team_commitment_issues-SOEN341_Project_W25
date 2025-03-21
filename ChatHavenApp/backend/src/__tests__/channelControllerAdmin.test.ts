@@ -16,10 +16,6 @@ const app = express();
 app.use(express.json());
 app.use('/channel', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), channelRoutes);
 
-beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
-});
-
 describe('POST /channel/addUserToChannel', () => {
     it('should add a user to a channel successfully', async () => {
         const superAdminUser = await TestHelpers.createTestSuperAdmin([]);

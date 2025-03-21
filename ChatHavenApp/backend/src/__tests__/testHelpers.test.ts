@@ -9,9 +9,6 @@ import TestHelpers from './testHelpers';
 import DirectMessage from '../models/DirectMessage';
 import DMessage from '../models/DMessage';
 
-beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
-});
 
 describe("createTestSuperAdmin", () => {
     it("should create a super admin with the given details", async () => {

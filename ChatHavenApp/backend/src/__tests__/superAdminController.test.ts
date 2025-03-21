@@ -14,10 +14,6 @@ const app = express();
 app.use(express.json());
 app.use('/superadmin', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), superAdminRoutes);
 
-beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
-});
-
 describe('POST /superadmin/addUserToTeam', () => {
     it('should add a user to a team successfully', async () => {
         const superAdminUser = await TestHelpers.createTestSuperAdmin([]);

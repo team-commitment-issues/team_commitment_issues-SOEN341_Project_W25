@@ -1,5 +1,5 @@
 import User from '../models/User';
-import mongoose, { Connection } from 'mongoose';
+import mongoose from 'mongoose';
 import { Role, TeamRole } from '../enums';
 import Team from '../models/Team';
 import Channel from '../models/Channel';
@@ -11,21 +11,6 @@ import { Message } from '../models/Message';
 import DMessage from '../models/DMessage';
 
 class TestHelpers {
-    static async ensureDbConnection(): Promise<void> {
-        if (mongoose.connection.readyState !== 1) {
-            console.log('Connecting to MongoDB before test...');
-            await mongoose.connect(process.env.MONGO_URI as string, { dbName: 'testingDB' });
-            
-            // Wait a bit to ensure connection is fully established
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            // Verify connection
-            if (mongoose.connection.readyState === 0) {
-              throw new Error('Failed to connect to MongoDB');
-            }
-          }
-    }
-    
     static async createTestSuperAdmin(teamMemberships: mongoose.Types.ObjectId[]): Promise<any> {
         const superAdminUser = new User({
             email: 'superadmin@user.com',

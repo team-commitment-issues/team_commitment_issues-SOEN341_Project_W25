@@ -11,10 +11,6 @@ const app = express();
 app.use(express.json());
 app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), directMessageRoutes);
 
-beforeAll(async () => {
-    await TestHelpers.ensureDbConnection();
-});
-
 describe('POST /directMessage/createDirectMessage', () => {
     it('should create a direct message successfully', async () => {
         const user = await TestHelpers.createTestUser('test@test.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
