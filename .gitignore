@@ -10,7 +10,7 @@
 /ChatHavenApp/backend/.env.test
 
 # testing
-/ChatHavenApp/backend/coverage/**
+/ChatHavenApp/backend/coverage
 
 # production
 /ChatHavenApp/frontend/build
