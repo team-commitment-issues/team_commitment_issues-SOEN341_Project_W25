@@ -11,6 +11,10 @@ const app = express();
 app.use(express.json());
 app.use('/dashboard', authenticate, checkTeamPermission(TeamRole.MEMBER), dashboardRoutes);
 
+beforeAll(async () => {
+    await TestHelpers.ensureDbConnection();
+});
+
 describe('POST /dashboard/listChannels', () => {
     it('should list all channels for the authenticated user in a team', async () => {
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);

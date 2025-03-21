@@ -14,6 +14,10 @@ const app = express();
 app.use(express.json());
 app.use('/superadmin', authenticate, checkUserPermission(Role.SUPER_ADMIN), superAdminRoutes);
 
+beforeAll(async () => {
+    await TestHelpers.ensureDbConnection();
+});
+
 describe('POST /superadmin/createTeam', () => {
     it('should create a new team successfully', async () => {
         const superAdminUser = await TestHelpers.createTestSuperAdmin([]);

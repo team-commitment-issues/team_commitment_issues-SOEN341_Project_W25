@@ -10,6 +10,10 @@ const app = express();
 app.use(express.json());
 app.use('/dashboard', authenticate, dashboardRoutes);
 
+beforeAll(async () => {
+    await TestHelpers.ensureDbConnection();
+});
+
 describe('GET /dashboard/listTeams', () => {
     it('should list all teams for the authenticated user', async () => {
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);

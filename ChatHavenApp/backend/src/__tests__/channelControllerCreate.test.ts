@@ -10,6 +10,10 @@ const app = express();
 app.use(express.json());
 app.use('/channel', authenticate, checkTeamPermission(TeamRole.ADMIN), channelRoutes);
 
+beforeAll(async () => {
+    await TestHelpers.ensureDbConnection();
+});
+
 describe('POST /channel/createChannel', () => {
     it('should create a new channel successfully', async () => {
         const user = await TestHelpers.createTestSuperAdmin([]);

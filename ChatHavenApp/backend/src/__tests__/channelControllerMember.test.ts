@@ -13,6 +13,10 @@ const app = express();
 app.use(express.json());
 app.use('/channel', authenticate, checkTeamPermission(TeamRole.MEMBER), checkChannelPermission(), channelRoutes);
 
+beforeAll(async () => {
+    await TestHelpers.ensureDbConnection();
+});
+
 describe('POST /channel/getMessages', () => {
     it('should return all messages in a channel', async () => {
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);

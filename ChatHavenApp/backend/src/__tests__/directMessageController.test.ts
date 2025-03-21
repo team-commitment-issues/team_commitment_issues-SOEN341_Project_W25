@@ -13,6 +13,10 @@ const app = express();
 app.use(express.json());
 app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), checkDirectMessagePermission(), directMessageRoutes);
 
+beforeAll(async () => {
+    await TestHelpers.ensureDbConnection();
+});
+
 describe('POST /directMessage/getDirectMessages', () => {
     it('should return all direct messages between two users', async () => {
         const user = await TestHelpers.createTestUser('user@user.com', 'testpassword', 'User', 'User', 'useruser', Role.USER, []);

@@ -6,4 +6,8 @@ module.exports = {
     },
     testPathIgnorePatterns: ['/node_modules/', '/dist/', '/src/__tests__/testHelpers.ts'],
     setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+
+    verbose: true,
+    testTimeout: 10000,
+    runner: 'jest-serial-runner',
 };
