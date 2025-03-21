@@ -25,6 +25,13 @@ const LoginForm: React.FC = () => {
       const response = await login(username, password);
       if (response.token) {
         localStorage.setItem("token", response.token);
+        
+        const userData = {
+          username: username,
+        };
+        
+        localStorage.setItem("user", JSON.stringify(userData));
+        
         navigate("/dashboard");
       }
     } catch (err) {

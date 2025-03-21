@@ -236,3 +236,20 @@ body.dark-mode .settings-button.back {
     width: 90%;
   }
 }
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  border: 1px solid #c3e6cb;
+  text-align: center;
+  font-weight: 500;
+}
+
+.dark-mode .success-message {
+  background-color: #184d29;
+  color: #8cffa9;
+  border-color: #2b6240;
+}

@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import User from '../models/User';
 import jwt from 'jsonwebtoken';
 import { Role } from '../enums';
+
 class UserService {
     static async createUser(email: string, password: string, firstName: string, lastName: string, username: string, role: Role): Promise<any> {
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -34,6 +35,43 @@ class UserService {
         } catch (err) {
             throw err;
         }
+    }
+
+    static async updateUsername(oldUsername: string, newUsername: string, password: string): Promise<any> {
+        const user = await User.findOne({ username: oldUsername });
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            throw new Error('Incorrect password');
+        }
+
+        const existingUser = await User.findOne({ username: newUsername });
+        if (existingUser) {
+            throw new Error('Username already exists');
+        }
+
+        user.username = newUsername;
+        return await user.save();
+    }
+
+    static async updatePassword(username: string, oldPassword: string, newPassword: string): Promise<any> {
+        const user = await User.findOne({ username });
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            throw new Error('Incorrect password');
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        
+        return await user.save();
     }
 }
 
