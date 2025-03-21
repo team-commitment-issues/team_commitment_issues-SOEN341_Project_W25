@@ -9,5 +9,5 @@ module.exports = {
 
     verbose: true,
     testTimeout: 10000,
-    runner: 'jest-serial-runner',
+    maxWorkers: '75%',
 };
