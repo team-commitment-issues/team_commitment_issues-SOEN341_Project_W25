@@ -48,7 +48,7 @@ class UserService {
             throw new Error('Incorrect password');
         }
 
-        const existingUser = await User.findOne({ username: newUsername });
+        const existingUser = await User.findOne({ username: { $eq: newUsername } });
         if (existingUser) {
             throw new Error('Username already exists');
         }
