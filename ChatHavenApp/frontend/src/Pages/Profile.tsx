@@ -61,6 +61,22 @@ const EditProfile: React.FC = () => {
   return (
     <div className={`profile-container ${theme === "dark" ? "dark-mode" : ""}`}>
       <h2 className="profile-title">Edit Profile</h2>
+
+      {/* Edit Profile Picture */}
+      <div className="profile-boxes">
+        <div className="profile-card">
+          <div className="profile-section-title">Edit Profile Picture</div>
+          <div className="profile-picture-container">
+            {profilePreview ? (
+              <img src={profilePreview} alt="Profile Preview" className="profile-preview" />
+            ) : (
+              <p>No profile picture selected</p>
+            )}
+            <input type="file" className="file-input" onChange={handleFileChange} />
+          </div>
+        </div>
+      </div>
+      
       <p className="profile-subtitle">Update your profile details.</p>
 
       {/* Edit Name & Email */}
@@ -88,20 +104,7 @@ const EditProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit Profile Picture */}
-      <div className="profile-boxes">
-        <div className="profile-card">
-          <div className="profile-section-title">Edit Profile Picture</div>
-          <div className="profile-picture-container">
-            {profilePreview ? (
-              <img src={profilePreview} alt="Profile Preview" className="profile-preview" />
-            ) : (
-              <p>No profile picture selected</p>
-            )}
-            <input type="file" className="file-input" onChange={handleFileChange} />
-          </div>
-        </div>
-      </div>
+      
 
       {/* Save & Back Buttons */}
       <button className="profile-button save" onClick={handleSave}>
