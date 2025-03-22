@@ -76,7 +76,7 @@ class OnlineStatusService {
     /**
      * Track user connection - called when a user connects via WebSocket
      */
-    static trackUserConnection(userId: Schema.Types.ObjectId, username: string): void {
+    static async trackUserConnection(userId: Schema.Types.ObjectId, username: string): Promise<void> {
         const connections = this.userConnections.get(username) || 0;
         this.userConnections.set(username, connections + 1);
         
@@ -108,7 +108,7 @@ class OnlineStatusService {
      */
     static async getTeamSubscribers(teamId: Schema.Types.ObjectId): Promise<string[]> {
         const members = await TeamMember.find({ team: teamId });
-        const subscribers = members.map((member: any) => User.findById(member.user));
+        const subscribers = await Promise.all(members.map(async (member: any) => await User.findById(member.user)));
         return subscribers.map((subscriber: any) => subscriber.username);
     }
 
@@ -125,7 +125,7 @@ class OnlineStatusService {
     /**
      * Clear stale users - should be run periodically
      */
-    static clearStaleUsers(): void {
+    static async clearStaleUsers(): Promise<void> {
         const now = new Date();
         const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
         
@@ -141,6 +141,14 @@ class OnlineStatusService {
             }
         }
     }
+
+    /**
+     * Get a user by username
+     */
+    static async getUserByUsername(username: string): Promise<any> {
+        return await User.findOne({ username: { $eq: username } });
+    }
+
 }
 
 export default OnlineStatusService;
