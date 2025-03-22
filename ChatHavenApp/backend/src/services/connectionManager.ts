@@ -19,6 +19,7 @@ export class ConnectionManager {
     totalMessages: number;
     activeUsers: Set<string>;
   };
+  private statsInterval: NodeJS.Timeout;
 
   constructor(wss: WebSocketServer) {
     this.wss = wss;
@@ -31,9 +32,18 @@ export class ConnectionManager {
 
     // Set up interval to log connection statistics
     if (process.env.NODE_ENV === 'production') {
-      setInterval(() => this.logStats(), 5 * 60 * 1000); // Log every 5 minutes in production
+      this.statsInterval = setInterval(() => this.logStats(), 5 * 60 * 1000); // Log every 5 minutes in production
     } else {
-      setInterval(() => this.logStats(), 60 * 1000); // Log every minute in development
+      this.statsInterval = setInterval(() => this.logStats(), 60 * 1000); // Log every minute in development
+    }
+  }
+
+  /**
+   * Clean up resources used by the connection manager
+   */
+  shutdown(): void {
+    if (this.statsInterval) {
+      clearInterval(this.statsInterval);
     }
   }
 

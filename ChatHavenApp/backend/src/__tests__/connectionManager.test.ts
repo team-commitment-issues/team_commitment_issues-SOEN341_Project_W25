@@ -1,3 +1,5 @@
+// Updated connectionManager.test.ts
+
 // Define mock logger functions before mocking
 const mockLoggerFunctions = {
   info: jest.fn(),
@@ -47,6 +49,12 @@ describe('ConnectionManager', () => {
     });
     (OnlineStatusService.getUserTeams as jest.Mock).mockResolvedValue(['team-id']);
     (OnlineStatusService.getTeamSubscribers as jest.Mock).mockResolvedValue(['testuser', 'otheruser']);
+  });
+  
+  // Cleanup after each test
+  afterEach(() => {
+    // Shut down the connection manager to clear the interval
+    connectionManager.shutdown();
   });
   
   test('should track connections', () => {

@@ -1,7 +1,13 @@
 // utils/rateLimiter.ts
 import { createLogger } from './logger';
 
-const logger = createLogger('RateLimiter');
+// Create logger but make it injectable for testing
+let loggerInstance = createLogger('RateLimiter');
+
+// Expose a function to replace the logger (for testing)
+export function setLogger(logger: any) {
+  loggerInstance = logger;
+}
 
 interface RateLimitConfig {
   // Maximum messages per window
@@ -24,6 +30,7 @@ interface RateLimitTracker {
 export class RateLimiter {
   private trackers: Map<string, RateLimitTracker> = new Map();
   private config: RateLimitConfig;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(config: Partial<RateLimitConfig> = {}) {
     this.config = {
@@ -32,8 +39,27 @@ export class RateLimiter {
       verbose: config.verbose || false
     };
 
-    // Periodically clean up expired trackers
-    setInterval(() => this.cleanup(), this.config.windowMs * 2);
+    // Only create the interval when needed, not at construction time
+    this.setupCleanupInterval();
+  }
+
+  /**
+   * Set up the cleanup interval
+   */
+  private setupCleanupInterval(): void {
+    if (!this.cleanupInterval) {
+      this.cleanupInterval = setInterval(() => this.cleanup(), this.config.windowMs * 2);
+    }
+  }
+
+  /**
+   * Clean up resources used by the rate limiter
+   */
+  shutdown(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   /**
@@ -42,6 +68,9 @@ export class RateLimiter {
    * @returns Boolean indicating if the client is allowed to proceed
    */
   isAllowed(id: string): boolean {
+    // Ensure cleanup interval is running
+    this.setupCleanupInterval();
+    
     const now = Date.now();
     
     // Get or create rate tracker
@@ -74,7 +103,7 @@ export class RateLimiter {
       tracker.blocked = true;
       
       if (this.config.verbose) {
-        logger.warn('Rate limit exceeded', {
+        loggerInstance.warn('Rate limit exceeded', {
           id,
           maxRequests: this.config.maxRequests,
           windowMs: this.config.windowMs
@@ -102,14 +131,61 @@ export class RateLimiter {
     }
     
     if (this.config.verbose && cleanedCount > 0) {
-      logger.debug('Cleaned up rate limiter entries', { count: cleanedCount });
+      loggerInstance.debug('Cleaned up rate limiter entries', { count: cleanedCount });
     }
   }
 }
 
-// Export a singleton instance with default settings
-export const defaultRateLimiter = new RateLimiter({
-  maxRequests: 200,  // 200 messages per minute
-  windowMs: 60000,   // 1 minute window
-  verbose: true
+// Create a controlled singleton instance
+let defaultLimiterInstance: RateLimiter | null = null;
+
+/**
+ * Clean up the default rate limiter if it exists
+ */
+export function shutdownDefaultRateLimiter(): void {
+  if (defaultLimiterInstance) {
+    defaultLimiterInstance.shutdown();
+    defaultLimiterInstance = null;
+  }
+}
+
+/**
+ * Create and get the default rate limiter, with lazy initialization
+ */
+function getDefaultRateLimiter(): RateLimiter {
+  if (!defaultLimiterInstance) {
+    defaultLimiterInstance = new RateLimiter({
+      maxRequests: 200,  // 200 messages per minute
+      windowMs: 60000,   // 1 minute window
+      verbose: true
+    });
+  }
+  return defaultLimiterInstance;
+}
+
+// Create a proxy object that behaves both like a function and an object
+// This maintains backward compatibility with code that calls defaultRateLimiter directly
+const defaultRateLimiterProxy = new Proxy(getDefaultRateLimiter(), {
+  apply: function(target, thisArg, argumentsList) {
+    // When called as a function, delegate to the instance's isAllowed method
+    if (argumentsList.length === 1 && typeof argumentsList[0] === 'string') {
+      return getDefaultRateLimiter().isAllowed.apply(target, argumentsList as [string]);
+    }
+    throw new Error('Invalid arguments passed to defaultRateLimiter');
+  },
+  get: function(target, prop) {
+    if (prop === 'isAllowed') {
+      return (...args: [string]) => getDefaultRateLimiter().isAllowed(...args);
+    }
+    if (prop === 'shutdown') {
+      return () => shutdownDefaultRateLimiter();
+    }
+    
+    // @ts-ignore
+    return target[prop];
+  }
 });
+
+// Export the proxy as defaultRateLimiter
+export const defaultRateLimiter = defaultRateLimiterProxy as unknown as RateLimiter & 
+  ((id: string) => boolean);

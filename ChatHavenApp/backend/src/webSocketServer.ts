@@ -805,22 +805,22 @@ export const setupWebSocketServer = async (server: any): Promise<WebSocketServer
     }
     
     ws.on('message', async (data) => {
-      try {
-        // Apply rate limiting
-        if (!ws.user || !defaultRateLimiter.isAllowed(ws.user.username)) {
-          logger.warn('Rate limit exceeded', { 
-            sessionId,
-            username: ws.user?.username 
-          });
-          ws.send(JSON.stringify({ 
-            type: 'error', 
-            message: 'Message rate limit exceeded. Please slow down.' 
-          }));
-          return;
-        }
-        
-        const messageStr = data.toString();
-        const message = JSON.parse(messageStr) as Message;
+        try {
+            // Apply rate limiting
+            if (!ws.user || !defaultRateLimiter.isAllowed(ws.user.username)) {
+              logger.warn('Rate limit exceeded', { 
+                sessionId,
+                username: ws.user?.username 
+              });
+              ws.send(JSON.stringify({ 
+                type: 'error', 
+                message: 'Message rate limit exceeded. Please slow down.' 
+              }));
+              return;
+            }
+            
+            const messageStr = data.toString();
+            const message = JSON.parse(messageStr) as Message;
         
         logger.debug('Received message', { 
           sessionId,

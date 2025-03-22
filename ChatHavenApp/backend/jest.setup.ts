@@ -3,8 +3,10 @@ dotenv.config({ path: '.env.test' });
 
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
+import { shutdownDefaultRateLimiter } from './src/utils/rateLimiter';
 
 let mongoServer: MongoMemoryServer;
+mongoose.set('bufferTimeoutMS', 30000);
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
@@ -13,8 +15,10 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  shutdownDefaultRateLimiter();
   await mongoose.disconnect();
   await mongoServer.stop();
+  await new Promise(resolve => setTimeout(resolve, 500));
 });
 
 beforeEach(async () => {

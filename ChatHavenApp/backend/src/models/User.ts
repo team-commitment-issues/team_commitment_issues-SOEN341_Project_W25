@@ -117,7 +117,6 @@ const UserSchema = new Schema<IUser>({
  * @see {@link IUser}
  */
 const User = model<IUser>('User', UserSchema);
-User.createIndexes();
 
 export default User;
 export type { IUser };

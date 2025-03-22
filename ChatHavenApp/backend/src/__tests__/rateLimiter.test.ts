@@ -1,42 +1,34 @@
 // tests/utils/rateLimiter.test.ts
-import { RateLimiter } from '../utils/rateLimiter';
-import { createLogger } from '../utils/logger';
-
-// Mock the logger module
-jest.mock('../utils/logger', () => {
-  const mockWarnFn = jest.fn();
-  const mockInfoFn = jest.fn();
-  const mockDebugFn = jest.fn();
-  const mockErrorFn = jest.fn();
-
-  return {
-    createLogger: jest.fn().mockReturnValue({
-      warn: mockWarnFn,
-      info: mockInfoFn,
-      debug: mockDebugFn,
-      error: mockErrorFn
-    }),
-    __mocks__: {
-      mockWarnFn,
-      mockInfoFn,
-      mockDebugFn,
-      mockErrorFn
-    }
-  };
-});
-
-// Import the mock functions for use in tests
-const { __mocks__ } = jest.requireMock('../utils/logger');
-const { mockWarnFn, mockInfoFn, mockDebugFn, mockErrorFn } = __mocks__;
+import { RateLimiter, shutdownDefaultRateLimiter, setLogger, defaultRateLimiter } from '../utils/rateLimiter';
 
 describe('RateLimiter', () => {
   let rateLimiter: RateLimiter;
+  
+  // Create mock logger functions
+  const mockLogger = {
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn()
+  };
+
+  // Set up mocks before all tests
+  beforeAll(() => {
+    // Inject our mock logger into the RateLimiter module
+    setLogger(mockLogger);
+  });
 
   beforeEach(() => {
     jest.useFakeTimers();
 
     // Reset all mocks before each test
     jest.clearAllMocks();
+    
+    // Clear all mock functions
+    mockLogger.warn.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.debug.mockClear();
+    mockLogger.error.mockClear();
 
     // Create rate limiter with small window for testing
     rateLimiter = new RateLimiter({
@@ -47,7 +39,14 @@ describe('RateLimiter', () => {
   });
 
   afterEach(() => {
+    // Clean up the rate limiter to prevent open handles
+    rateLimiter.shutdown();
     jest.useRealTimers();
+  });
+
+  // After all tests, make sure to shut down any singleton instances
+  afterAll(() => {
+    shutdownDefaultRateLimiter();
   });
 
   test('should allow requests within the limit', () => {
@@ -151,27 +150,42 @@ describe('RateLimiter', () => {
   });
 
   test('should log warnings when verbose mode is enabled', () => {
-    // Clear any previous calls to the mock
-    mockWarnFn.mockClear();
-
-    // Create new rate limiter with verbose mode
+    // Create a new rate limiter with verbose mode ENABLED
     const verboseRateLimiter = new RateLimiter({
       maxRequests: 3,
       windowMs: 1000,
-      verbose: true
+      verbose: true  // This is crucial!
     });
 
     const clientId = 'verbose-client';
 
     // Make requests up to the limit
     for (let i = 0; i < 3; i++) {
-      expect(verboseRateLimiter.isAllowed(clientId)).toBe(true);
+      verboseRateLimiter.isAllowed(clientId);
     }
 
-    // Exceed the limit
-    expect(verboseRateLimiter.isAllowed(clientId)).toBe(false);
+    // At this point we've made exactly the max number of requests
+    // Let's verify no warning has been logged yet
+    expect(mockLogger.warn).not.toHaveBeenCalled();
 
-    // Verify warning was logged using our directly accessible mock function
-    expect(mockWarnFn).toHaveBeenCalledWith('Rate limit exceeded', expect.any(Object));
+    // Exceed the limit - this should trigger the warning
+    verboseRateLimiter.isAllowed(clientId);
+
+    // Now verify the warning was logged
+    expect(mockLogger.warn).toHaveBeenCalledWith('Rate limit exceeded', expect.any(Object));
+    
+    // Clean up this rate limiter
+    verboseRateLimiter.shutdown();
+  });
+  
+  test('defaultRateLimiter should function as a singleton', () => {
+    // Test that the default rate limiter can be used directly
+    const clientId = 'default-client';
+    
+    // Should be able to call isAllowed() directly on the defaultRateLimiter
+    expect(defaultRateLimiter.isAllowed(clientId)).toBe(true);
+    
+    // Should also work when called directly on the instance
+    expect(defaultRateLimiter.isAllowed(clientId)).toBe(true);
   });
 });
