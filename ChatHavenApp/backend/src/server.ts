@@ -26,8 +26,8 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
-// Log loaded JWT_SECRET (first few characters only for security)
-console.log(`JWT_SECRET loaded (starts with): ${process.env.JWT_SECRET?.substring(0, 5)}...`);
+// Log successful loading of JWT_SECRET without revealing its value
+console.log('JWT_SECRET loaded successfully.');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chathavendb';
 
