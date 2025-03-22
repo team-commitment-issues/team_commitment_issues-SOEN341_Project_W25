@@ -1,5 +1,6 @@
 import request from 'supertest';
 import express from 'express';
+import mongoose from 'mongoose';
 import directMessageRoutes from '../routes/directMessageRoutes';
 import authenticate from '../middlewares/authMiddleware';
 import { checkTeamPermission } from '../middlewares/permissionMiddleware';
@@ -7,9 +8,26 @@ import { Role, TeamRole } from '../enums';
 import TestHelpers from './testHelpers';
 import DirectMessage from '../models/DirectMessage';
 
+// Increase MongoDB operation timeout
+mongoose.set('bufferTimeoutMS', 30000); // 30 seconds instead of 10
+
+// Set up test app
 const app = express();
 app.use(express.json());
 app.use('/directMessage', authenticate, checkTeamPermission(TeamRole.MEMBER), directMessageRoutes);
+
+// Set up and tear down database connection
+beforeAll(async () => {
+  // Connect to the test database if not already connected
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/test-db');
+  }
+});
+
+// Clean up after all tests
+afterAll(async () => {
+  await mongoose.connection.close();
+});
 
 describe('POST /directMessage/createDirectMessage', () => {
     it('should create a direct message successfully', async () => {

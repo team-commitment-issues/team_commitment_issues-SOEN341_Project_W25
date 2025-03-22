@@ -67,7 +67,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
     fetchChannels();
   }, [selectedTeam]);
 
-  // Helper to check if a channel is currently selected
   const isChannelSelected = (channelName: string) => {
     return selection?.type === 'channel' && selection.channelName === channelName;
   };

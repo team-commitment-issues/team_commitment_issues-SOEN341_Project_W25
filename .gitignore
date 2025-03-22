@@ -10,7 +10,7 @@
 /ChatHavenApp/backend/.env.test
 
 # testing
-/coverage
+/ChatHavenApp/backend/coverage
 
 # production
 /ChatHavenApp/frontend/build
@@ -21,3 +21,4 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/ChatHavenApp/backend/coverage

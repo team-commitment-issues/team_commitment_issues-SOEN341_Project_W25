@@ -17,3 +17,17 @@ export enum TeamRole {
   ADMIN = 'ADMIN',
   MEMBER = 'MEMBER'
 }
+
+/**
+ * Represents the status available in the application.
+ * @property {string} ONLINE - Represents the online status.
+ * @property {string} AWAY - Represents the away status.
+ * @property {string} BUSY - Represents the busy status.
+ * @property {string} OFFLINE - Represents the offline status.
+*/
+export enum Status {
+  ONLINE = 'online',
+  AWAY = 'away',
+  BUSY = 'busy',
+  OFFLINE = 'offline'
+}

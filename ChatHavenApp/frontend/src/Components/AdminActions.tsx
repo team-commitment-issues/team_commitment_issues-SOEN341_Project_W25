@@ -9,17 +9,16 @@ const AdminActions: React.FC = () => {
 
   const { theme } = useTheme();
 
-  // Define button styles separately to ensure proper type checking
   const buttonStyle: React.CSSProperties = {
     ...styles.assignUserButton,
     backgroundColor: "#007bff",
     color: "#fff",
     border: "1px solid #007bff",
-    textAlign: "center", // Ensure proper type
+    textAlign: "center",
     cursor: "pointer",
     transition: "0.3s",
     ...(theme === "dark" && {
-      backgroundColor: "#007bff", // Keep blue in dark mode
+      backgroundColor: "#007bff",
       border: "1px solid #007bff",
       color: "#fff",
     }),

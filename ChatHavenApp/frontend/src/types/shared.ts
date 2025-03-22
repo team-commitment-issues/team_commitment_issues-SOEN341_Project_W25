@@ -1,16 +1,12 @@
-export interface ChannelSelection {
+export type Selection = {
     type: 'channel';
     teamName: string;
     channelName: string;
-}
-
-export interface DirectMessageSelection {
+} | {
     type: 'directMessage';
     teamName: string;
     username: string;
-}
-
-export type Selection = ChannelSelection | DirectMessageSelection | null;
+} | null;
 
 export interface ContextMenuState {
     visible: boolean;
@@ -25,3 +21,21 @@ export interface ChatMessage {
     username: string;
     createdAt: Date;
 }
+
+export type Status = 'online' | 'away' | 'busy' | 'offline';
+
+export interface UserStatus {
+    username: string;
+    status: Status;
+    lastSeen?: Date;
+}
+
+export type WebSocketMessage = 
+    | { type: 'message'; text: string; username: string; _id: string; createdAt: string; teamName: string; channelName: string }
+    | { type: 'directMessage'; text: string; username: string; receiverUsername: string; _id: string; createdAt: string; teamName: string }
+    | { type: 'statusUpdate'; username: string; status: Status; lastSeen?: string }
+    | { type: 'typing'; username: string; isTyping: boolean; teamName: string; channelName?: string; receiverUsername?: string }
+    | { type: 'join'; teamName: string; channelName: string }
+    | { type: 'joinDirectMessage'; teamName: string; username: string }
+    | { type: 'ping'; selection: Selection }
+    | { type: 'subscribeOnlineStatus'; teamName: string };

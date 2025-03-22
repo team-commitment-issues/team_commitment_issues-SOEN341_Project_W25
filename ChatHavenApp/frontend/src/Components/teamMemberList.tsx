@@ -6,6 +6,8 @@ import { removeUserFromChannel } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
 import { useTheme } from "../Context/ThemeContext";
 import { Selection, ContextMenuState } from "../types/shared";
+import { useOnlineStatus } from "../Context/OnlineStatusContext";
+import UserStatusIndicator from "./UI/UserStatusIndicator";
 
 interface User {
     username: string;
@@ -38,13 +40,12 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const [title, setTitle] = useState<string>("Users");
   const [selectedUserRole, setSelectedUserRole] = useState<string>("MEMBER");  
   const { theme } = useTheme();
+  const { refreshStatuses, subscribeToTeamStatuses, subscribeToChannelStatuses } = useOnlineStatus();
 
-  // Helper function to get the current channel from the selection
   const getCurrentChannel = () => {
     return selection?.type === 'channel' ? selection.channelName : null;
   };
 
-  // Helper function to set a DM selection
   const setSelectedDm = (username: string | null) => {
     if (username && selectedTeam) {
       setSelection({
@@ -65,21 +66,25 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         setTitle("Channel Members");
         const channelMemberList = await getUsersInChannel(selectedTeam, selectedChannel);
         setUsers(channelMemberList);
+        await refreshStatuses(channelMemberList.map((user: { username: any; }) => user.username));
+        subscribeToChannelStatuses(selectedTeam, selectedChannel);
       } else if (selectedTeam) {
         setTitle("Team Members");
         const teamMemberList = await getUsersInTeam(selectedTeam);
         setUsers(teamMemberList);
+        await refreshStatuses(teamMemberList.map((user: { username: any; }) => user.username));
+        subscribeToTeamStatuses(selectedTeam);
       } else {
         return [];
       }
     } catch (err) {
       console.error("Failed to fetch users", err);
     }
-  }, [selection, selectedTeam]);
+  }, [selection, selectedTeam, refreshStatuses, subscribeToChannelStatuses, subscribeToTeamStatuses]);
 
   useEffect(() => {
     fetchUsers();
-  }, [selection, selectedTeam, fetchUsers, refreshState]);
+  }, [selection, selectedTeam, refreshState, fetchUsers]);
 
   const toggleTeamMemberSelection = (user: string) => {
     setSelectedTeamMembers((previouslySelectedMembers) =>
@@ -121,30 +126,35 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
     { label: 'Promote User to Admin', onClick: async () => await promoteToAdmin(contextMenu.selected, selectedTeam).then(fetchUsers) },
   ];
 
+  const getStyledComponent = (baseStyle: any) => ({
+    ...baseStyle,
+    ...(theme === "dark" && baseStyle["&.dark-mode"]),
+  });
+
   return (
-    <div style={{ ...styles.userList, ...(theme === "dark" && styles.userList["&.dark-mode"]) }}>
+    <div style={getStyledComponent(styles.userList)}>
       <h3 
         onClick={() => setCollapsed(!collapsed)} 
-        style={{ ...styles.listHeader, ...(theme === "dark" && styles.listHeader["&.dark-mode"]) }}
+        style={getStyledComponent(styles.listHeader)}
       >
         {title} {collapsed ? "▲" : "▼"}
       </h3>
 
       {!collapsed && (
-        <ul style={{ ...styles.listContainer, ...(theme === "dark" && styles.listContainer["&.dark-mode"]) }}>
+        <ul style={getStyledComponent(styles.listContainer)}>
           {users.map((user) => (
             <li
               key={user.username}
               onContextMenu={e => handleContextMenu(e, user)}
               value={user.username}
               style={{
-                ...styles.listItem,
+                ...getStyledComponent(styles.listItem),
                 backgroundColor: selectedTeamMembers.includes(user.username) ? "#D3E3FC" : "transparent",
                 fontWeight: selectedTeamMembers.includes(user.username) ? "bold" : "normal",
-                ...(theme === "dark" && styles.listItem["&.dark-mode:hover"]),
               }}
               onClick={() => toggleTeamMemberSelection(user.username)}
             >
+              <UserStatusIndicator username={user.username} size="small" />
               {user.username} - {user.role}
             </li>
           ))}

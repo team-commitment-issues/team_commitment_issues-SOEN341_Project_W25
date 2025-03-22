@@ -132,7 +132,7 @@ function checkChannelPermission() {
             return next();
         }
 
-        TeamMember.findOne({ user: req.user._id, team: req.team._id }).then((teamMember) => {
+        await TeamMember.findOne({ user: req.user._id, team: req.team._id }).then((teamMember) => {
             if (!teamMember) {
                 res.status(404).json({'Not Found': 'Team member not found'});
                 return;
