@@ -56,6 +56,7 @@ export interface ChannelMessage extends BaseMessage {
   teamName: string;
   channelName: string;
   text?: string;
+  username?: string; // Sender username
   _id?: string; // Server-assigned message ID
   createdAt?: string; // ISO string date
   status?: MessageStatus; // Message delivery status
@@ -66,11 +67,20 @@ export interface ChannelMessage extends BaseMessage {
  */
 export interface DirectMessagePayload extends BaseMessage {
   teamName: string;
-  username: string; // receiver username
+  username?: string; // Sender username
+  receiverUsername: string; // Receiver username - Renamed for clarity
   text?: string;
   _id?: string; // Server-assigned message ID
   createdAt?: string; // ISO string date
   status?: MessageStatus; // Message delivery status
+}
+
+/**
+ * Join direct message request
+ */
+export interface JoinDirectMessagePayload extends BaseMessage {
+  teamName: string;
+  username: string; // Receiver username to start a conversation with
 }
 
 /**
@@ -88,6 +98,7 @@ export interface TypingMessage extends BaseMessage {
   channelName?: string;
   receiverUsername?: string;
   isTyping: boolean;
+  username?: string; // Who is typing
 }
 
 /**
@@ -118,10 +129,10 @@ export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed'
 export interface FetchHistoryMessage extends BaseMessage {
   teamName: string;
   channelName?: string;
-  username?: string; // For direct messages
+  username?: string; // For direct messages - this is the other user's username
   before?: string; // Message ID to fetch before
   limit: number;
-  requestId: string;
+  requestId?: string;
 }
 
 /**
@@ -137,6 +148,7 @@ export interface HistoryResponse extends BaseMessage {
   }>;
   hasMore: boolean;
   before?: string; // The original 'before' parameter
+  requestId?: string; // Echo back the request ID
 }
 
 /**
@@ -144,13 +156,15 @@ export interface HistoryResponse extends BaseMessage {
  */
 export type Message = 
   | ChannelMessage 
-  | DirectMessagePayload 
+  | DirectMessagePayload
+  | JoinDirectMessagePayload
   | StatusMessage 
   | TypingMessage 
   | OnlineStatusSubscription
   | MessageAck
   | FetchHistoryMessage
-  | HistoryResponse;
+  | HistoryResponse
+  | BaseMessage; // Include base message for simple types like ping
 
 /**
  * Decoded JWT token structure

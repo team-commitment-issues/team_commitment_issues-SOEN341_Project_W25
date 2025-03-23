@@ -23,7 +23,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   
   // This state will be managed by ChatSelectionContext
-  const [selection, setSelection] = useState<Selection>(null);
+  const [selection, setSelection] = useState<Selection | null>(null);
   
   const [usersContextMenu, setUsersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
   const [membersContextMenu, setMembersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });

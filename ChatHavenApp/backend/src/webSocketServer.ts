@@ -10,6 +10,7 @@ import Team, { ITeam } from './models/Team';
 import TeamMember, { ITeamMember } from './models/TeamMember';
 import Channel, { IChannel } from './models/Channel';
 import DirectMessage, { IDirectMessage } from './models/DirectMessage';
+import { Message, IMessage } from './models/Message';
 import { Role, Status } from './enums';
 import { setTimeout } from 'timers/promises';
 import { createLogger } from './utils/logger';
@@ -20,15 +21,16 @@ import {
   ExtendedWebSocket,
   DecodedToken,
   MessageType,
-  Message,
   ChannelMessage,
   DirectMessagePayload,
   StatusMessage,
   TypingMessage,
   OnlineStatusSubscription,
   MessageAck,
-  FetchHistoryMessage
+  FetchHistoryMessage,
+  BaseMessage
 } from './types/websocket';
+import DMessage from './models/DMessage';
 
 // Setup structured logging
 const logger = createLogger('WebSocketServer');
@@ -198,56 +200,62 @@ const authorizeUserForChannel = async (ws: ExtendedWebSocket, message: ChannelMe
  * Finds or creates a direct message between two users
  */
 const findOrCreateDirectMessage = async (
-    userId: Schema.Types.ObjectId, 
-    teamName: string, 
-    username: string
-  ): Promise<{ team: ITeam; receiver: IUser; directMessage: IDirectMessage }> => {
-    // Find the team
-    const team = await Team.findOne({ name: teamName }).exec();
-    if (!team) throw new Error(`Team with name "${teamName}" not found`);
+  userId: Schema.Types.ObjectId, 
+  teamName: string, 
+  username: string
+): Promise<{ team: ITeam; receiver: IUser; directMessage: IDirectMessage }> => {
+  // Find the team
+  const team = await Team.findOne({ name: teamName }).exec();
+  if (!team) throw new Error(`Team with name "${teamName}" not found`);
+
+  // Find sender user
+  const user1 = await User.findById(userId).exec();
+  if (!user1) throw new Error(`User with ID "${userId}" not found`);
   
-    // Find sender user
-    const user1 = await User.findById(userId).exec();
-    if (!user1) throw new Error(`User with ID "${userId}" not found`);
+  // Verify sender is a team member
+  if (user1.role !== 'SUPER_ADMIN') {
+    const teamMember = await TeamMember.findOne({ user: userId, team: team._id }).exec();
+    if (!teamMember) throw new Error(`User is not a member of team "${teamName}"`);
+  }
+
+  // Find receiver user
+  const user2 = await User.findOne({ username }).exec();
+  if (!user2) throw new Error(`User with username "${username}" not found`);
+  
+  // Handle self-messaging case specially to avoid confusion
+  if (user1.username === user2.username) {
+    throw new Error('Cannot create a direct message with yourself');
+  }
+  
+  // Verify receiver is a team member
+  if (user2.role !== 'SUPER_ADMIN') {
+    const teamMember = await TeamMember.findOne({ user: user2._id, team: team._id }).exec();
+    if (!teamMember) throw new Error(`User "${username}" is not a member of team "${teamName}"`);
+  }
+
+  // Try to find an existing direct message between these specific users
+  // IMPORTANT: Find direction message that contains BOTH users, and ONLY these two users
+  let directMessage = await DirectMessage.findOne({
+    users: { $all: [user1._id, user2._id], $size: 2 }
+  }).exec();
+  
+  // Create a new direct message if needed
+  if (!directMessage) {
+    logger.info('Creating new direct message', {
+      sender: user1.username,
+      receiver: user2.username,
+      teamName: team.name
+    });
     
-    // Verify sender is a team member
-    if (user1.role !== 'SUPER_ADMIN') {
-      const teamMember = await TeamMember.findOne({ user: userId, team: team._id }).exec();
-      if (!teamMember) throw new Error(`User is not a member of team "${teamName}"`);
-    }
-  
-    // Find receiver user
-    const user2 = await User.findOne({ username }).exec();
-    if (!user2) throw new Error(`User with username "${username}" not found`);
-    
-    // Verify receiver is a team member
-    if (user2.role !== 'SUPER_ADMIN') {
-      const teamMember = await TeamMember.findOne({ user: user2._id, team: team._id }).exec();
-      if (!teamMember) throw new Error(`User "${username}" is not a member of team "${teamName}"`);
-    }
-  
-    // Try to find an existing direct message
-    let directMessage = await DirectMessage.findOne({ 
-      users: { $all: [user1._id, user2._id] }
-    }).exec();
-    
-    // Create a new direct message if needed
-    if (!directMessage) {
-      logger.info('Creating new direct message', {
-        sender: user1.username,
-        receiver: user2.username,
-        teamName: team.name
-      });
-      
-      directMessage = await DirectMessageService.createDirectMessage(
-        user1.username, 
-        user2._id as Schema.Types.ObjectId, 
-        team._id as Schema.Types.ObjectId
-      );
-    }
-  
-    return { team, receiver: user2, directMessage };
-  };
+    directMessage = await DirectMessageService.createDirectMessage(
+      user2.username, 
+      user1._id as Schema.Types.ObjectId, 
+      team._id as Schema.Types.ObjectId
+    );
+  }
+
+  return { team, receiver: user2, directMessage };
+};
 
 /**
  * Broadcasts status updates to all subscribed clients
@@ -402,7 +410,7 @@ class MessageHandlers {
     const { team, receiver, directMessage } = await findOrCreateDirectMessage(
       user._id as Schema.Types.ObjectId, 
       message.teamName, 
-      message.username
+      message.username || ''
     );
     
     ws.team = team;
@@ -425,67 +433,136 @@ class MessageHandlers {
   }
 
   /**
-   * Handles sending direct messages
-   */
-  static async handleDirectMessage(
-    ws: ExtendedWebSocket, 
-    message: DirectMessagePayload, 
-    wss: WebSocketServer, 
-    token: string
-  ): Promise<void> {
-    const user = await verifyToken(token);
-    ws.user = user;
-    
-    const { team, receiver, directMessage } = await findOrCreateDirectMessage(
-      user._id as Schema.Types.ObjectId, 
-      message.teamName, 
-      message.username
+ * Handles direct messages
+ */
+static async handleDirectMessage(
+  ws: ExtendedWebSocket, 
+  message: DirectMessagePayload, 
+  wss: WebSocketServer, 
+  token: string
+): Promise<void> {
+  const user = await verifyToken(token);
+  ws.user = user;
+  
+  // Log incoming message details for debugging
+  logger.debug('DirectMessage request details', {
+    senderUsername: user.username,
+    requestedReceiverUsername: message.username,
+    receiverInPayload: message.receiverUsername,
+    teamName: message.teamName,
+    messageLength: message.text ? message.text.length : 0
+  });
+  
+  // Check if receiverUsername is used correctly in the payload
+  // In some implementations, the username might be in message.username and 
+  // in others it might be in message.receiverUsername
+  const receiverUsername = message.receiverUsername || message.username;
+  
+  // Prevent messaging yourself (with more detailed logging)
+  if (user.username === receiverUsername) {
+    logger.error('Self-messaging attempt detected', {
+      username: user.username,
+      receiverUsername,
+      teamName: message.teamName
+    });
+    throw new Error('Cannot send a direct message to yourself');
+  }
+  
+  // Find receiver user first for validation
+  const receiver = await User.findOne({ username: receiverUsername });
+  if (!receiver) {
+    throw new Error(`User with username "${receiverUsername}" not found`);
+  }
+  
+  // Find the team
+  const team = await Team.findOne({ name: message.teamName }).exec();
+  if (!team) throw new Error(`Team with name "${message.teamName}" not found`);
+  
+  // Try to find the direct message between these two specific users
+  const directMessage = await DirectMessage.findOne({
+    users: { 
+      $all: [user._id, receiver._id],
+      $size: 2
+    }
+  }).exec();
+  
+  if (!directMessage) {
+    logger.info('Creating new direct message', {
+      sender: user.username,
+      receiver: receiverUsername,
+      teamName: message.teamName
+    });
+
+    // Create the direct message if it doesn't exist
+    const newDirectMessage = await DirectMessageService.createDirectMessage(
+      receiverUsername!,
+      user._id as Schema.Types.ObjectId,
+      team._id as Schema.Types.ObjectId
     );
     
+    // Update the WebSocket context
+    ws.team = team;
+    ws.receiver = receiver;
+    ws.directMessage = newDirectMessage;
+  } else {
+    // Update the WebSocket context with the existing direct message
     ws.team = team;
     ws.receiver = receiver;
     ws.directMessage = directMessage;
-    
-    if (!message.text) {
-      throw new Error('Message text is required');
-    }
-    
-    const sentMessage = await DirectMessageService.sendDirectMessage(
-      message.text, 
-      user.username, 
-      directMessage._id as Types.ObjectId
-    );
-    
-    const formattedMessage = {
-      type: 'directMessage',
-      _id: sentMessage._id,
-      text: sentMessage.text,
-      username: sentMessage.username,
-      createdAt: sentMessage.createdAt,
-      // Echo back the client message ID if provided
-      ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
-    };
-    
-    let sentCount = 0;
-    wss.clients.forEach((client) => {
-      const extendedClient = client as ExtendedWebSocket;
-      if (extendedClient.readyState === WebSocket.OPEN && 
-          extendedClient.directMessage && ws.directMessage &&
-          extendedClient.directMessage._id === ws.directMessage._id) {
-        extendedClient.send(JSON.stringify(formattedMessage));
-        sentCount++;
-      }
-    });
-    
-    logger.debug('Direct message sent', {
-      directMessageId: directMessage._id,
-      sender: user.username,
-      receiver: receiver.username,
-      messageId: sentMessage._id,
-      clientMessageId: message.clientMessageId,
-      sentCount
-    });
   }
+  
+  logger.debug('Using direct message context', {
+    userId: user._id,
+    username: user.username,
+    receiverUsername,
+    directMessageId: ws.directMessage._id
+  });
+  
+  if (!message.text) {
+    throw new Error('Message text is required');
+  }
+  
+  // Now use the correct directMessage
+  const sentMessage = await DirectMessageService.sendDirectMessage(
+    message.text, 
+    user.username, 
+    ws.directMessage._id as Types.ObjectId
+  );
+  
+  const formattedMessage = {
+    type: 'directMessage',
+    _id: sentMessage._id,
+    text: sentMessage.text,
+    username: sentMessage.username,
+    createdAt: sentMessage.createdAt,
+    status: sentMessage.status || 'sent',
+    // Echo back the client message ID if provided
+    ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
+  };
+  
+  // Send the message to both the sender and receiver
+  let sentCount = 0;
+  wss.clients.forEach((client) => {
+    const extendedClient = client as ExtendedWebSocket;
+    if (extendedClient.readyState === WebSocket.OPEN && 
+        extendedClient.user && 
+        (extendedClient.user.username === user.username || 
+         extendedClient.user.username === receiverUsername)) {
+      
+      extendedClient.send(JSON.stringify(formattedMessage));
+      sentCount++;
+    }
+  });
+  
+  logger.debug('Direct message sent', {
+    directMessageId: ws.directMessage._id,
+    sender: user.username,
+    receiver: receiverUsername,
+    messageId: sentMessage._id,
+    clientMessageId: message.clientMessageId,
+    sentCount
+  });
+}
 
   /**
    * Handles ping messages (keep-alive)
@@ -670,48 +747,53 @@ class MessageHandlers {
     });
     
     try {
-      // First check if this is a channel or direct message
-      const directMessage = await DirectMessage.findOne({ 
-        "messages._id": messageId 
-      }).populate('users').exec();
+      // Check if this is a direct message first
+      const dMessage = await DMessage.findById(messageId);
       
-      if (directMessage) {
-        // This is a direct message, find other user to notify
-        const otherUsers = directMessage.users.filter(
-          u => u !== user._id
-        );
+      if (dMessage) {
+        // This is a direct message, find the directMessage it belongs to
+        const directMessage = await DirectMessage.findOne({ 
+          dmessages: messageId 
+        }).populate('users').exec();
         
-        // Forward ack to all other participants
-        otherUsers.forEach(otherUser => {
-          wss.clients.forEach(client => {
-            const extClient = client as ExtendedWebSocket;
-            if (extClient.readyState === WebSocket.OPEN && 
-                extClient.user && 
-                extClient.user._id === otherUser) {
-              extClient.send(JSON.stringify({
-                type: 'messageAck',
-                messageId,
-                status,
-                username: user.username,
-                // Include clientMessageId if provided
-                ...(clientMessageId && { clientMessageId })
-              }));
-            }
+        if (directMessage) {
+          // Forward ack to all other participants
+          const otherUsers = directMessage.users.filter(
+            u => String(u) !== String(user._id)
+          );
+          
+          // Forward ack to all other participants
+          otherUsers.forEach(otherUserId => {
+            wss.clients.forEach(client => {
+              const extClient = client as ExtendedWebSocket;
+              if (extClient.readyState === WebSocket.OPEN && 
+                  extClient.user && 
+                  String(extClient.user._id) === String(otherUserId)) {
+                extClient.send(JSON.stringify({
+                  type: 'messageAck',
+                  messageId,
+                  status,
+                  username: user.username,
+                  // Include clientMessageId if provided
+                  ...(clientMessageId && { clientMessageId })
+                }));
+              }
+            });
           });
-        });
-        
-        // Update message status in database if needed
-        if (status === 'read' || status === 'delivered') {
-          await DirectMessageService.updateMessageStatus(messageId, status);
+          
+          // Update message status in database if needed
+          if (status === 'read' || status === 'delivered') {
+            await DirectMessageService.updateMessageStatus(messageId, status);
+          }
         }
       } else {
-        // This might be a channel message, update status
-        const channelMessage = await Channel.findOne({ 
-          "messages._id": messageId 
-        }).exec();
+        // Check if this is a channel message
+        const channelMessage = await Message.findById(messageId);
         
         if (channelMessage) {
           await ChannelService.updateMessageStatus(messageId, status);
+        } else {
+          throw new Error(`Message ${messageId} not found`);
         }
       }
     } catch (error) {
@@ -848,7 +930,7 @@ class MessageHandlers {
  */
 const handleWebSocketMessage = async (
   ws: ExtendedWebSocket, 
-  message: Message, 
+  message: BaseMessage, 
   wss: WebSocketServer, 
   token: string
 ): Promise<void> => {
@@ -1030,7 +1112,7 @@ export const setupWebSocketServer = async (server: any): Promise<WebSocketServer
             }
             
             const messageStr = data.toString();
-            const message = JSON.parse(messageStr) as Message;
+            const message = JSON.parse(messageStr) as BaseMessage;
         
         logger.debug('Received message', { 
           sessionId,

@@ -1,7 +1,8 @@
 import React from 'react';
+import { MessageStatus } from '../../types/shared';
 
 interface MessageStatusIndicatorProps {
-  status?: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+  status?: MessageStatus;
   dark?: boolean;
 }
 

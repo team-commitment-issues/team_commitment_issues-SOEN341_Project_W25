@@ -9,6 +9,7 @@ import { useOnlineStatus } from "../Context/OnlineStatusContext";
 import UserStatusIndicator from "./UI/UserStatusIndicator";
 import { Selection, ContextMenuState } from "../types/shared";
 import { useChatSelection } from "../Context/ChatSelectionContext";
+import { Status } from "../types/shared";
 
 interface User {
   username: string;
@@ -18,7 +19,7 @@ interface UserListProps {
   selectedUsers: string[];
   setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
-  selection: Selection;
+  selection: Selection | null;
   setSelection: (selection: Selection) => void;
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   contextMenu: ContextMenuState;
@@ -42,50 +43,60 @@ const UserList: React.FC<UserListProps> = ({
   const { theme } = useTheme();
   const { refreshStatuses, getUserStatus } = useOnlineStatus();
   const [hasPermission, setHasPermission] = useState(true);
+  const [fetchTrigger, setFetchTrigger] = useState(0); // Used to trigger fetches manually
   
   // We'll keep the old selection prop for compatibility with the old components
   // but we'll also use the ChatSelectionContext for the new components that support it
   const chatSelectionContext = useChatSelection();
 
-  const getCurrentChannel = () => {
+  const getCurrentChannel = useCallback(() => {
     return selection?.type === 'channel' ? selection.channelName : null;
-  };
+  }, [selection]);
 
-  const fetchUsers = useCallback(async () => {
+  // Store stable reference to refreshStatuses to prevent infinite loops
+  const refreshStatusesRef = React.useRef(refreshStatuses);
+  
+  // Update the ref when refreshStatuses changes
+  useEffect(() => {
+    refreshStatusesRef.current = refreshStatuses;
+  }, [refreshStatuses]);
+  
+  // Fetch users only once on component mount and when explicitly triggered
+  useEffect(() => {
     if (!hasPermission) return;
 
-    try {
-      const usersList = await getUsers();
-      setUsers(usersList);
-      
-      await refreshStatuses(usersList.map((user: { username: any; }) => user.username));
-    } catch (err: any) {
-      if (err.message?.includes('Forbidden')) {
-        setHasPermission(false);
-      } else {
-        setUsers([]);
+    const fetchUserData = async () => {
+      try {
+        const usersList = await getUsers();
+        setUsers(usersList);
+        
+        // Don't await this - it should run independently to avoid re-render loops
+        // Use the ref instead of the function directly
+        refreshStatusesRef.current(usersList.map((user: { username: any; }) => user.username))
+          .catch(err => console.error("Error refreshing statuses:", err));
+      } catch (err: any) {
+        if (err.message?.includes('Forbidden')) {
+          setHasPermission(false);
+        } else {
+          setUsers([]);
+        }
       }
-    }
-  }, [hasPermission, refreshStatuses]);
+    };
 
-  useEffect(() => {
-    fetchUsers();
-  }, [hasPermission, fetchUsers]);
+    fetchUserData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPermission, fetchTrigger]); // Only depend on permission and manual triggers
 
-  const toggleUserSelection = (user: string) => {
+  const toggleUserSelection = useCallback((user: string) => {
     setSelectedUsers((prevSelectedUsers) =>
       prevSelectedUsers.includes(user)
         ? prevSelectedUsers.filter((u) => u !== user)
         : [...prevSelectedUsers, user]
     );
     setSelectedTeamMembers([]);
-  };
+  }, [setSelectedUsers, setSelectedTeamMembers]);
 
-  if (!users.length) {
-    return null;
-  }
-
-  const handleContextMenu = (event: React.MouseEvent, username: string) => {
+  const handleContextMenu = useCallback((event: React.MouseEvent, username: string) => {
     event.preventDefault();
     setContextMenu({
       visible: true,
@@ -93,13 +104,62 @@ const UserList: React.FC<UserListProps> = ({
       y: event.clientY,
       selected: username,
     });
-  };
+  }, [setContextMenu]);
 
-  const handleCloseContextMenu = () => {
+  const handleCloseContextMenu = useCallback(() => {
     setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
-  };
+  }, [setContextMenu]);
 
-  const formatLastSeen = (lastSeen?: Date) => {
+  const handleAddUserToTeam = useCallback(async (username: string) => {
+    if (selectedTeam) {
+      await addUserToTeam(username, selectedTeam, "MEMBER");
+      setFetchTrigger(prev => prev + 1); // Trigger a refresh
+      handleRefresh();
+    }
+  }, [selectedTeam, handleRefresh]);
+
+  const handleAddUserToChannel = useCallback(async (username: string) => {
+    const selectedChannel = getCurrentChannel();
+    if (selectedTeam && selectedChannel) {
+      await addUserToChannel(username, selectedTeam, selectedChannel);
+      setFetchTrigger(prev => prev + 1); // Trigger a refresh
+      handleRefresh();
+    }
+  }, [selectedTeam, getCurrentChannel, handleRefresh]);
+
+  const handleDirectMessage = useCallback((username: string) => {
+    if (selectedTeam) {
+      const dmSelection = {
+        type: 'directMessage' as const,
+        teamName: selectedTeam,
+        username
+      };
+      
+      // Update both the prop and context selection
+      setSelection(dmSelection);
+      if (chatSelectionContext) {
+        chatSelectionContext.setSelection(dmSelection);
+      }
+    }
+  }, [selectedTeam, setSelection, chatSelectionContext]);
+
+  // Memoize menu items to prevent unnecessary re-renders
+  const menuItems = useCallback(() => [
+    { 
+      label: 'Add User to Selected Team', 
+      onClick: () => handleAddUserToTeam(contextMenu.selected)
+    },
+    { 
+      label: 'Add User to Selected Channel', 
+      onClick: () => handleAddUserToChannel(contextMenu.selected)
+    },
+    {
+      label: 'Direct Message User',
+      onClick: () => handleDirectMessage(contextMenu.selected)
+    }
+  ], [contextMenu.selected, handleAddUserToTeam, handleAddUserToChannel, handleDirectMessage]);
+
+  const formatLastSeen = useCallback((lastSeen?: Date) => {
     if (!lastSeen) return 'Unknown';
     
     const now = new Date();
@@ -113,47 +173,11 @@ const UserList: React.FC<UserListProps> = ({
     if (diffHours < 24) return `${diffHours}h ago`;
     
     return lastSeen.toLocaleDateString();
-  };
+  }, []);
 
-  const menuItems = [
-    { 
-      label: 'Add User to Selected Team', 
-      onClick: async () => {
-        if (selectedTeam) {
-          await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER");
-          handleRefresh();
-        }
-      } 
-    },
-    { 
-      label: 'Add User to Selected Channel', 
-      onClick: async () => {
-        const selectedChannel = getCurrentChannel();
-        if (selectedTeam && selectedChannel) {
-          await addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel);
-          handleRefresh();
-        }
-      }
-    },
-    {
-      label: 'Direct Message User',
-      onClick: () => {
-        if (selectedTeam && contextMenu.selected) {
-          const dmSelection = {
-            type: 'directMessage' as const,
-            teamName: selectedTeam,
-            username: contextMenu.selected
-          };
-          
-          // Update both the prop and context selection
-          setSelection(dmSelection);
-          if (chatSelectionContext) {
-            chatSelectionContext.setSelection(dmSelection);
-          }
-        }
-      }
-    }
-  ];
+  if (!users.length) {
+    return null;
+  }
 
   return (
     <div
@@ -213,11 +237,11 @@ const UserList: React.FC<UserListProps> = ({
                   color: theme === "dark" ? "#AAA" : "#606770",
                   marginLeft: "auto"
                 }}>
-                  {status === 'online'
+                  {status === Status.ONLINE
                     ? "Online"
-                    : status === 'away'
+                    : status === Status.AWAY
                       ? "Away"
-                      : status === 'busy'
+                      : status === Status.BUSY
                         ? "Busy"
                         : `Last seen: ${formatLastSeen(userStatus?.lastSeen)}`
                   }
@@ -229,7 +253,7 @@ const UserList: React.FC<UserListProps> = ({
       )}
       {contextMenu.visible && (
         <ContextMenu
-          items={menuItems}
+          items={menuItems()}
           position={{ x: contextMenu.x, y: contextMenu.y }}
           onClose={handleCloseContextMenu}
         />

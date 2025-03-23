@@ -28,6 +28,7 @@ interface IDMessage extends Document {
      * @type {Date}
      */
     createdAt: Date;
+    status: string;
 }
 
 /**
@@ -51,6 +52,11 @@ const DMessageSchema = new Schema<IDMessage>({
     createdAt: {
         type: Date,
         default: Date.now,
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'sent', 'delivered', 'read', 'failed'], 
+        default: 'sent',
     },
 });
 

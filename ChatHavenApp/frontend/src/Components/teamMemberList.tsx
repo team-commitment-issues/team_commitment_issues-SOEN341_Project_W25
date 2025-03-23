@@ -19,8 +19,8 @@ interface TeamMemberListProps {
   selectedTeamMembers: string[];
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
-  selection: Selection;
-  setSelection: (selection: Selection) => void;
+  selection: Selection | null;
+  setSelection: (selection: Selection | null) => void;
   contextMenu: ContextMenuState;
   setContextMenu: (arg: ContextMenuState) => void;
   refreshState: boolean;
@@ -42,16 +42,17 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const [selectedUserRole, setSelectedUserRole] = useState<string>("MEMBER");  
   const { theme } = useTheme();
   const { refreshStatuses, subscribeToTeamStatuses, subscribeToChannelStatuses } = useOnlineStatus();
+  const [fetchTrigger, setFetchTrigger] = useState(0); // Used to trigger fetches manually
   
   // We'll keep the old selection prop for compatibility with the old components
   // but we'll also use the ChatSelectionContext for the new components that support it
   const chatSelectionContext = useChatSelection();
 
-  const getCurrentChannel = () => {
+  const getCurrentChannel = useCallback(() => {
     return selection?.type === 'channel' ? selection.channelName : null;
-  };
+  }, [selection]);
 
-  const setSelectedDm = (username: string | null) => {
+  const setSelectedDm = useCallback((username: string | null) => {
     if (username && selectedTeam) {
       const dmSelection = {
         type: 'directMessage' as const,
@@ -70,115 +71,179 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         chatSelectionContext.setSelection(null);
       }
     }
-  };
+  }, [chatSelectionContext, selectedTeam, setSelection]);
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      const selectedChannel = selection?.type === 'channel' ? selection.channelName : null;
-      
-      if (selectedChannel && selectedTeam) {
-        setTitle("Channel Members");
-        const channelMemberList = await getUsersInChannel(selectedTeam, selectedChannel);
-        setUsers(channelMemberList);
-        await refreshStatuses(channelMemberList.map((user: { username: any; }) => user.username));
-        subscribeToChannelStatuses(selectedTeam, selectedChannel);
-      } else if (selectedTeam) {
-        setTitle("Team Members");
-        const teamMemberList = await getUsersInTeam(selectedTeam);
-        setUsers(teamMemberList);
-        await refreshStatuses(teamMemberList.map((user: { username: any; }) => user.username));
-        subscribeToTeamStatuses(selectedTeam);
-      } else {
-        setUsers([]);
-      }
-    } catch (err) {
-      console.error("Failed to fetch users", err);
-    }
-  }, [selection, selectedTeam, refreshStatuses, subscribeToChannelStatuses, subscribeToTeamStatuses]);
-
+  // Store stable references to functions that cause infinite loops when included as dependencies
+  const statusFunctionsRef = React.useRef({
+    refreshStatuses,
+    subscribeToChannelStatuses,
+    subscribeToTeamStatuses
+  });
+  
+  // Update the refs when the functions change
   useEffect(() => {
-    fetchUsers();
-  }, [selection, selectedTeam, refreshState, fetchUsers]);
+    statusFunctionsRef.current = {
+      refreshStatuses,
+      subscribeToChannelStatuses,
+      subscribeToTeamStatuses
+    };
+  }, [refreshStatuses, subscribeToChannelStatuses, subscribeToTeamStatuses]);
+  
+  // useEffect for fetching users - separate from other logic
+  useEffect(() => {
+    if (!selectedTeam) return;
 
-  const toggleTeamMemberSelection = (user: string) => {
+    // Get current channel inside the effect to avoid dependency
+    const selectedChannel = selection?.type === 'channel' ? selection.channelName : null;
+    
+    const fetchUserData = async () => {
+      try {
+        if (selectedChannel && selectedTeam) {
+          setTitle("Channel Members");
+          const channelMemberList = await getUsersInChannel(selectedTeam, selectedChannel);
+          setUsers(channelMemberList);
+          
+          // Run status updates independently using the ref
+          statusFunctionsRef.current.refreshStatuses(channelMemberList.map((user: { username: any; }) => user.username))
+            .catch(err => console.error("Error refreshing channel statuses:", err));
+          
+          // Handle subscription separately to avoid dependency loops
+          try {
+            statusFunctionsRef.current.subscribeToChannelStatuses(selectedTeam, selectedChannel);
+          } catch (err) {
+            console.error("Error subscribing to channel statuses:", err);
+          }
+        } else if (selectedTeam) {
+          setTitle("Team Members");
+          const teamMemberList = await getUsersInTeam(selectedTeam);
+          setUsers(teamMemberList);
+          
+          // Run status updates independently using the ref
+          statusFunctionsRef.current.refreshStatuses(teamMemberList.map((user: { username: any; }) => user.username))
+            .catch(err => console.error("Error refreshing team statuses:", err));
+          
+          // Handle subscription separately to avoid dependency loops
+          try {
+            statusFunctionsRef.current.subscribeToTeamStatuses(selectedTeam);
+          } catch (err) {
+            console.error("Error subscribing to team statuses:", err);
+          }
+        } else {
+          setUsers([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      }
+    };
+
+    fetchUserData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTeam, selection, refreshState, fetchTrigger]); // Using eslint-disable for explicit control
+
+  const handleRefreshUsers = useCallback(() => {
+    setFetchTrigger(prev => prev + 1);
+  }, []);
+
+  const toggleTeamMemberSelection = useCallback((user: string) => {
     setSelectedTeamMembers((previouslySelectedMembers) =>
       previouslySelectedMembers.includes(user)
         ? previouslySelectedMembers.filter((u) => u !== user)
         : [...previouslySelectedMembers, user]
     );
-  };
+  }, [setSelectedTeamMembers]);
+
+  const handleContextMenu = useCallback((event: any, {username, role }: {username: string, role: string}) => {
+    event.preventDefault();
+    setSelectedUserRole(role);
+    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: username });
+  }, [setContextMenu]);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
+  }, [setContextMenu]);
+
+  // Handler functions for context menu items
+  const handleRemoveFromTeam = useCallback(async (username: string) => {
+    if (selectedTeam) {
+      await removeUserFromTeam(username, selectedTeam);
+      handleRefreshUsers();
+    }
+  }, [selectedTeam, handleRefreshUsers]);
+
+  const handleRemoveFromChannel = useCallback(async (username: string) => {
+    const selectedChannel = getCurrentChannel();
+    if (selectedTeam && selectedChannel) {
+      await removeUserFromChannel(username, selectedTeam, selectedChannel);
+      handleRefreshUsers();
+    }
+  }, [selectedTeam, getCurrentChannel, handleRefreshUsers]);
+
+  const handlePromoteToAdmin = useCallback(async (username: string) => {
+    if (selectedTeam) {
+      await promoteToAdmin(username, selectedTeam);
+      handleRefreshUsers();
+    }
+  }, [selectedTeam, handleRefreshUsers]);
+
+  const handleDemoteToUser = useCallback(async (username: string) => {
+    if (selectedTeam) {
+      await demoteToUser(username, selectedTeam);
+      handleRefreshUsers();
+    }
+  }, [selectedTeam, handleRefreshUsers]);
+
+  // Memoize menu items
+  const getMenuItems = useCallback(() => {
+    const menuItems = [
+      { 
+        label: 'Remove User from Team', 
+        onClick: () => handleRemoveFromTeam(contextMenu.selected)
+      },
+      { 
+        label: 'Remove User from Channel', 
+        onClick: () => handleRemoveFromChannel(contextMenu.selected)
+      },
+      { 
+        label: 'Direct Message User', 
+        onClick: () => setSelectedDm(contextMenu.selected) 
+      },
+    ];
+
+    const adminOptions = [
+      ...menuItems,
+      { 
+        label: 'Demote User from Admin', 
+        onClick: () => handleDemoteToUser(contextMenu.selected)
+      },
+    ];
+
+    const memberOptions = [
+      ...menuItems,
+      { 
+        label: 'Promote User to Admin', 
+        onClick: () => handlePromoteToAdmin(contextMenu.selected)
+      },
+    ];
+
+    return selectedUserRole === "ADMIN" ? adminOptions : memberOptions;
+  }, [
+    contextMenu.selected, 
+    handleRemoveFromTeam, 
+    handleRemoveFromChannel, 
+    setSelectedDm, 
+    handleDemoteToUser, 
+    handlePromoteToAdmin, 
+    selectedUserRole
+  ]);
+
+  const getStyledComponent = useCallback((baseStyle: any) => ({
+    ...baseStyle,
+    ...(theme === "dark" && baseStyle["&.dark-mode"]),
+  }), [theme]);
 
   if (!selectedTeam) {
     return null;
   }
-
-  const handleContextMenu = (event: any, {username, role }: {username: string, role: string}) => {
-    event.preventDefault();
-    setSelectedUserRole(role);
-    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, selected: username });
-  };
-
-  const handleCloseContextMenu = () => {
-    setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
-  };
-
-  const selectedChannel = getCurrentChannel();
-
-  const menuItems = [
-    { 
-      label: 'Remove User from Team', 
-      onClick: async () => {
-        if (selectedTeam) {
-          await removeUserFromTeam(contextMenu.selected, selectedTeam);
-          await fetchUsers();
-        }
-      } 
-    },
-    { 
-      label: 'Remove User from Channel', 
-      onClick: async () => {
-        if (selectedTeam && selectedChannel) {
-          await removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel);
-          await fetchUsers();
-        }
-      } 
-    },
-    { 
-      label: 'Direct Message User', 
-      onClick: () => setSelectedDm(contextMenu.selected) 
-    },
-  ];
-
-  const adminOptions = [
-    ...menuItems,
-    { 
-      label: 'Demote User from Admin', 
-      onClick: async () => {
-        if (selectedTeam) {
-          await demoteToUser(contextMenu.selected, selectedTeam);
-          await fetchUsers();
-        }
-      } 
-    },
-  ];
-
-  const memberOptions = [
-    ...menuItems,
-    { 
-      label: 'Promote User to Admin', 
-      onClick: async () => {
-        if (selectedTeam) {
-          await promoteToAdmin(contextMenu.selected, selectedTeam);
-          await fetchUsers();
-        }
-      } 
-    },
-  ];
-
-  const getStyledComponent = (baseStyle: any) => ({
-    ...baseStyle,
-    ...(theme === "dark" && baseStyle["&.dark-mode"]),
-  });
 
   return (
     <div style={getStyledComponent(styles.userList)}>
@@ -213,7 +278,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
       )}
       {contextMenu.visible && (
         <ContextMenu
-          items={selectedUserRole === "ADMIN" ? adminOptions : memberOptions}
+          items={getMenuItems()}
           position={{ x: contextMenu.x, y: contextMenu.y }}
           onClose={handleCloseContextMenu}
         />

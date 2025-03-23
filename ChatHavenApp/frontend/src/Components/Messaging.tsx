@@ -21,7 +21,7 @@ const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 3000;
 
 interface MessagingProps {
-  selection: Selection;
+  selection: Selection | null;
   contextMenu: ContextMenuState;
   setContextMenu: (arg: ContextMenuState) => void;
 }
@@ -72,9 +72,9 @@ const Messaging: React.FC<MessagingProps> = ({
     } else {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>Direct Messages with {selection.username}</span>
+          <span>Direct Messages with {selection.username || "Unknown User"}</span>
           <UserStatusIndicator 
-            username={selection.username} 
+            username={selection.username || "Unknown User"} 
             showStatusText={true} 
             size="medium"
           />
@@ -111,7 +111,7 @@ const Messaging: React.FC<MessagingProps> = ({
           isTyping, 
           username,
           teamName: selection.teamName, 
-          receiverUsername: selection.username 
+          receiverUsername: selection.username
         };
         
     wsService.send(typingMessage);
@@ -138,7 +138,8 @@ const Messaging: React.FC<MessagingProps> = ({
           updated.set(clientMessageId, {
             message: messageData,
             attempts: pending.attempts + 1,
-            timeout: setTimeout(() => trackPendingMessage(messageData, clientMessageId), RETRY_DELAY_MS)
+            timeout: setTimeout(() => trackPendingMessage(messageData, clientMessageId), RETRY_DELAY_MS),
+            createdAt: messageData.createdAt || Date.now()
           });
           return updated;
         } else {
@@ -165,7 +166,8 @@ const Messaging: React.FC<MessagingProps> = ({
       updated.set(clientMessageId, { 
         message: messageData, 
         attempts: 0, 
-        timeout 
+        timeout,
+        createdAt: messageData.createdAt || Date.now()
       });
       return updated;
     });
@@ -175,9 +177,10 @@ const Messaging: React.FC<MessagingProps> = ({
   const sendMessage = useCallback((messageData: WebSocketMessage) => {
     // Generate a client-side ID for tracking
     const clientMessageId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const messageWithId = { 
+    const messageWithId: WebSocketMessage = { 
       ...messageData, 
-      clientMessageId 
+      clientMessageId,
+      text: messageData.text || ''
     };
     
     if (wsService.isConnected()) {
@@ -345,9 +348,8 @@ const Messaging: React.FC<MessagingProps> = ({
       ? { 
           type: 'directMessage', 
           text: message, 
-          username, 
           teamName: selection.teamName,
-          receiverUsername: selection.username
+          receiverUsername: selection.username // Changed from username to receiverUsername
         }
       : { 
           type: 'message', 
@@ -356,7 +358,7 @@ const Messaging: React.FC<MessagingProps> = ({
           teamName: selection.teamName, 
           channelName: selection.channelName,
         };
-
+  
     sendMessage(newMessage);
     setMessage("");
     
@@ -410,7 +412,11 @@ const Messaging: React.FC<MessagingProps> = ({
     
     try {
       // This uses HTTP, but deletion is admin functionality that doesn't need real-time updates
-      await deleteMessage(selection.teamName, selection.channelName, contextMenu.selected);
+      if (contextMenu.selected && selection.type === 'channel' && selection.channelName) {
+        await deleteMessage(selection.teamName, selection.channelName, contextMenu.selected);
+      } else {
+        console.error("No message selected for deletion.");
+      }
       setMessages(prev => prev.filter(msg => msg._id !== contextMenu.selected));
       setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
     } catch (err) {
@@ -576,7 +582,7 @@ const Messaging: React.FC<MessagingProps> = ({
             username: msg.username,
             createdAt: new Date(msg.createdAt),
             status: msg.status || 'delivered',
-            clientMessageId: msg.clientMessageId
+            ...(msg.clientMessageId && { clientMessageId: msg.clientMessageId })
           }));
         
         // Even if there are no messages, set initialLoadDone to true
@@ -588,11 +594,17 @@ const Messaging: React.FC<MessagingProps> = ({
             setMessages([]);
           }
         } else {
-          // Update oldest message ID for pagination
-          const sortedMessages = [...historyMessages].sort(
-            (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-          );
-          setOldestMessageId(sortedMessages[0]._id);
+          // If paginating (loading older messages), we need to find the oldest message
+          // If initial load, we'll use the first message from the response
+          const oldestMessageForPagination = data.before 
+            ? historyMessages.reduce((oldest: { createdAt: string | number | Date; }, current: { createdAt: string | number | Date; }) => 
+                new Date(oldest.createdAt).getTime() < new Date(current.createdAt).getTime() 
+                  ? oldest 
+                  : current
+              )
+            : historyMessages[0];
+            
+          setOldestMessageId(oldestMessageForPagination._id);
           
           // Update messages state based on whether this is pagination or initial load
           if (data.before) {

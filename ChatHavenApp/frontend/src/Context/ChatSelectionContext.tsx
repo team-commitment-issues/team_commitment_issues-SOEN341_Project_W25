@@ -3,8 +3,8 @@ import { Selection } from '../types/shared';
 import { getChannels } from '../Services/dashboardService';
 
 interface ChatSelectionContextType {
-  selection: Selection;
-  setSelection: (selection: Selection) => void;
+  selection: Selection | null;
+  setSelection: (selection: Selection | null) => void;
   isValidSelection: (selection: Selection) => Promise<boolean>;
   checkAndUpdateSelection: () => Promise<void>;
   validateTeam: (teamName: string) => Promise<boolean>;
@@ -26,7 +26,7 @@ interface ChatSelectionProviderProps {
 }
 
 export const ChatSelectionProvider: React.FC<ChatSelectionProviderProps> = ({ children }) => {
-  const [selection, setSelection] = useState<Selection>(null);
+  const [selection, setSelection] = useState<Selection | null>(null);
   const [validTeams, setValidTeams] = useState<Set<string>>(new Set());
   const [validChannels, setValidChannels] = useState<Map<string, Set<string>>>(new Map());
 
@@ -85,7 +85,7 @@ export const ChatSelectionProvider: React.FC<ChatSelectionProviderProps> = ({ ch
     if (!sel) return true; // null selection is always valid
     
     if (sel.type === 'channel') {
-      return validateChannel(sel.teamName, sel.channelName);
+      return validateChannel(sel.teamName, sel.channelName!);
     } else if (sel.type === 'directMessage') {
       return validateTeam(sel.teamName);
     }

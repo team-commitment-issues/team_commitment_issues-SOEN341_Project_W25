@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import WebSocketClient from '../Services/webSocketClient';
-import { Status, UserStatus, MessageStatus } from '../types/shared';
+import { createStatusUpdatePayload, createOnlineStatusSubscriptionRequest, Status, UserStatus } from '../types/shared';
 
 interface OnlineStatusContextType {
     onlineUsers: Record<string, UserStatus>;
     getUserStatus: (username: string) => UserStatus | undefined;
     updateUserStatus: (username: string, status: Status, lastSeen?: Date) => void;
-    refreshStatuses: (usernames: string[]) => void;
+    refreshStatuses: (usernames: string[]) => Promise<void>;
     subscribeToTeamStatuses: (teamName: string) => void;
     subscribeToChannelStatuses: (teamName: string, channelName: string) => void;
     setUserStatus: (status: Status) => void;
+    currentUserStatus: Status;
 }
 
 const OnlineStatusContext = createContext<OnlineStatusContextType | undefined>(undefined);
@@ -29,10 +30,12 @@ interface OnlineStatusProviderProps {
 export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ children }) => {
     const [onlineUsers, setOnlineUsers] = useState<Record<string, UserStatus>>({});
     const [isConnected, setIsConnected] = useState(false);
-    
+    const [currentUserStatus, setCurrentUserStatus] = useState<Status>(Status.ONLINE);
+    const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+
     // Use the shared WebSocket service
     const wsService = WebSocketClient.getInstance();
-    
+
     const getUserStatus = useCallback((username: string): UserStatus | undefined => {
         return onlineUsers[username];
     }, [onlineUsers]);
@@ -40,32 +43,84 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
     const updateUserStatus = useCallback((username: string, status: Status, lastSeen?: Date) => {
         setOnlineUsers(prev => ({
             ...prev,
-            [username]: { username, status, lastSeen }
+            [username]: { username, status, lastSeen: lastSeen || new Date() }
         }));
-    }, []);
 
-    // Updated to use the shared WebSocket service
-    const refreshStatuses = useCallback((usernames: string[]) => {
-        if (!usernames.length || !isConnected) return;
-        
-        // We rely on subscriptions to get status updates
-    }, [isConnected]);
+        // Update current user status if it's our own status
+        if (username === currentUsername) {
+            setCurrentUserStatus(status);
+        }
+    }, [currentUsername]);
+
+    // Fetch user statuses - this now works by subscribing to team statuses
+    // The server will respond with statusUpdate messages for each user
+    const refreshStatuses = useCallback(async (usernames: string[]): Promise<void> => {
+        if (!usernames.length || !isConnected) {
+            return Promise.resolve();
+        }
+
+        try {
+            // For each username, add a default offline status if they don't exist yet
+            const updatedUsers = { ...onlineUsers };
+
+            usernames.forEach(username => {
+                if (!updatedUsers[username]) {
+                    updatedUsers[username] = {
+                        username,
+                        status: Status.OFFLINE,
+                        lastSeen: new Date()
+                    };
+                }
+            });
+
+            setOnlineUsers(updatedUsers);
+
+            // Server doesn't have a direct "requestStatusUpdates" message type
+            // This is handled through subscribing to team statuses instead
+            // The statuses come as separate statusUpdate messages
+
+            return Promise.resolve();
+        } catch (error) {
+            console.error("Failed to refresh statuses:", error);
+            return Promise.reject(error);
+        }
+    }, [isConnected, onlineUsers]);
 
     // Set user status through shared WebSocket
     const setUserStatus = useCallback((status: Status) => {
         if (!isConnected) return;
-        
-        // Use the shared WebSocket service to send the status update
-        wsService.send({
-            type: 'setStatus',
-            status: status as MessageStatus
-        });
-    }, [isConnected, wsService]);
+
+        try {
+            // Create a status update payload using the helper
+            const statusPayload = createStatusUpdatePayload(status);
+            wsService.send(statusPayload);
+
+            // Optimistically update local state
+            if (currentUsername) {
+                updateUserStatus(currentUsername, status);
+                setCurrentUserStatus(status);
+            }
+
+            console.log(`Status update sent: ${status}`);
+        } catch (error) {
+            console.error("Failed to update status:", error);
+        }
+    }, [isConnected, wsService, currentUsername, updateUserStatus]);
 
     // Connect to WebSocket once on component mount
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) return;
+
+        // Try to get current username from localStorage
+        const userData = localStorage.getItem('user');
+        if (userData) {
+            const user = JSON.parse(userData);
+            setCurrentUsername(user.username);
+            console.log(`Current username set from localStorage: ${user.username}`);
+        } else {
+            console.warn('Username not found in localStorage. Status features may not work correctly.');
+        }
 
         const handleConnection = () => {
             console.log("Status context connected to WebSocket");
@@ -79,11 +134,14 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
 
         const handleStatusUpdate = (data: any) => {
             if (data.type === "statusUpdate") {
+                // Server sends: username, status, lastSeen
                 updateUserStatus(
-                    data.username, 
-                    data.status, 
-                    data.lastSeen ? new Date(data.lastSeen) : undefined
+                    data.username,
+                    data.status,
+                    data.lastSeen ? new Date(data.lastSeen) : new Date()
                 );
+
+                console.log(`Status update received for ${data.username}: ${data.status}`);
             }
         };
 
@@ -91,37 +149,69 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         wsService.addConnectionListener(handleConnection);
         wsService.addDisconnectionListener(handleDisconnection);
         const subscriptionId = wsService.subscribe("statusUpdate", handleStatusUpdate);
-        
-        // Connect to the WebSocket
-        wsService.connect(token).catch((error: any) => {
-            console.error("Failed to connect to WebSocket:", error);
+
+        // Also subscribe to error messages
+        const errorSubId = wsService.subscribe("error", (data) => {
+            console.error("WebSocket error:", data.message);
         });
-        
+
+        // Connect to the WebSocket if not already connected
+        if (!wsService.isConnected()) {
+            wsService.connect(token).catch((error: any) => {
+                console.error("Failed to connect to WebSocket:", error);
+            });
+        } else {
+            // If already connected, set the flag
+            setIsConnected(true);
+        }
+
         return () => {
             wsService.removeConnectionListener(handleConnection);
             wsService.removeDisconnectionListener(handleDisconnection);
             wsService.unsubscribe(subscriptionId);
+            wsService.unsubscribe(errorSubId);
         };
     }, [updateUserStatus, wsService]);
-    
+
+    // Initialize current user's status when connection is established
+    useEffect(() => {
+        if (isConnected && currentUsername) {
+            if (!onlineUsers[currentUsername]) {
+                // Using a direct WebSocket send instead of setUserStatus to avoid the loop
+                const statusPayload = createStatusUpdatePayload(Status.ONLINE);
+                wsService.send(statusPayload);
+
+                // Update local state directly
+                updateUserStatus(currentUsername, Status.ONLINE);
+            } else {
+                setCurrentUserStatus(onlineUsers[currentUsername].status);
+            }
+        }
+    }, [isConnected, currentUsername, onlineUsers, wsService, updateUserStatus]);
+
+    // Subscribe to team statuses
     const subscribeToTeamStatuses = useCallback((teamName: string) => {
-        if (isConnected) {
-            // Use the shared WebSocket service
-            wsService.send({
-                type: 'subscribeOnlineStatus',
-                teamName
-            });
+        if (!isConnected || !teamName) return;
+
+        try {
+            const payload = createOnlineStatusSubscriptionRequest(teamName);
+            wsService.send(payload);
+            console.log(`Subscribed to online status for team: ${teamName}`);
+        } catch (error) {
+            console.error(`Failed to subscribe to team statuses for ${teamName}:`, error);
         }
     }, [isConnected, wsService]);
 
+    // Subscribe to channel statuses
     const subscribeToChannelStatuses = useCallback((teamName: string, channelName: string) => {
-        if (isConnected) {
-            // Use the shared WebSocket service
-            wsService.send({
-                type: 'subscribeOnlineStatus',
-                teamName,
-                channelName
-            });
+        if (!isConnected || !teamName || !channelName) return;
+
+        try {
+            const payload = createOnlineStatusSubscriptionRequest(teamName, channelName);
+            wsService.send(payload);
+            console.log(`Subscribed to online status for channel: ${teamName}/${channelName}`);
+        } catch (error) {
+            console.error(`Failed to subscribe to channel statuses for ${teamName}/${channelName}:`, error);
         }
     }, [isConnected, wsService]);
 
@@ -132,7 +222,8 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         refreshStatuses,
         subscribeToTeamStatuses,
         subscribeToChannelStatuses,
-        setUserStatus
+        setUserStatus,
+        currentUserStatus
     }), [
         onlineUsers,
         getUserStatus,
@@ -140,7 +231,8 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         refreshStatuses,
         subscribeToTeamStatuses,
         subscribeToChannelStatuses,
-        setUserStatus
+        setUserStatus,
+        currentUserStatus
     ]);
 
     return (

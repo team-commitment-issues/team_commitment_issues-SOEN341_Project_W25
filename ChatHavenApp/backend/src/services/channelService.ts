@@ -174,21 +174,29 @@ class ChannelService {
 
     static async getMessagesByCriteria(criteria: any, limit: number): Promise<any[]> {
         const channel = await Channel.findOne(
-            { _id: criteria.channel },
-            { messages: { $elemMatch: criteria } }
+          { _id: criteria.channel }
         ).exec();
-
-        if (!channel || !channel.messages) {
-            return [];
+      
+        if (!channel) {
+          return [];
         }
-
-        const messages = await ChannelService.getMessages(channel.id);
-        const sortedMessages = messages.sort(
-            (a: { createdAt: string | number | Date; }, b: { createdAt: string | number | Date; }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        return sortedMessages.slice(0, limit);
-    }
+        
+        // Create message query
+        let query: any = { channel: channel._id };
+        
+        // Add _id constraint if "before" parameter is provided
+        if (criteria._id) {
+          query._id = criteria._id;
+        }
+      
+        // Get messages sorted chronologically (oldest to newest)
+        const messages = await Message.find(query)
+          .sort({ createdAt: 1 }) // Changed from -1 to 1
+          .limit(limit)
+          .exec();
+      
+        return messages;
+      }
 }
 
 export default ChannelService;

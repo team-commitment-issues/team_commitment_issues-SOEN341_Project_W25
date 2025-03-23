@@ -19,8 +19,8 @@ interface Channel {
 interface ChannelListProps {
   selectedTeam: string | null;
   selectedTeamMembers: string[];
-  selection: Selection;
-  setSelection: (selection: Selection) => void;
+  selection: Selection | null;
+  setSelection: (selection: Selection | null) => void;
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({
