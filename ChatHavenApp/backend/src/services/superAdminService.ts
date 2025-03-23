@@ -58,6 +58,10 @@ class SuperAdminService {
         team.teamMembers.push(teamMember._id as ObjectId);
         await team.save();
 
+        for (const channel of Object.values(DefaultChannels)) {
+            await ChannelService.addUserToChannel(team._id as Types.ObjectId, channel, userName);
+        }
+
         return teamMember;
     }
 
