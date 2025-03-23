@@ -79,3 +79,16 @@ export const getMessages = async (teamName: string, channelName: string) => {
         throw new Error((error as any).response?.data?.error || 'Failed to fetch messages. Please try again.');
     }
 }
+
+export const leaveChannel = async (teamName: string, channelName: string) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_URL}/leaveChannel`, 
+            { teamName, channelName },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data;
+    } catch (error) {
+        throw new Error((error as any).response?.data?.error || 'Failed to leave channel. Please try again.');
+    }
+}
