@@ -6,6 +6,7 @@ import styles from "../Styles/dashboardStyles";
 import { getTeams } from "../Services/dashboardService";
 import { deleteTeam } from "../Services/superAdminService";
 import { useTheme } from "../Context/ThemeContext";
+import { useChatSelection } from "../Context/ChatSelectionContext";
 
 const TrashIcon: IconType = FaTrash;
 
@@ -29,13 +30,23 @@ const TeamList: React.FC<TeamListProps> = ({
   const [teams, setTeams] = useState<Team[]>([]);
   const navigate = useNavigate();
   const { theme } = useTheme();
+  
+  // Access the ChatSelectionContext if available (wrapped by AdminDashboard)
+  const chatSelectionContext = useChatSelection();
 
   const handleDeleteTeam = async (team: Team) => {
     try {
       await deleteTeam(team.name);
       setTeams((prevTeams) => prevTeams.filter((t) => t.name !== team.name));
+      
+      // If the deleted team was selected, clear the selection
       if (selectedTeam === team.name) {
         setSelectedTeam(null);
+        
+        // Also clear the chat selection if using context
+        if (chatSelectionContext) {
+          chatSelectionContext.setSelection(null);
+        }
       }
     } catch (err) {
       console.error("Failed to delete team", err);
@@ -67,7 +78,9 @@ const TeamList: React.FC<TeamListProps> = ({
               key={index}
               style={{
                 ...styles.listItem,
-                backgroundColor: selectedTeam === team.name ? "#D3E3FC" : "transparent",
+                backgroundColor: selectedTeam === team.name ? 
+                  (theme === "dark" ? "#3A3F44" : "#D3E3FC") : 
+                  "transparent",
                 fontWeight: selectedTeam === team.name ? "bold" : "normal",
                 ...(theme === "dark" && styles.listItem["&.dark-mode:hover"]),
               }}

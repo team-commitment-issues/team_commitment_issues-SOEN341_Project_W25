@@ -121,6 +121,7 @@ export interface FetchHistoryMessage extends BaseMessage {
   username?: string; // For direct messages
   before?: string; // Message ID to fetch before
   limit: number;
+  requestId: string;
 }
 
 /**

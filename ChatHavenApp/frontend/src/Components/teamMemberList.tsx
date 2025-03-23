@@ -8,6 +8,7 @@ import { useTheme } from "../Context/ThemeContext";
 import { Selection, ContextMenuState } from "../types/shared";
 import { useOnlineStatus } from "../Context/OnlineStatusContext";
 import UserStatusIndicator from "./UI/UserStatusIndicator";
+import { useChatSelection } from "../Context/ChatSelectionContext";
 
 interface User {
     username: string;
@@ -19,7 +20,7 @@ interface TeamMemberListProps {
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
   selection: Selection;
-  setSelection: React.Dispatch<React.SetStateAction<Selection>>;
+  setSelection: (selection: Selection) => void;
   contextMenu: ContextMenuState;
   setContextMenu: (arg: ContextMenuState) => void;
   refreshState: boolean;
@@ -41,6 +42,10 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const [selectedUserRole, setSelectedUserRole] = useState<string>("MEMBER");  
   const { theme } = useTheme();
   const { refreshStatuses, subscribeToTeamStatuses, subscribeToChannelStatuses } = useOnlineStatus();
+  
+  // We'll keep the old selection prop for compatibility with the old components
+  // but we'll also use the ChatSelectionContext for the new components that support it
+  const chatSelectionContext = useChatSelection();
 
   const getCurrentChannel = () => {
     return selection?.type === 'channel' ? selection.channelName : null;
@@ -48,13 +53,22 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
 
   const setSelectedDm = (username: string | null) => {
     if (username && selectedTeam) {
-      setSelection({
-        type: 'directMessage',
+      const dmSelection = {
+        type: 'directMessage' as const,
         teamName: selectedTeam,
         username
-      });
+      };
+      
+      // Update both the prop and context selection
+      setSelection(dmSelection);
+      if (chatSelectionContext) {
+        chatSelectionContext.setSelection(dmSelection);
+      }
     } else {
       setSelection(null);
+      if (chatSelectionContext) {
+        chatSelectionContext.setSelection(null);
+      }
     }
   };
 
@@ -75,7 +89,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         await refreshStatuses(teamMemberList.map((user: { username: any; }) => user.username));
         subscribeToTeamStatuses(selectedTeam);
       } else {
-        return [];
+        setUsers([]);
       }
     } catch (err) {
       console.error("Failed to fetch users", err);
@@ -111,19 +125,54 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const selectedChannel = getCurrentChannel();
 
   const menuItems = [
-    { label: 'Remove User from Team', onClick: async () => selectedTeam && await removeUserFromTeam(contextMenu.selected, selectedTeam).then(fetchUsers) },
-    { label: 'Remove User from Channel', onClick: async () => selectedTeam && selectedChannel && await removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel).then(fetchUsers) },
-    { label: 'Direct Message User', onClick: () => setSelectedDm(contextMenu.selected) },
+    { 
+      label: 'Remove User from Team', 
+      onClick: async () => {
+        if (selectedTeam) {
+          await removeUserFromTeam(contextMenu.selected, selectedTeam);
+          await fetchUsers();
+        }
+      } 
+    },
+    { 
+      label: 'Remove User from Channel', 
+      onClick: async () => {
+        if (selectedTeam && selectedChannel) {
+          await removeUserFromChannel(contextMenu.selected, selectedTeam, selectedChannel);
+          await fetchUsers();
+        }
+      } 
+    },
+    { 
+      label: 'Direct Message User', 
+      onClick: () => setSelectedDm(contextMenu.selected) 
+    },
   ];
 
   const adminOptions = [
     ...menuItems,
-    { label: 'Demote User from Admin', onClick: async () => await demoteToUser(contextMenu.selected, selectedTeam).then(fetchUsers) },
+    { 
+      label: 'Demote User from Admin', 
+      onClick: async () => {
+        if (selectedTeam) {
+          await demoteToUser(contextMenu.selected, selectedTeam);
+          await fetchUsers();
+        }
+      } 
+    },
   ];
 
   const memberOptions = [
     ...menuItems,
-    { label: 'Promote User to Admin', onClick: async () => await promoteToAdmin(contextMenu.selected, selectedTeam).then(fetchUsers) },
+    { 
+      label: 'Promote User to Admin', 
+      onClick: async () => {
+        if (selectedTeam) {
+          await promoteToAdmin(contextMenu.selected, selectedTeam);
+          await fetchUsers();
+        }
+      } 
+    },
   ];
 
   const getStyledComponent = (baseStyle: any) => ({
@@ -149,7 +198,9 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
               value={user.username}
               style={{
                 ...getStyledComponent(styles.listItem),
-                backgroundColor: selectedTeamMembers.includes(user.username) ? "#D3E3FC" : "transparent",
+                backgroundColor: selectedTeamMembers.includes(user.username) ? 
+                  (theme === "dark" ? "#3A3F44" : "#D3E3FC") : 
+                  "transparent",
                 fontWeight: selectedTeamMembers.includes(user.username) ? "bold" : "normal",
               }}
               onClick={() => toggleTeamMemberSelection(user.username)}

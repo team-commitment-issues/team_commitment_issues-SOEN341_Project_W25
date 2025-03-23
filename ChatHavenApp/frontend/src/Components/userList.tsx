@@ -8,6 +8,7 @@ import { useTheme } from "../Context/ThemeContext";
 import { useOnlineStatus } from "../Context/OnlineStatusContext";
 import UserStatusIndicator from "./UI/UserStatusIndicator";
 import { Selection, ContextMenuState } from "../types/shared";
+import { useChatSelection } from "../Context/ChatSelectionContext";
 
 interface User {
   username: string;
@@ -18,6 +19,7 @@ interface UserListProps {
   setSelectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
   selectedTeam: string | null;
   selection: Selection;
+  setSelection: (selection: Selection) => void;
   setSelectedTeamMembers: React.Dispatch<React.SetStateAction<string[]>>;
   contextMenu: ContextMenuState;
   setContextMenu: (arg: ContextMenuState) => void;
@@ -29,6 +31,7 @@ const UserList: React.FC<UserListProps> = ({
   setSelectedUsers,
   selectedTeam,
   selection,
+  setSelection,
   setSelectedTeamMembers,
   contextMenu,
   setContextMenu,
@@ -39,6 +42,10 @@ const UserList: React.FC<UserListProps> = ({
   const { theme } = useTheme();
   const { refreshStatuses, getUserStatus } = useOnlineStatus();
   const [hasPermission, setHasPermission] = useState(true);
+  
+  // We'll keep the old selection prop for compatibility with the old components
+  // but we'll also use the ChatSelectionContext for the new components that support it
+  const chatSelectionContext = useChatSelection();
 
   const getCurrentChannel = () => {
     return selection?.type === 'channel' ? selection.channelName : null;
@@ -53,7 +60,7 @@ const UserList: React.FC<UserListProps> = ({
       
       await refreshStatuses(usersList.map((user: { username: any; }) => user.username));
     } catch (err: any) {
-      if (err.message.includes('Forbidden')) {
+      if (err.message?.includes('Forbidden')) {
         setHasPermission(false);
       } else {
         setUsers([]);
@@ -111,16 +118,41 @@ const UserList: React.FC<UserListProps> = ({
   const menuItems = [
     { 
       label: 'Add User to Selected Team', 
-      onClick: async () => selectedTeam && await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER").then(handleRefresh) 
+      onClick: async () => {
+        if (selectedTeam) {
+          await addUserToTeam(contextMenu.selected, selectedTeam, "MEMBER");
+          handleRefresh();
+        }
+      } 
     },
     { 
       label: 'Add User to Selected Channel', 
       onClick: async () => {
         const selectedChannel = getCurrentChannel();
-        return selectedTeam && selectedChannel && 
-          await addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel).then(handleRefresh);
+        if (selectedTeam && selectedChannel) {
+          await addUserToChannel(contextMenu.selected, selectedTeam, selectedChannel);
+          handleRefresh();
+        }
       }
     },
+    {
+      label: 'Direct Message User',
+      onClick: () => {
+        if (selectedTeam && contextMenu.selected) {
+          const dmSelection = {
+            type: 'directMessage' as const,
+            teamName: selectedTeam,
+            username: contextMenu.selected
+          };
+          
+          // Update both the prop and context selection
+          setSelection(dmSelection);
+          if (chatSelectionContext) {
+            chatSelectionContext.setSelection(dmSelection);
+          }
+        }
+      }
+    }
   ];
 
   return (

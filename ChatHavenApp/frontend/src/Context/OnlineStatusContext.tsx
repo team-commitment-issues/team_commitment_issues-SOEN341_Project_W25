@@ -1,13 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
-import { subscribeToOnlineStatus, sendUserStatus } from '../Services/onlineStatusService';
-
-type Status = 'online' | 'away' | 'busy' | 'offline';
-
-interface UserStatus {
-    username: string;
-    status: Status;
-    lastSeen?: Date;
-}
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import WebSocketClient from '../Services/webSocketClient';
+import { Status, UserStatus, MessageStatus } from '../types/shared';
 
 interface OnlineStatusContextType {
     onlineUsers: Record<string, UserStatus>;
@@ -35,8 +28,10 @@ interface OnlineStatusProviderProps {
 
 export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ children }) => {
     const [onlineUsers, setOnlineUsers] = useState<Record<string, UserStatus>>({});
-    const wsRef = useRef<WebSocket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    
+    // Use the shared WebSocket service
+    const wsService = WebSocketClient.getInstance();
     
     const getUserStatus = useCallback((username: string): UserStatus | undefined => {
         return onlineUsers[username];
@@ -49,92 +44,86 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         }));
     }, []);
 
-    // Updated to use subscribeToOnlineStatus instead of a custom message
+    // Updated to use the shared WebSocket service
     const refreshStatuses = useCallback((usernames: string[]) => {
-        if (!usernames.length || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        if (!usernames.length || !isConnected) return;
         
-        // Instead of sending a single request for all usernames, we subscribe to the team
-        // The server will send status updates for all team members
-        // const userTeams = new Set<string>();
-        
-        // We could store a mapping of users to teams in state if needed
-        // For now, we'll rely on the team being passed to subscribeToTeamStatuses
-    }, []);
+        // We rely on subscriptions to get status updates
+    }, [isConnected]);
 
-    // Set user status through WebSocket
+    // Set user status through shared WebSocket
     const setUserStatus = useCallback((status: Status) => {
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        if (!isConnected) return;
         
-        sendUserStatus(wsRef.current, status);
-    }, []);
+        // Use the shared WebSocket service to send the status update
+        wsService.send({
+            type: 'setStatus',
+            status: status as MessageStatus
+        });
+    }, [isConnected, wsService]);
 
+    // Connect to WebSocket once on component mount
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const connectWebSocket = () => {
-            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                setIsConnected(true);
-                return;
-            }
-
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsHost = process.env.REACT_APP_WS_HOST || window.location.host;
-            wsRef.current = new WebSocket(`${wsProtocol}//${wsHost}/ws?token=${token}`);
-            
-            wsRef.current.onopen = () => {
-                console.log("Status WebSocket connection established");
-                setIsConnected(true);
-            };
-            
-            wsRef.current.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    if (data.type === "statusUpdate") {
-                        updateUserStatus(
-                            data.username, 
-                            data.status, 
-                            data.lastSeen ? new Date(data.lastSeen) : undefined
-                        );
-                    }
-                } catch (error) {
-                    console.error("Failed to parse status message:", error);
-                }
-            };
-            
-            wsRef.current.onclose = () => {
-                console.log("Status WebSocket connection closed");
-                setIsConnected(false);
-                setTimeout(connectWebSocket, 5000);
-            };
-            
-            wsRef.current.onerror = (error) => {
-                console.error("Status WebSocket error:", error);
-            };
+        const handleConnection = () => {
+            console.log("Status context connected to WebSocket");
+            setIsConnected(true);
         };
+
+        const handleDisconnection = () => {
+            console.log("Status context disconnected from WebSocket");
+            setIsConnected(false);
+        };
+
+        const handleStatusUpdate = (data: any) => {
+            if (data.type === "statusUpdate") {
+                updateUserStatus(
+                    data.username, 
+                    data.status, 
+                    data.lastSeen ? new Date(data.lastSeen) : undefined
+                );
+            }
+        };
+
+        // Subscribe to status updates
+        wsService.addConnectionListener(handleConnection);
+        wsService.addDisconnectionListener(handleDisconnection);
+        const subscriptionId = wsService.subscribe("statusUpdate", handleStatusUpdate);
         
-        connectWebSocket();
+        // Connect to the WebSocket
+        wsService.connect(token).catch((error: any) => {
+            console.error("Failed to connect to WebSocket:", error);
+        });
         
         return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
-            }
+            wsService.removeConnectionListener(handleConnection);
+            wsService.removeDisconnectionListener(handleDisconnection);
+            wsService.unsubscribe(subscriptionId);
         };
-    }, [updateUserStatus]);
+    }, [updateUserStatus, wsService]);
     
     const subscribeToTeamStatuses = useCallback((teamName: string) => {
-        if (wsRef.current && isConnected) {
-            subscribeToOnlineStatus(wsRef.current, teamName);
+        if (isConnected) {
+            // Use the shared WebSocket service
+            wsService.send({
+                type: 'subscribeOnlineStatus',
+                teamName
+            });
         }
-    }, [isConnected]);
+    }, [isConnected, wsService]);
 
     const subscribeToChannelStatuses = useCallback((teamName: string, channelName: string) => {
-        if (wsRef.current && isConnected) {
-            subscribeToOnlineStatus(wsRef.current, teamName, channelName);
+        if (isConnected) {
+            // Use the shared WebSocket service
+            wsService.send({
+                type: 'subscribeOnlineStatus',
+                teamName,
+                channelName
+            });
         }
-    }, [isConnected]);
+    }, [isConnected, wsService]);
 
     const contextValue = React.useMemo(() => ({
         onlineUsers,

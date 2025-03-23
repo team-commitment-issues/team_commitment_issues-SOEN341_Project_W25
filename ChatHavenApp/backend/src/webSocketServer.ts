@@ -362,6 +362,8 @@ class MessageHandlers {
       text: sentMessage.text,
       username: sentMessage.username,
       createdAt: sentMessage.createdAt,
+      // Echo back the client message ID if provided
+      ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
     };
     
     let sentCount = 0;
@@ -381,6 +383,7 @@ class MessageHandlers {
       teamName: ws.team?.name,
       channelName: ws.channel.name,
       messageId: sentMessage._id,
+      clientMessageId: message.clientMessageId,
       sentCount
     });
   }
@@ -459,6 +462,8 @@ class MessageHandlers {
       text: sentMessage.text,
       username: sentMessage.username,
       createdAt: sentMessage.createdAt,
+      // Echo back the client message ID if provided
+      ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
     };
     
     let sentCount = 0;
@@ -477,6 +482,7 @@ class MessageHandlers {
       sender: user.username,
       receiver: receiver.username,
       messageId: sentMessage._id,
+      clientMessageId: message.clientMessageId,
       sentCount
     });
   }
@@ -654,12 +660,13 @@ class MessageHandlers {
     const user = await verifyToken(token);
     ws.user = user;
     
-    const { messageId, status } = message;
+    const { messageId, status, clientMessageId } = message;
     
     logger.debug('Message acknowledgment received', { 
       username: user.username,
       messageId, 
-      status
+      status,
+      clientMessageId
     });
     
     try {
@@ -685,7 +692,9 @@ class MessageHandlers {
                 type: 'messageAck',
                 messageId,
                 status,
-                username: user.username
+                username: user.username,
+                // Include clientMessageId if provided
+                ...(clientMessageId && { clientMessageId })
               }));
             }
           });
@@ -709,6 +718,7 @@ class MessageHandlers {
       logger.error('Error processing message acknowledgment', { 
         messageId,
         status,
+        clientMessageId,
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -725,7 +735,7 @@ class MessageHandlers {
     const user = await verifyToken(token);
     ws.user = user;
     
-    const { teamName, channelName, username, before, limit = 50 } = message;
+    const { teamName, channelName, username, before, limit = 50, requestId } = message;
     const MAX_LIMIT = 100; // Maximum number of messages per request
     
     // Apply limit constraints
@@ -800,7 +810,9 @@ class MessageHandlers {
           status: msg.status || 'delivered'
         })),
         hasMore,
-        before
+        before,
+        // Include request ID if provided for correlation
+        ...(requestId && { requestId })
       }));
       
       logger.debug('Sent message history', {
@@ -809,7 +821,8 @@ class MessageHandlers {
         channelName,
         directMessageUser: username,
         count: messages.length,
-        hasMore
+        hasMore,
+        requestId
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -817,12 +830,14 @@ class MessageHandlers {
         teamName,
         channelName,
         username,
+        requestId,
         error: errorMessage
       });
       
       ws.send(JSON.stringify({
         type: 'error',
-        message: `Failed to fetch message history: ${errorMessage}`
+        message: `Failed to fetch message history: ${errorMessage}`,
+        ...(requestId && { requestId })
       }));
     }
   }
