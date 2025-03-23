@@ -1,29 +1,46 @@
-import axios from 'axios';
+/**
+ * Creates a message for establishing a direct message channel
+ */
+export const createDirectMessageRequest = (teamName: string, receiverUsername: string): any => {
+    return {
+        type: 'joinDirectMessage', 
+        teamName,
+        username: receiverUsername
+    };
+};
 
-const API_URL = 'http://localhost:5000/directMessage';
+/**
+ * Sends a direct message through WebSocket
+ */
+export const createDirectMessagePayload = (
+    text: string, 
+    username: string, 
+    teamName: string, 
+    receiverUsername: string
+): any => {
+    return {
+        type: 'directMessage',
+        text,
+        username,
+        teamName,
+        receiverUsername
+    };
+};
 
-export const createDirectMessage = async (teamMember: string, teamName: string) => {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await axios.post(`${API_URL}/createDirectMessage`, 
-            { teamName, receiver: teamMember },
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        return response.data;
-    } catch (error) {
-        throw new Error((error as any).response?.data?.error || 'Direct message creation failed. Please try again.');
-    }
-}
-
-export const getDirectMessages = async (teamName: string, teamMember: string) => {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await axios.post(`${API_URL}/getDirectMessages`, 
-            { teamName, receiver: teamMember },
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        return response.data;
-    } catch (error) {
-        throw new Error((error as any).response?.data?.error || 'Failed to get direct messages. Please try again.');
-    }
-}
+/**
+ * Creates a request to fetch direct message history
+ */
+export const getDirectMessagesRequest = (
+    teamName: string, 
+    receiverUsername: string,
+    before?: string,
+    limit: number = 50
+): any => {
+    return {
+        type: 'fetchHistory',
+        teamName,
+        username: receiverUsername,
+        before,
+        limit
+    };
+};

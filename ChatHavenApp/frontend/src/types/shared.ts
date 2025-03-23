@@ -15,12 +15,22 @@ export interface ContextMenuState {
     selected: string;
 }
 
+export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+
 export interface ChatMessage {
     _id: string;
     text: string;
     username: string;
     createdAt: Date;
+    status?: MessageStatus;
+    clientMessageId?: string;
 }
+
+export interface RetryInfo {
+    message: WebSocketMessage;
+    attempts: number;
+    timeout: NodeJS.Timeout | null;
+  }
 
 export type Status = 'online' | 'away' | 'busy' | 'offline';
 
@@ -30,12 +40,23 @@ export interface UserStatus {
     lastSeen?: Date;
 }
 
-export type WebSocketMessage = 
-    | { type: 'message'; text: string; username: string; _id: string; createdAt: string; teamName: string; channelName: string }
-    | { type: 'directMessage'; text: string; username: string; receiverUsername: string; _id: string; createdAt: string; teamName: string }
-    | { type: 'statusUpdate'; username: string; status: Status; lastSeen?: string }
-    | { type: 'typing'; username: string; isTyping: boolean; teamName: string; channelName?: string; receiverUsername?: string }
-    | { type: 'join'; teamName: string; channelName: string }
-    | { type: 'joinDirectMessage'; teamName: string; username: string }
-    | { type: 'ping'; selection: Selection }
-    | { type: 'subscribeOnlineStatus'; teamName: string };
+export interface WebSocketMessage {
+    type: string;
+    teamName?: string;
+    channelName?: string;
+    username?: string;
+    text?: string;
+    isTyping?: boolean;
+    receiverUsername?: string;
+    status?: MessageStatus;
+    _id?: string;
+    createdAt?: string;
+    clientMessageId?: string;
+    messageId?: string;
+    selection?: any;
+    before?: string;
+    limit?: number;
+    hasMore?: boolean;
+    messages?: any[];
+    lastSeen?: string;
+  }

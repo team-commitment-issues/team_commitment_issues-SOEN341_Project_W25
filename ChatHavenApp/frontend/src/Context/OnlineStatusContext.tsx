@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
-import { getUserOnlineStatus, subscribeToOnlineStatus } from '../Services/onlineStatusService';
+import { subscribeToOnlineStatus, sendUserStatus } from '../Services/onlineStatusService';
 
 type Status = 'online' | 'away' | 'busy' | 'offline';
 
@@ -13,9 +13,10 @@ interface OnlineStatusContextType {
     onlineUsers: Record<string, UserStatus>;
     getUserStatus: (username: string) => UserStatus | undefined;
     updateUserStatus: (username: string, status: Status, lastSeen?: Date) => void;
-    refreshStatuses: (usernames: string[]) => Promise<void>;
+    refreshStatuses: (usernames: string[]) => void;
     subscribeToTeamStatuses: (teamName: string) => void;
     subscribeToChannelStatuses: (teamName: string, channelName: string) => void;
+    setUserStatus: (status: Status) => void;
 }
 
 const OnlineStatusContext = createContext<OnlineStatusContextType | undefined>(undefined);
@@ -48,24 +49,23 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         }));
     }, []);
 
-    const refreshStatuses = useCallback(async (usernames: string[]) => {
-        if (!usernames.length) return;
+    // Updated to use subscribeToOnlineStatus instead of a custom message
+    const refreshStatuses = useCallback((usernames: string[]) => {
+        if (!usernames.length || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
         
-        try {
-            const response = await getUserOnlineStatus(usernames);
-            const newStatuses: Record<string, UserStatus> = {};
-            
-            response.statuses.forEach((status: UserStatus) => {
-                newStatuses[status.username] = {
-                    ...status,
-                    lastSeen: status.lastSeen ? new Date(status.lastSeen) : undefined
-                };
-            });
-            
-            setOnlineUsers(prev => ({ ...prev, ...newStatuses }));
-        } catch (error) {
-            console.error('Failed to refresh online statuses:', error);
-        }
+        // Instead of sending a single request for all usernames, we subscribe to the team
+        // The server will send status updates for all team members
+        // const userTeams = new Set<string>();
+        
+        // We could store a mapping of users to teams in state if needed
+        // For now, we'll rely on the team being passed to subscribeToTeamStatuses
+    }, []);
+
+    // Set user status through WebSocket
+    const setUserStatus = useCallback((status: Status) => {
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+        
+        sendUserStatus(wsRef.current, status);
     }, []);
 
     useEffect(() => {
@@ -78,7 +78,9 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
                 return;
             }
 
-            wsRef.current = new WebSocket(`ws://localhost:5000?token=${token}`);
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsHost = process.env.REACT_APP_WS_HOST || window.location.host;
+            wsRef.current = new WebSocket(`${wsProtocol}//${wsHost}/ws?token=${token}`);
             
             wsRef.current.onopen = () => {
                 console.log("Status WebSocket connection established");
@@ -140,14 +142,16 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         updateUserStatus,
         refreshStatuses,
         subscribeToTeamStatuses,
-        subscribeToChannelStatuses
+        subscribeToChannelStatuses,
+        setUserStatus
     }), [
         onlineUsers,
         getUserStatus,
         updateUserStatus,
         refreshStatuses,
         subscribeToTeamStatuses,
-        subscribeToChannelStatuses
+        subscribeToChannelStatuses,
+        setUserStatus
     ]);
 
     return (

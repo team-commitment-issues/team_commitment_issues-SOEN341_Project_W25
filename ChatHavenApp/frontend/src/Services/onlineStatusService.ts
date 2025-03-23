@@ -1,23 +1,9 @@
-import axios from 'axios';
 import { Status } from '../types/shared';
 
-const API_URL = 'http://localhost:5000/onlineStatus';
-
-export const getUserOnlineStatus = async (usernames: string[]) => {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await axios.post(
-            `${API_URL}/online-status`,
-            { usernames },
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching online status:', error);
-        throw new Error((error as any).response?.data?.error || 'Failed to fetch online status');
-    }
-};
-
+/**
+ * Subscribe to online status for a team
+ * This is the primary way to get status updates for users in a team
+ */
 export const subscribeToOnlineStatus = (ws: WebSocket, teamName: string, channelName?: string) => {
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
@@ -30,17 +16,16 @@ export const subscribeToOnlineStatus = (ws: WebSocket, teamName: string, channel
     return false;
 };
 
-export const setUserStatus = async (status: Status) => {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await axios.post(
-            `${API_URL}/set-status`,
-            { status },
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        return response.data;
-    } catch (error) {
-        console.error('Error setting user status:', error);
-        throw new Error((error as any).response?.data?.error || 'Failed to update status');
+/**
+ * Send a status update through WebSocket
+ */
+export const sendUserStatus = (ws: WebSocket, status: Status) => {
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            type: 'setStatus',
+            status
+        }));
+        return true;
     }
+    return false;
 };

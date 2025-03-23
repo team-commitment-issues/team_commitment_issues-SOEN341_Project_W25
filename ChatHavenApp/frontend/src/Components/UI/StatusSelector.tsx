@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { setUserStatus } from '../../Services/onlineStatusService';
 import { useTheme } from '../../Context/ThemeContext';
+import { useOnlineStatus } from '../../Context/OnlineStatusContext';
 import styles from '../../Styles/StatusSelector.module.css';
 
 type Status = 'online' | 'away' | 'busy' | 'offline';
@@ -9,6 +9,7 @@ const StatusSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<Status>('online');
   const { theme } = useTheme();
+  const { setUserStatus } = useOnlineStatus();
   
   const statuses: { type: Status; label: string; color: string }[] = [
       { type: 'online', label: 'Online', color: '#4CAF50' },
@@ -17,9 +18,10 @@ const StatusSelector: React.FC = () => {
       { type: 'offline', label: 'Appear Offline', color: '#9E9E9E' }
     ];
   
-  const handleStatusChange = async (status: Status) => {
+  const handleStatusChange = (status: Status) => {
     try {
-      await setUserStatus(status);
+      // Send status update through WebSocket context
+      setUserStatus(status);
       setCurrentStatus(status);
       setIsOpen(false);
     } catch (error) {

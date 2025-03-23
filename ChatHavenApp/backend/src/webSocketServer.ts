@@ -25,7 +25,9 @@ import {
   DirectMessagePayload,
   StatusMessage,
   TypingMessage,
-  OnlineStatusSubscription
+  OnlineStatusSubscription,
+  MessageAck,
+  FetchHistoryMessage
 } from './types/websocket';
 
 // Setup structured logging
@@ -637,6 +639,193 @@ class MessageHandlers {
       });
     }
   }
+
+  // In webSocketServer.ts, add these handlers to the MessageHandlers class
+
+  /**
+   * Handles message acknowledgments
+   */
+  static async handleMessageAck(
+    ws: ExtendedWebSocket, 
+    message: MessageAck, 
+    wss: WebSocketServer, 
+    token: string
+  ): Promise<void> {
+    const user = await verifyToken(token);
+    ws.user = user;
+    
+    const { messageId, status } = message;
+    
+    logger.debug('Message acknowledgment received', { 
+      username: user.username,
+      messageId, 
+      status
+    });
+    
+    try {
+      // First check if this is a channel or direct message
+      const directMessage = await DirectMessage.findOne({ 
+        "messages._id": messageId 
+      }).populate('users').exec();
+      
+      if (directMessage) {
+        // This is a direct message, find other user to notify
+        const otherUsers = directMessage.users.filter(
+          u => u !== user._id
+        );
+        
+        // Forward ack to all other participants
+        otherUsers.forEach(otherUser => {
+          wss.clients.forEach(client => {
+            const extClient = client as ExtendedWebSocket;
+            if (extClient.readyState === WebSocket.OPEN && 
+                extClient.user && 
+                extClient.user._id === otherUser) {
+              extClient.send(JSON.stringify({
+                type: 'messageAck',
+                messageId,
+                status,
+                username: user.username
+              }));
+            }
+          });
+        });
+        
+        // Update message status in database if needed
+        if (status === 'read' || status === 'delivered') {
+          await DirectMessageService.updateMessageStatus(messageId, status);
+        }
+      } else {
+        // This might be a channel message, update status
+        const channelMessage = await Channel.findOne({ 
+          "messages._id": messageId 
+        }).exec();
+        
+        if (channelMessage) {
+          await ChannelService.updateMessageStatus(messageId, status);
+        }
+      }
+    } catch (error) {
+      logger.error('Error processing message acknowledgment', { 
+        messageId,
+        status,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * Handles fetching message history with pagination
+   */
+  static async handleFetchHistory(
+    ws: ExtendedWebSocket, 
+    message: FetchHistoryMessage,
+    token: string
+  ): Promise<void> {
+    const user = await verifyToken(token);
+    ws.user = user;
+    
+    const { teamName, channelName, username, before, limit = 50 } = message;
+    const MAX_LIMIT = 100; // Maximum number of messages per request
+    
+    // Apply limit constraints
+    const actualLimit = Math.min(limit, MAX_LIMIT);
+    
+    let messages = [];
+    let hasMore = false;
+    
+    try {
+      if (channelName) {
+        // Fetch channel messages with pagination
+        const { team, channel } = await findTeamAndChannel(
+          teamName, 
+          channelName, 
+          user._id as Schema.Types.ObjectId, 
+          user.role
+        );
+        
+        // For pagination, we need a more sophisticated query
+        const messagesQuery = before 
+          ? { channel: channel._id, _id: { $lt: new Types.ObjectId(before) } }
+          : { channel: channel._id };
+          
+        // Get messages with pagination
+        messages = await ChannelService.getMessagesByCriteria(
+          messagesQuery,
+          actualLimit + 1 // Fetch one extra to determine if there are more
+        );
+        
+        // Check if there are more messages
+        if (messages.length > actualLimit) {
+          hasMore = true;
+          messages = messages.slice(0, actualLimit);
+        }
+        
+      } else if (username) {
+        // Fetch direct messages with pagination
+        const { directMessage } = await findOrCreateDirectMessage(
+          user._id as Schema.Types.ObjectId, 
+          teamName, 
+          username
+        );
+        
+        // For pagination, we need a more sophisticated query
+        const messagesQuery = before 
+          ? { directMessage: directMessage._id, _id: { $lt: new Types.ObjectId(before) } }
+          : { directMessage: directMessage._id };
+          
+        // Get messages with pagination
+        messages = await DirectMessageService.getMessagesByCriteria(
+          messagesQuery,
+          actualLimit + 1 // Fetch one extra to determine if there are more
+        );
+        
+        // Check if there are more messages
+        if (messages.length > actualLimit) {
+          hasMore = true;
+          messages = messages.slice(0, actualLimit);
+        }
+      } else {
+        throw new Error('Either channelName or username must be provided');
+      }
+      
+      // Send messages to client
+      ws.send(JSON.stringify({
+        type: 'historyResponse',
+        messages: messages.map((msg: { _id: any; text: any; username: any; createdAt: any; status: any; }) => ({
+          _id: msg._id,
+          text: msg.text,
+          username: msg.username,
+          createdAt: msg.createdAt,
+          status: msg.status || 'delivered'
+        })),
+        hasMore,
+        before
+      }));
+      
+      logger.debug('Sent message history', {
+        username: user.username,
+        teamName,
+        channelName,
+        directMessageUser: username,
+        count: messages.length,
+        hasMore
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error fetching message history', {
+        teamName,
+        channelName,
+        username,
+        error: errorMessage
+      });
+      
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: `Failed to fetch message history: ${errorMessage}`
+      }));
+    }
+  }
 }
 
 /**
@@ -673,6 +862,12 @@ const handleWebSocketMessage = async (
         break;
       case 'typing':
         await MessageHandlers.handleTyping(ws, message as TypingMessage, wss, token);
+        break;
+      case 'messageAck':
+        await MessageHandlers.handleMessageAck(ws, message as MessageAck, wss, token);
+        break;
+      case 'fetchHistory':
+        await MessageHandlers.handleFetchHistory(ws, message as FetchHistoryMessage, token);
         break;
       default:
         throw new Error(`Unknown message type: ${(message as any).type}`);

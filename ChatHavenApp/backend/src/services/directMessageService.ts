@@ -92,6 +92,35 @@ class DirectMessageService {
         await directMessage.save();
         return newDMessage;
     }
+
+    static async updateMessageStatus(messageId: string, status: string): Promise<void> {
+        const result = await DirectMessage.updateOne(
+            { "messages._id": messageId },
+            { "$set": { "messages.$.status": status } }
+        );
+
+        if (result.modifiedCount === 0) {
+            throw new Error(`Message ${messageId} not found or status already set to ${status}`);
+        }
+    }
+
+    static async getMessagesByCriteria(criteria: any, limit: number): Promise<any[]> {
+        const dm = await DirectMessage.findOne(
+            { _id: criteria.directMessage },
+            { messages: { $elemMatch: criteria } }
+        ).exec();
+
+        if (!dm || !dm.dmessages) {
+            return [];
+        }
+
+        const messages = await DirectMessageService.getDirectMessages(dm.id);
+        const sortedMessages = messages.sort(
+            (a: { createdAt: string | number | Date; }, b: { createdAt: string | number | Date; }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        return sortedMessages.slice(0, limit);
+    }
 }
 
 export default DirectMessageService;
