@@ -1,10 +1,11 @@
-import { Role, TeamRole } from '../enums';
+import { Role, TeamRole, DefaultChannels } from '../enums';
 import Channel from '../models/Channel';
 import User from '../models/User';
 import Team from '../models/Team';
 import TeamMember from '../models/TeamMember';
 import { ObjectId, Schema, Types } from 'mongoose';
 import { Message } from '../models/Message';
+import ChannelService from './channelService';
 
 class SuperAdminService {
     static async createTeam(teamName: string, createdByUserID: Types.ObjectId, username: string): Promise<any> {
@@ -20,6 +21,10 @@ class SuperAdminService {
 
         await team.save();
         await SuperAdminService.addUserToTeam(username, team._id as Schema.Types.ObjectId, TeamRole.ADMIN);
+
+        for (const channel of Object.values(DefaultChannels)) {
+            await ChannelService.createChannel(team._id as Types.ObjectId, channel, createdByUserID, username, Role.SUPER_ADMIN, []);
+        }
 
         return team;
     }
