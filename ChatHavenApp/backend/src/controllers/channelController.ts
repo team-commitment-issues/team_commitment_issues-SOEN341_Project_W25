@@ -133,6 +133,29 @@ class ChannelController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    static async leaveChannel(req: Request, res: Response): Promise<void> {
+        try {
+            const team = req.team.name;
+            const channel = req.channel.name;
+            const user = req.user._id as Types.ObjectId;
+            const result = await ChannelService.leaveChannel(team, channel, user);
+
+            res.status(200).json({
+                message: 'User left channel successfully'
+            });
+        } catch (err) {
+            if ((err as any).message === 'Channel not found') {
+                res.status(404).json({ error: 'Channel not found' });
+            } else if ((err as any).message === 'Team not found') {
+                res.status(404).json({ error: 'Team not found' });
+            } else if ((err as any).message === 'User is not a member of the team') {
+                res.status(403).json({ error: 'User is not a member of the team' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        }
+    }
 }
 
 export default ChannelController;
