@@ -7,7 +7,7 @@ import { TeamRole } from '../enums';
 
 const channelRoutes = Router();
 
-channelRoutes.post('/createChannel', authenticate, checkTeamPermission(TeamRole.ADMIN), ChannelController.createChannel);
+channelRoutes.post('/createChannel', authenticate, checkTeamPermission(TeamRole.MEMBER), ChannelController.createChannel);
 channelRoutes.post('/addUserToChannel', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), ChannelController.addUserToChannel);
 channelRoutes.post('/removeUserFromChannel', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), ChannelController.removeUserFromChannel);
 channelRoutes.post('/deleteChannel', authenticate, checkTeamPermission(TeamRole.ADMIN), checkChannelPermission(), ChannelController.deleteChannel);
