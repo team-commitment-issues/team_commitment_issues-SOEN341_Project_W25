@@ -15,6 +15,7 @@ const SignUpForm: React.FC = () => {
   const [lastName, setLastName] = useState<string>('');
   const [username, setUserID] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const navigate = useNavigate();
 
@@ -24,11 +25,19 @@ const SignUpForm: React.FC = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
+    
     try {
       await signUp(email, password, firstName, lastName, username);
-      navigate('/login');
-    } catch (err) {
-      setError('Signup failed. Please try again.');
+      setSuccess('Account created successfully! Redirecting to login...');
+      
+      // Redirect to login after a short delay to show the success message
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Signup failed. Please try again.');
     }
   };
 
@@ -36,12 +45,12 @@ const SignUpForm: React.FC = () => {
     <div style={styles.formContainer}>
       <h2 style={styles.heading}>Sign Up for ChatHaven</h2>
       {error && <p style={styles.error}>{error}</p>}
+      {success && <p style={{ ...styles.error, color: 'green' }}>{success}</p>}
       <form onSubmit={handleSignUp} style={styles.form}>
         <FormGroup label="Email:">
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </FormGroup>
         <FormGroup label="Password:">
-          {/* <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /> */}
           <div style={{ position: 'relative' }}>
             <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
             <span

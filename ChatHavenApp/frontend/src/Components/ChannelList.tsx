@@ -7,6 +7,7 @@ import { getChannels } from "../Services/dashboardService";
 import { deleteChannel } from "../Services/channelService";
 import { useTheme } from "../Context/ThemeContext";
 import { Selection } from "../types/shared";
+import { useChatSelection } from "../Context/ChatSelectionContext";
 
 const TrashIcon: IconType = FaTrash;
 
@@ -18,8 +19,8 @@ interface Channel {
 interface ChannelListProps {
   selectedTeam: string | null;
   selectedTeamMembers: string[];
-  selection: Selection;
-  setSelection: (selection: Selection) => void;
+  selection: Selection | null;
+  setSelection: (selection: Selection | null) => void;
 }
 
 const ChannelList: React.FC<ChannelListProps> = ({
@@ -32,13 +33,25 @@ const ChannelList: React.FC<ChannelListProps> = ({
   const [channels, setChannels] = useState<Channel[]>([]);
   const navigate = useNavigate();
   const { theme } = useTheme();
+  
+  const chatSelectionContext = useChatSelection();
 
   const handleDeleteChannel = async (channelToDelete: Channel) => {
     try {
       await deleteChannel(selectedTeam!, channelToDelete.name);
       setChannels((prevChannels) => prevChannels.filter((c) => c.name !== channelToDelete.name));
+      
+      // If the deleted channel was selected, clear the selection
       if (selection?.type === "channel" && selection.channelName === channelToDelete.name) {
         setSelection(null);
+        if (chatSelectionContext) {
+          chatSelectionContext.setSelection(null);
+        }
+      }
+      
+      // Check if any other selections are still valid
+      if (chatSelectionContext) {
+        chatSelectionContext.checkAndUpdateSelection();
       }
     } catch (err) {
       console.error("Failed to delete channel", err);
@@ -47,25 +60,52 @@ const ChannelList: React.FC<ChannelListProps> = ({
 
   const handleSetChannel = (channelName: string) => {
     if (selection?.type === "channel" && selection.channelName === channelName) {
+      // Deselect if clicking the same channel
       setSelection(null);
-      return
+      if (chatSelectionContext) {
+        chatSelectionContext.setSelection(null);
+      }
+      return;
     }
-    setSelection({ type: "channel", channelName, teamName: selectedTeam! });
+    
+    if (selectedTeam) {
+      const channelSelection = { 
+        type: "channel" as const, 
+        channelName, 
+        teamName: selectedTeam 
+      };
+      
+      // Update both the prop and context selection
+      setSelection(channelSelection);
+      if (chatSelectionContext) {
+        chatSelectionContext.setSelection(channelSelection);
+      }
+    }
   };
 
   useEffect(() => {
     const fetchChannels = async () => {
       try {
-        if (!selectedTeam) return [];
+        if (!selectedTeam) {
+          setChannels([]);
+          return;
+        }
+        
         const channelsList = await getChannels(selectedTeam);
         setChannels(channelsList);
+        
+        // Verify if current selection is still valid
+        if (chatSelectionContext) {
+          chatSelectionContext.checkAndUpdateSelection();
+        }
       } catch (err) {
         console.error("Failed to fetch channels", err);
+        setChannels([]);
       }
     };
 
     fetchChannels();
-  }, [selectedTeam]);
+  }, [selectedTeam, chatSelectionContext]);
 
   const isChannelSelected = (channelName: string) => {
     return selection?.type === 'channel' && selection.channelName === channelName;
@@ -87,7 +127,9 @@ const ChannelList: React.FC<ChannelListProps> = ({
               key={index}
               style={{
                 ...styles.listItem,
-                backgroundColor: isChannelSelected(channel.name) ? "#f0f0f0" : "transparent",
+                backgroundColor: isChannelSelected(channel.name) ? 
+                  (theme === "dark" ? "#3A3F44" : "#f0f0f0") : 
+                  "transparent",
                 fontWeight: isChannelSelected(channel.name) ? "bold" : "normal",
                 ...(theme === "dark" && styles.listItem["&.dark-mode:hover"]),
               }}

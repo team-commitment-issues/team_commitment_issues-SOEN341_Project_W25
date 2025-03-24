@@ -7,6 +7,7 @@ import FormGroup from "./UI/FormGroup";
 import styles from "../Styles/loginStyles";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import TextLink from "./UI/TextLink";
+import { useUser } from "../Context/UserContext";
 
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState<string>("");
@@ -14,6 +15,7 @@ const LoginForm: React.FC = () => {
   const [error, setError] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const navigate = useNavigate();
+  const { setUserData } = useUser();
 
   const toggleShowPassword = () => {
     setShowPassword((prevState) => !prevState);
@@ -30,7 +32,8 @@ const LoginForm: React.FC = () => {
           username: username,
         };
         
-        localStorage.setItem("user", JSON.stringify(userData));
+        // Update both context and localStorage
+        setUserData(userData);
         
         navigate("/dashboard");
       }

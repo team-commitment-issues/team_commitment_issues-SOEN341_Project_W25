@@ -1,26 +1,24 @@
-import React, { useState } from 'react';
-import { setUserStatus } from '../../Services/onlineStatusService';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../Context/ThemeContext';
+import { useOnlineStatus } from '../../Context/OnlineStatusContext';
 import styles from '../../Styles/StatusSelector.module.css';
-
-type Status = 'online' | 'away' | 'busy' | 'offline';
+import { Status } from '../../types/shared';
 
 const StatusSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState<Status>('online');
   const { theme } = useTheme();
+  const { setUserStatus, currentUserStatus } = useOnlineStatus();
   
   const statuses: { type: Status; label: string; color: string }[] = [
-      { type: 'online', label: 'Online', color: '#4CAF50' },
-      { type: 'away', label: 'Away', color: '#FFC107' },
-      { type: 'busy', label: 'Busy', color: '#F44336' },
-      { type: 'offline', label: 'Appear Offline', color: '#9E9E9E' }
+      { type: Status.ONLINE, label: 'Online', color: '#4CAF50' },
+      { type: Status.AWAY, label: 'Away', color: '#FFC107' },
+      { type: Status.BUSY, label: 'Busy', color: '#F44336' },
+      { type: Status.OFFLINE, label: 'Appear Offline', color: '#9E9E9E' }
     ];
   
-  const handleStatusChange = async (status: Status) => {
+  const handleStatusChange = (status: Status) => {
     try {
-      await setUserStatus(status);
-      setCurrentStatus(status);
+      setUserStatus(status);
       setIsOpen(false);
     } catch (error) {
       console.error('Failed to update status:', error);
@@ -28,12 +26,27 @@ const StatusSelector: React.FC = () => {
   };
   
   const getCurrentStatusLabel = () => {
-    return statuses.find(s => s.type === currentStatus)?.label || 'Online';
+    return statuses.find(s => s.type === currentUserStatus)?.label || 'Online';
   };
   
   const getCurrentStatusColor = () => {
-    return statuses.find(s => s.type === currentStatus)?.color || '#4CAF50';
+    return statuses.find(s => s.type === currentUserStatus)?.color || '#4CAF50';
   };
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(`.${styles.container}`)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   return (
     <div className={styles.container}>
@@ -46,7 +59,7 @@ const StatusSelector: React.FC = () => {
           style={{ backgroundColor: getCurrentStatusColor() }} 
         />
         <span>{getCurrentStatusLabel()}</span>
-        <span style={{ fontSize: '10px' }}>▼</span>
+        <span style={{ fontSize: '10px' }}>{isOpen ? '▲' : '▼'}</span>
       </div>
       
       {isOpen && (
@@ -55,7 +68,7 @@ const StatusSelector: React.FC = () => {
             <div 
               key={status.type}
               onClick={() => handleStatusChange(status.type)}
-              className={`${styles.dropdownItem} ${theme === 'dark' ? styles.dark : styles.light} ${currentStatus === status.type ? (theme === 'dark' ? styles.activeDark : styles.activeLight) : ''}`}
+              className={`${styles.dropdownItem} ${theme === 'dark' ? styles.dark : styles.light} ${currentUserStatus === status.type ? (theme === 'dark' ? styles.activeDark : styles.activeLight) : ''}`}
               style={{ '--hover-bg-color': theme === 'dark' ? '#444' : '#f5f5f5' } as React.CSSProperties}
             >
               <div 
@@ -63,6 +76,9 @@ const StatusSelector: React.FC = () => {
                 style={{ backgroundColor: status.color }} 
               />
               <span>{status.label}</span>
+              {currentUserStatus === status.type && (
+                <span style={{ marginLeft: 'auto', fontSize: '12px' }}>✓</span>
+              )}
             </div>
           ))}
         </div>

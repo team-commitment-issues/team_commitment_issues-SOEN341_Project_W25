@@ -18,6 +18,8 @@ interface IDirectMessage extends Document {
      * @see {@link DMessage}
     */
     dmessages: Schema.Types.ObjectId[];
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 /**
@@ -34,6 +36,14 @@ const DirectMessageSchema = new Schema<IDirectMessage>({
         type: Schema.Types.ObjectId,
         ref: 'DMessage',
     }],
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now,
+    },
 });
 
 /**

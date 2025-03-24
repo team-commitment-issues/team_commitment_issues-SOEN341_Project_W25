@@ -9,6 +9,7 @@ import TeamMemberList from "../Components/teamMemberList";
 import { useTheme } from "../Context/ThemeContext";
 import { Selection, ContextMenuState } from "../types/shared";
 import StatusSelector from "../Components/UI/StatusSelector";
+import { ChatSelectionProvider } from "../Context/ChatSelectionContext";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -21,7 +22,8 @@ const AdminDashboard: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   
-  const [selection, setSelection] = useState<Selection>(null);
+  // This state will be managed by ChatSelectionContext
+  const [selection, setSelection] = useState<Selection | null>(null);
   
   const [usersContextMenu, setUsersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
   const [membersContextMenu, setMembersContextMenu] = useState<ContextMenuState>({ visible: false, x: 0, y: 0, selected: "" });
@@ -83,82 +85,85 @@ const AdminDashboard: React.FC = () => {
     }), [theme]);
 
   return (
-    <div style={getStyledComponent(styles.container)}>
-      <div style={getStyledComponent(styles.menuContainer)} ref={dropdownRef}>
-        <button
-          style={getStyledComponent(styles.menuButton)}
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-        >
-          ☰ Menu
-        </button>
-        {dropdownOpen && (
-          <div style={getStyledComponent(styles.dropdownMenu)}>
-            <div style={{ padding: '8px 12px', borderBottom: '1px solid #ccc' }}>
-              <StatusSelector />
+    <ChatSelectionProvider>
+      <div style={getStyledComponent(styles.container)}>
+        <div style={getStyledComponent(styles.menuContainer)} ref={dropdownRef}>
+          <button
+            style={getStyledComponent(styles.menuButton)}
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          >
+            ☰ Menu
+          </button>
+          {dropdownOpen && (
+            <div style={getStyledComponent(styles.dropdownMenu)}>
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid #ccc' }}>
+                <StatusSelector />
+              </div>
+              <button onClick={() => navigate("/profile")} style={getStyledComponent(styles.menuItem)}>
+                Profile
+              </button>
+              <button
+                onClick={() => navigate("/settings")}
+                style={getStyledComponent(styles.menuItem)}
+              >
+                Settings
+              </button>
+              <button onClick={handleLogout} style={getStyledComponent(styles.menuItem)}>
+                Logout
+              </button>
             </div>
-            <button onClick={() => navigate("/profile")} style={getStyledComponent(styles.menuItem)}>
-              Profile
-            </button>
-            <button
-              onClick={() => navigate("/settings")}
-              style={getStyledComponent(styles.menuItem)}
-            >
-              Settings
-            </button>
-            <button onClick={handleLogout} style={getStyledComponent(styles.menuItem)}>
-              Logout
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      <h2 style={getStyledComponent(styles.heading)}>Dashboard</h2>
-      <p style={getStyledComponent(styles.text)}>Manage users, teams, channels, and messages.</p>
+        <h2 style={getStyledComponent(styles.heading)}>Dashboard</h2>
+        <p style={getStyledComponent(styles.text)}>Manage users, teams, channels, and messages.</p>
 
-      <div style={styles.mainContainer}>
-        <UserList 
-          selectedUsers={selectedUsers}
-          setSelectedUsers={setSelectedUsers}
-          selectedTeam={selectedTeam}
-          selection={selection}
-          setSelectedTeamMembers={setSelectedTeamMembers}
-          contextMenu={usersContextMenu}
-          setContextMenu={(arg: ContextMenuState) => handleContextMenu("users", arg)}
-          handleRefresh={handleRefresh}
-        />
-        
-        <TeamMemberList
-          selectedTeam={selectedTeam}
-          selectedTeamMembers={selectedTeamMembers}
-          setSelectedTeamMembers={setSelectedTeamMembers}
-          selection={selection}
-          setSelection={setSelection}
-          contextMenu={membersContextMenu}
-          setContextMenu={(arg: ContextMenuState) => handleContextMenu("members", arg)}
-          refreshState={refreshState}
-        />
-
-        <div style={styles.middleContainer}>
-          <TeamList
+        <div style={styles.mainContainer}>
+          <UserList 
             selectedUsers={selectedUsers}
+            setSelectedUsers={setSelectedUsers}
             selectedTeam={selectedTeam}
-            setSelectedTeam={handleTeamChange}
-          />
-          <ChannelList
-            selectedTeam={selectedTeam}
-            selectedTeamMembers={selectedTeamMembers}
             selection={selection}
             setSelection={setSelection}
+            setSelectedTeamMembers={setSelectedTeamMembers}
+            contextMenu={usersContextMenu}
+            setContextMenu={(arg: ContextMenuState) => handleContextMenu("users", arg)}
+            handleRefresh={handleRefresh}
+          />
+          
+          <TeamMemberList
+            selectedTeam={selectedTeam}
+            selectedTeamMembers={selectedTeamMembers}
+            setSelectedTeamMembers={setSelectedTeamMembers}
+            selection={selection}
+            setSelection={setSelection}
+            contextMenu={membersContextMenu}
+            setContextMenu={(arg: ContextMenuState) => handleContextMenu("members", arg)}
+            refreshState={refreshState}
+          />
+
+          <div style={styles.middleContainer}>
+            <TeamList
+              selectedUsers={selectedUsers}
+              selectedTeam={selectedTeam}
+              setSelectedTeam={handleTeamChange}
+            />
+            <ChannelList
+              selectedTeam={selectedTeam}
+              selectedTeamMembers={selectedTeamMembers}
+              selection={selection}
+              setSelection={setSelection}
+            />
+          </div>
+          
+          <Messaging
+            selection={selection}
+            contextMenu={messagesContextMenu}
+            setContextMenu={(arg: ContextMenuState) => handleContextMenu("messages", arg)}
           />
         </div>
-        
-        <Messaging
-          selection={selection}
-          contextMenu={messagesContextMenu}
-          setContextMenu={(arg: ContextMenuState) => handleContextMenu("messages", arg)}
-        />
       </div>
-    </div>
+    </ChatSelectionProvider>
   );
 };
 

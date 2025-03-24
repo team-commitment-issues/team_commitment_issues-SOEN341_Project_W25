@@ -1,5 +1,6 @@
 import React from 'react';
 import { useOnlineStatus } from '../../Context/OnlineStatusContext';
+import { Status } from '../../types/shared';
 
 interface UserStatusIndicatorProps {
     username: string;
@@ -15,17 +16,28 @@ const UserStatusIndicator: React.FC<UserStatusIndicatorProps> = ({
     const { getUserStatus } = useOnlineStatus();
     const userStatus = getUserStatus(username);
     
-    const status = userStatus?.status || 'offline';
+    const status = userStatus?.status || Status.OFFLINE;
     
     const sizeInPx = size === 'small' ? 8 : size === 'medium' ? 12 : 16;
+    const textSize = size === 'small' ? 10 : size === 'medium' ? 12 : 14;
     
     const getStatusColor = () => {
         switch (status) {
-            case 'online': return '#4CAF50'; // Green
-            case 'away': return '#FFC107';   // Yellow
-            case 'busy': return '#F44336';   // Red
-            case 'offline': return '#9E9E9E'; // Gray
+            case Status.ONLINE: return '#4CAF50'; // Green
+            case Status.AWAY: return '#FFC107';   // Yellow
+            case Status.BUSY: return '#F44336';   // Red
+            case Status.OFFLINE: return '#9E9E9E'; // Gray
             default: return '#9E9E9E';
+        }
+    };
+    
+    const getStatusText = () => {
+        switch (status) {
+            case Status.ONLINE: return 'Online';
+            case Status.AWAY: return 'Away';
+            case Status.BUSY: return 'Busy';
+            case Status.OFFLINE: return 'Offline';
+            default: return 'Offline';
         }
     };
     
@@ -44,6 +56,9 @@ const UserStatusIndicator: React.FC<UserStatusIndicatorProps> = ({
         const diffHours = Math.floor(diffMins / 60);
         if (diffHours < 24) return `${diffHours}h ago`;
         
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
         return lastSeen.toLocaleDateString();
     };
     
@@ -54,13 +69,14 @@ const UserStatusIndicator: React.FC<UserStatusIndicatorProps> = ({
                 height: `${sizeInPx}px`,
                 borderRadius: '50%',
                 backgroundColor: getStatusColor(),
-                display: 'inline-block'
+                display: 'inline-block',
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
             }} />
             
             {showStatusText && (
-                <div style={{ fontSize: `${sizeInPx * 0.9}px` }}>
-                    <span>{status}</span>
-                    {status === 'offline' && userStatus?.lastSeen && (
+                <div style={{ fontSize: `${textSize}px` }}>
+                    <span>{getStatusText()}</span>
+                    {status === Status.OFFLINE && userStatus?.lastSeen && (
                         <span style={{ marginLeft: '4px', opacity: 0.7 }}>
                             ({getLastSeenText()})
                         </span>

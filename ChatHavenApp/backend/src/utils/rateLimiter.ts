@@ -1,4 +1,3 @@
-// utils/rateLimiter.ts
 import { createLogger } from './logger';
 
 // Create logger but make it injectable for testing
@@ -163,8 +162,6 @@ function getDefaultRateLimiter(): RateLimiter {
   return defaultLimiterInstance;
 }
 
-// Create a proxy object that behaves both like a function and an object
-// This maintains backward compatibility with code that calls defaultRateLimiter directly
 const defaultRateLimiterProxy = new Proxy(getDefaultRateLimiter(), {
   apply: function(target, thisArg, argumentsList) {
     // When called as a function, delegate to the instance's isAllowed method
@@ -186,6 +183,5 @@ const defaultRateLimiterProxy = new Proxy(getDefaultRateLimiter(), {
   }
 });
 
-// Export the proxy as defaultRateLimiter
 export const defaultRateLimiter = defaultRateLimiterProxy as unknown as RateLimiter & 
   ((id: string) => boolean);

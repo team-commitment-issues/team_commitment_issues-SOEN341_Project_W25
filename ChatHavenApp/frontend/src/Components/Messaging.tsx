@@ -1,25 +1,27 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import styles from "../Styles/dashboardStyles";
-import { deleteMessage, getMessages } from "../Services/channelService";
-import { getDirectMessages } from "../Services/directMessageService";
-import { jwtDecode } from "jwt-decode";
+import { deleteMessage } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
 import { useTheme } from "../Context/ThemeContext";
-import { useOnlineStatus } from "../Context/OnlineStatusContext";
 import UserStatusIndicator from "./UI/UserStatusIndicator";
+import MessageStatusIndicator from "./UI/MessageStatusIndicator";
+import WebSocketClient from "../Services/webSocketClient";
+import { useUser } from "../Context/UserContext";
 import { 
   Selection, 
   ContextMenuState, 
   ChatMessage, 
   WebSocketMessage,
+  RetryInfo,
+  MessageStatus,
 } from "../types/shared";
 
-const MAX_RETRY_COUNT = 5;
-const BASE_RETRY_MS = 1000;
-const HEARTBEAT_INTERVAL_MS = 30000;
+// Constants for message retry
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 3000;
 
 interface MessagingProps {
-  selection: Selection;
+  selection: Selection | null;
   contextMenu: ContextMenuState;
   setContextMenu: (arg: ContextMenuState) => void;
 }
@@ -35,22 +37,32 @@ const Messaging: React.FC<MessagingProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState<string>("");
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
-  const [retryCount, setRetryCount] = useState(0);
-  const [messageQueue, setMessageQueue] = useState<WebSocketMessage[]>([]);
   const [typingIndicator, setTypingIndicator] = useState<{username: string, isTyping: boolean} | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [pendingMessages, setPendingMessages] = useState<Map<string, RetryInfo>>(new Map());
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [oldestMessageId, setOldestMessageId] = useState<string | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   
   // Refs
-  const ws = useRef<WebSocket | null>(null);
-  const isMounted = useRef(true);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const currentSelection = useRef<Selection | null>(null);
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const chatBoxRef = useRef<HTMLDivElement>(null);
+  const lastScrollHeight = useRef<number>(0);
+  const scrollPositionRef = useRef<number>(0);
+  const isMounted = useRef(true);
+  const messageSubscriptionRef = useRef<string | null>(null);
+  const processedMessageIds = useRef<Set<string>>(new Set());
+  
+  // Shared WebSocket service
+  const wsService = WebSocketClient.getInstance();
   
   const { theme } = useTheme();
-  const { updateUserStatus } = useOnlineStatus();
   const token = localStorage.getItem("token");
-  const username = token ? jwtDecode<any>(token).username : "";
+  const { userData } = useUser();
+  const username = userData?.username || "";
 
   // Helper functions
   const getSelectionTitle = () => {
@@ -61,9 +73,9 @@ const Messaging: React.FC<MessagingProps> = ({
     } else {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>Direct Messages with {selection.username}</span>
+          <span>Direct Messages with {selection.username || "Unknown User"}</span>
           <UserStatusIndicator 
-            username={selection.username} 
+            username={selection.username || "Unknown User"} 
             showStatusText={true} 
             size="medium"
           />
@@ -85,7 +97,7 @@ const Messaging: React.FC<MessagingProps> = ({
   };
 
   const sendTypingStatus = (isTyping: boolean) => {
-    if (!ws.current || ws.current.readyState !== WebSocket.OPEN || !selection) return;
+    if (!wsService.isConnected() || !selection) return;
     
     const typingMessage: WebSocketMessage = selection.type === 'channel' 
       ? { 
@@ -100,11 +112,192 @@ const Messaging: React.FC<MessagingProps> = ({
           isTyping, 
           username,
           teamName: selection.teamName, 
-          receiverUsername: selection.username 
+          receiverUsername: selection.username
         };
         
-    ws.current.send(JSON.stringify(typingMessage));
+    wsService.send(typingMessage);
   };
+
+  // Function to track pending messages and handle retries
+  const trackPendingMessage = useCallback((messageData: WebSocketMessage, clientMessageId: string) => {
+    // Create a timeout for retry
+    const timeout = setTimeout(() => {
+      setPendingMessages(prev => {
+        const pending = prev.get(clientMessageId);
+        
+        if (pending && pending.attempts < MAX_RETRY_ATTEMPTS) {
+          // Retry sending
+          console.log(`Retrying message ${clientMessageId}, attempt ${pending.attempts + 1}`);
+          
+          // Attempt to resend
+          if (wsService.isConnected()) {
+            wsService.send(messageData);
+          }
+          
+          // Update retry info
+          const updated = new Map(prev);
+          updated.set(clientMessageId, {
+            message: messageData,
+            attempts: pending.attempts + 1,
+            timeout: setTimeout(() => trackPendingMessage(messageData, clientMessageId), RETRY_DELAY_MS),
+            createdAt: messageData.createdAt || Date.now()
+          });
+          return updated;
+        } else {
+          // Max retries reached, mark as failed
+          setMessages(prevMsgs => 
+            prevMsgs.map(msg => 
+              msg.clientMessageId === clientMessageId 
+                ? { ...msg, status: 'failed' } 
+                : msg
+            )
+          );
+          
+          // Remove from pending
+          const updated = new Map(prev);
+          updated.delete(clientMessageId);
+          return updated;
+        }
+      });
+    }, RETRY_DELAY_MS);
+    
+    // Store retry info
+    setPendingMessages(prev => {
+      const updated = new Map(prev);
+      updated.set(clientMessageId, { 
+        message: messageData, 
+        attempts: 0, 
+        timeout,
+        createdAt: messageData.createdAt || Date.now()
+      });
+      return updated;
+    });
+  }, [wsService]);
+
+  // Sending messages with client-side tracking
+  const sendMessage = useCallback((messageData: WebSocketMessage) => {
+    // Generate a client-side ID for tracking
+    const clientMessageId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const messageWithId: WebSocketMessage = { 
+      ...messageData, 
+      clientMessageId,
+      text: messageData.text || ''
+    };
+    
+    if (wsService.isConnected()) {
+      wsService.send(messageWithId);
+      
+      // Register for status updates
+      wsService.registerMessageStatusCallback(clientMessageId, (status) => {
+        setMessages(prevMsgs => 
+          prevMsgs.map(msg => 
+            msg.clientMessageId === clientMessageId 
+              ? { ...msg, status: status as MessageStatus } 
+              : msg
+          )
+        );
+      });
+      
+      // Add message to state immediately with pending status
+      const newMessage: ChatMessage = {
+        _id: '', // Server will assign a real ID
+        text: messageWithId.text || '',
+        username,
+        createdAt: new Date(),
+        status: 'pending',
+        clientMessageId
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      
+      return true;
+    } else {
+      // Add message to state with pending status
+      const newMessage: ChatMessage = {
+        _id: '',
+        text: messageWithId.text || '',
+        username,
+        createdAt: new Date(),
+        status: 'pending',
+        clientMessageId
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      
+      // This will be queued by the service
+      wsService.send(messageWithId);
+      
+      return false;
+    }
+  }, [username, wsService]);
+
+  // Function to handle message resend
+  const handleResendMessage = useCallback((message: ChatMessage) => {
+    // Create a new message based on the failed one
+    const newMessage: WebSocketMessage = {
+      type: selection?.type === 'directMessage' ? 'directMessage' : 'message',
+      text: message.text,
+      username,
+      teamName: selection?.teamName || '',
+      ...(selection?.type === 'directMessage' 
+                ? { receiverUsername: selection?.username || '' }
+                : { channelName: selection?.channelName || '' }),
+    };
+
+    // Remove the failed message
+    setMessages(prev => prev.filter(msg => 
+      (msg._id && msg._id !== message._id) || 
+      (msg.clientMessageId && msg.clientMessageId !== message.clientMessageId)
+    ));
+    
+    // Send the new message
+    sendMessage(newMessage);
+  }, [selection, sendMessage, username]);
+
+  // Function to load older messages
+  const loadOlderMessages = useCallback(() => {
+    if (!wsService.isConnected() || !selection || isLoadingHistory || !hasMoreMessages) {
+      return;
+    }
+    
+    setIsLoadingHistory(true);
+    
+    const historyRequest: WebSocketMessage = selection.type === 'channel'
+      ? {
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          channelName: selection.channelName,
+          before: oldestMessageId || undefined,
+          limit: 25
+        }
+      : {
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          username: selection.username,
+          before: oldestMessageId || undefined,
+          limit: 25
+        };
+        
+    wsService.send(historyRequest);
+    
+    // Store current scroll position for restoration
+    if (chatBoxRef.current) {
+      lastScrollHeight.current = chatBoxRef.current.scrollHeight;
+      scrollPositionRef.current = chatBoxRef.current.scrollTop;
+    }
+  }, [selection, isLoadingHistory, hasMoreMessages, oldestMessageId, wsService]);
+
+  // Handle scroll to detect when to load more messages
+  const handleScroll = useCallback(() => {
+    if (!chatBoxRef.current) return;
+    
+    // Check if user has scrolled near the top (threshold of 100px)
+    const { scrollTop } = chatBoxRef.current;
+    
+    if (scrollTop < 100 && hasMoreMessages && !isLoadingHistory) {
+      loadOlderMessages();
+    }
+  }, [hasMoreMessages, isLoadingHistory, loadOlderMessages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
@@ -127,145 +320,8 @@ const Messaging: React.FC<MessagingProps> = ({
     }, 3000);
   };
 
-  const connectWebSocket = useCallback(() => {
-    if (!token || !selection) return;
-
-    if (ws.current) {
-      ws.current.close(1000, "Creating new connection");
-      ws.current = null;
-    }
-
-    setConnectionStatus('connecting');
-    ws.current = new WebSocket(`ws://localhost:5000?token=${token}`);
-
-    ws.current.onopen = () => {
-      if (!isMounted.current) return;
-      
-      console.log("WebSocket connection established");
-      setConnectionStatus('connected');
-      setRetryCount(0);
-      
-      // Set up heartbeat
-      clearHeartbeat();
-      heartbeatInterval.current = setInterval(() => {
-        if (ws.current?.readyState === WebSocket.OPEN) {
-          const pingMessage: WebSocketMessage = { 
-            type: "ping", 
-            selection 
-          };
-          ws.current.send(JSON.stringify(pingMessage));
-        }
-      }, HEARTBEAT_INTERVAL_MS);
-      
-      sendJoinMessage(selection);
-      
-      if (messageQueue.length > 0) {
-        messageQueue.forEach(msg => ws.current?.send(JSON.stringify(msg)));
-        setMessageQueue([]);
-      }
-    };
-
-    ws.current.onmessage = (event) => {
-      if (!isMounted.current) return;
-      
-      try {
-        const data = JSON.parse(event.data) as WebSocketMessage;
-        
-        switch (data.type) {
-          case "message":
-          case "directMessage":
-            setMessages((prevMessages) => {
-              // Avoid duplicate messages
-              if (prevMessages.some(msg => msg._id === data._id)) {
-                return prevMessages;
-              }
-              
-              return [...prevMessages, {
-                _id: data._id,
-                text: data.text,
-                username: data.username,
-                createdAt: new Date(data.createdAt),
-              }];
-            });
-            break;
-            
-          case "typing":
-            if (data.username !== username) {
-              setTypingIndicator({
-                username: data.username,
-                isTyping: data.isTyping
-              });
-              
-              // Clear typing indicator after 5 seconds if no update is received
-              if (data.isTyping) {
-                setTimeout(() => {
-                  setTypingIndicator(current => 
-                    current?.username === data.username ? null : current
-                  );
-                }, 5000);
-              } else {
-                setTypingIndicator(null);
-              }
-            }
-            break;
-            
-          case "statusUpdate":
-            updateUserStatus(
-              data.username, 
-              data.status, 
-              data.lastSeen ? new Date(data.lastSeen) : undefined
-            );
-            break;
-        }
-      } catch (error) {
-        console.error("Failed to parse incoming message:", error);
-      }
-    };
-
-    ws.current.onclose = (event) => {
-      if (!isMounted.current) return;
-      
-      console.log("WebSocket connection closed:", event.code, event.reason);
-      setConnectionStatus('disconnected');
-      ws.current = null;
-      clearHeartbeat();
-      
-      if (event.code === 1008) {
-        console.error("Authentication failed, not reconnecting");
-        return;
-      }
-
-      const intentionalClosureReasons = [
-        "Creating new connection",
-        "Component unmounting",
-        "User initiated disconnect",
-        "Switching channels/DMs",
-        "No selection"
-      ];
-      
-      if (event.code === 1000 && intentionalClosureReasons.includes(event.reason)) {
-        console.log("Clean WebSocket closure, no reconnection needed");
-        return;
-      }
-      
-      // Implement exponential backoff for reconnection
-      if (retryCount < MAX_RETRY_COUNT) {
-        const delay = Math.min(BASE_RETRY_MS * Math.pow(2, retryCount), 30000);
-        setRetryCount(prev => prev + 1);
-        setTimeout(connectWebSocket, delay);
-      } else {
-        console.error("Max reconnection attempts reached");
-      }
-    };
-
-    ws.current.onerror = (error) => {
-      if (!isMounted.current) return;
-      console.error("WebSocket error:", error);
-    };
-  }, [token, selection, messageQueue, retryCount, username, updateUserStatus]);
-
-  const sendJoinMessage = (sel: Selection) => {
-    if (!ws.current || ws.current.readyState !== WebSocket.OPEN || !sel) return;
+  const sendJoinMessage = useCallback((sel: Selection) => {
+    if (!wsService.isConnected() || !sel) return;
 
     const joinMessage: WebSocketMessage = sel.type === 'channel'
       ? { 
@@ -279,18 +335,8 @@ const Messaging: React.FC<MessagingProps> = ({
           username: sel.username 
         };
         
-    ws.current.send(JSON.stringify(joinMessage));
-  };
-
-  const sendMessage = useCallback((messageData: WebSocketMessage) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify(messageData));
-      return true;
-    } else {
-      setMessageQueue(prev => [...prev, messageData]);
-      return false;
-    }
-  }, []);
+    wsService.send(joinMessage);
+  }, [wsService]);
 
   const handleSendMessage = () => {
     if (!message.trim() || !selection) return;
@@ -303,11 +349,8 @@ const Messaging: React.FC<MessagingProps> = ({
       ? { 
           type: 'directMessage', 
           text: message, 
-          username, 
           teamName: selection.teamName,
-          receiverUsername: selection.username,
-          _id: '', // Will be assigned by server
-          createdAt: new Date().toISOString()
+          receiverUsername: selection.username
         }
       : { 
           type: 'message', 
@@ -315,61 +358,65 @@ const Messaging: React.FC<MessagingProps> = ({
           username, 
           teamName: selection.teamName, 
           channelName: selection.channelName,
-          _id: '', // Will be assigned by server
-          createdAt: new Date().toISOString()
         };
-
-    const sent = sendMessage(newMessage);
-    if (sent) {
-      setMessage("");
+  
+    sendMessage(newMessage);
+    setMessage("");
+    
+    // Clear typing indicator when sending a message
+    if (isTyping) {
+      setIsTyping(false);
+      sendTypingStatus(false);
       
-      // Clear typing indicator when sending a message
-      if (isTyping) {
-        setIsTyping(false);
-        sendTypingStatus(false);
-        
-        if (typingTimeout.current) {
-          clearTimeout(typingTimeout.current);
-          typingTimeout.current = null;
-        }
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+        typingTimeout.current = null;
       }
     }
   };
 
-  const fetchMessages = useCallback(async () => {
-    if (!selection) {
+  // Fetch messages using WebSocket
+  const fetchMessages = useCallback(() => {
+    if (!selection || !wsService.isConnected()) {
       setMessages([]);
+      setHasMoreMessages(false);
+      setOldestMessageId(null);
+      setInitialLoadDone(false);
       return;
     }
-
-    try {
-      let fetchedMessages;
-      
-      if (selection.type === 'directMessage') {
-        const response = await getDirectMessages(selection.teamName, selection.username);
-        if (!isMounted.current) return;
-        fetchedMessages = response.directMessages;
-      } else {
-        fetchedMessages = await getMessages(selection.teamName, selection.channelName);
-        if (!isMounted.current) return;
-      }
-      
-      setMessages(fetchedMessages.map((msg: any) => ({
-        _id: msg._id,
-        text: msg.text,
-        username: msg.username,
-        createdAt: new Date(msg.createdAt),
-      })));
-    } catch (err) {
-      console.error("Failed to fetch messages", err);
-    }
-  }, [selection]);
+    
+    setIsLoadingHistory(true);
+    setInitialLoadDone(false);
+    
+    // Clear the processed message IDs set when starting a new fetch
+    processedMessageIds.current = new Set();
+    
+    const historyRequest: WebSocketMessage = selection.type === 'channel'
+      ? {
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          channelName: selection.channelName,
+          limit: 50
+        }
+      : {
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          username: selection.username,
+          limit: 50
+        };
+        
+    wsService.send(historyRequest);
+  }, [selection, wsService]);
 
   const handleDeleteMessage = async () => {
     if (!contextMenu.selected || !selection || selection.type !== 'channel') return;
     
     try {
-      await deleteMessage(selection.teamName, selection.channelName, contextMenu.selected);
+      if (contextMenu.selected && selection.type === 'channel' && selection.channelName) {
+        await deleteMessage(selection.teamName, selection.channelName, contextMenu.selected);
+      } else {
+        console.error("No message selected for deletion.");
+      }
       setMessages(prev => prev.filter(msg => msg._id !== contextMenu.selected));
       setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
     } catch (err) {
@@ -386,8 +433,289 @@ const Messaging: React.FC<MessagingProps> = ({
     setContextMenu({ visible: false, x: 0, y: 0, selected: "" });
   };
   
+  // Register scroll handler
+  useEffect(() => {
+    const chatBoxElement = chatBoxRef.current;
+    if (chatBoxElement) {
+      chatBoxElement.addEventListener('scroll', handleScroll);
+    }
+    
+    return () => {
+      if (chatBoxElement) {
+        chatBoxElement.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [handleScroll]);
+  
+  // Setup WebSocket message handlers
+  useEffect(() => {
+    if (!token) return;
+    
+    const handleConnection = () => {
+      setConnectionStatus('connected');
+      
+      // If we have a selection, join the channel or DM
+      if (selection) {
+        sendJoinMessage(selection);
+        fetchMessages();
+      }
+    };
+    
+    const handleDisconnection = () => {
+      setConnectionStatus('disconnected');
+    };
+    
+    const handleError = () => {
+      setConnectionStatus('disconnected');
+    };
+    
+    const handleMessage = (data: any) => {
+      // check both _id and clientMessageId
+      const isDuplicate = (messageData: any): boolean => {
+        // Check if we've already processed this message ID
+        if (messageData._id && processedMessageIds.current.has(messageData._id)) {
+          return true;
+        }
+        
+        // Check if it's a message we sent that's already in our state
+        if (messageData.clientMessageId && messages.some(
+          msg => msg.clientMessageId === messageData.clientMessageId
+        )) {
+          return true;
+        }
+        
+        // Mark as processed
+        if (messageData._id) {
+          processedMessageIds.current.add(messageData._id);
+        }
+        
+        return false;
+      };
+      
+      if (data.type === "message" || data.type === "directMessage") {
+        // Avoid duplicates
+        if (isDuplicate(data)) {
+          return;
+        }
+        
+        // Check if message matches current conversation context
+        if (data.type === "message") {
+          // Only show channel messages if we're currently in a channel
+          if (!selection || selection.type !== 'channel') {
+            return; // Not viewing a channel, don't display this message
+          }
+        } else if (data.type === "directMessage") {
+          // Only show DMs if we're in the correct DM conversation
+          if (!selection || selection.type !== 'directMessage' ||
+              (data.username !== username && data.username !== selection.username)) {
+            return; // Not in the correct DM conversation, don't display this message
+          }
+        }
+        
+        // Check if this is a message we sent (by matching usernames)
+        if (data.username === username) {
+          // Find pending message by matching text/content
+          const pendingMessage = messages.find(msg => 
+            msg.status === 'pending' && 
+            msg.text === data.text && 
+            msg.username === data.username
+          );
+          
+          if (pendingMessage) {
+            // Update message status to sent
+            setMessages(prev => 
+              prev.map(msg => 
+                msg === pendingMessage
+                  ? { ...msg, _id: data._id ?? 'unknown-id', status: 'sent' } 
+                  : msg
+              )
+            );
+          } else {
+            // This is a new message from us (maybe from another client)
+            setMessages(prev => [
+              ...prev, 
+              {
+                _id: data._id ?? 'unknown-id',
+                text: data.text || '',
+                username: data.username || '',
+                createdAt: new Date(data.createdAt || new Date()),
+                status: 'sent'
+              }
+            ]);
+          }
+          
+          // Send delivery acknowledgment
+          wsService.send({
+            type: 'messageAck',
+            messageId: data._id,
+            status: 'delivered'
+          });
+        } else {
+          // This is a message from someone else
+          setMessages(prev => [
+            ...prev, 
+            {
+              _id: data._id ?? 'unknown-id',
+              text: data.text || '',
+              username: data.username || '',
+              createdAt: new Date(data.createdAt || new Date()),
+              status: 'delivered'
+            }
+          ]);
+          
+          // Send read receipt
+          if (data._id) {
+            wsService.send({
+              type: 'messageAck',
+              messageId: data._id,
+              status: 'read'
+            });
+          }
+        }
+      }
+      else if (data.type === "messageAck") {
+        // Update message status based on acknowledgment
+        setMessages(prev => 
+          prev.map(msg => 
+            msg._id === data.messageId 
+              ? { ...msg, status: data.status } 
+              : msg
+          )
+        );
+      }
+      else if (data.type === "historyResponse") {
+        setIsLoadingHistory(false);
+        setInitialLoadDone(true);
+        
+        // Process the messages
+        const historyMessages = (data.messages || [])
+          .filter((msg: any) => !isDuplicate(msg))
+          .map((msg: any) => ({
+            _id: msg._id,
+            text: msg.text,
+            username: msg.username,
+            createdAt: new Date(msg.createdAt),
+            status: msg.status || 'delivered',
+            ...(msg.clientMessageId && { clientMessageId: msg.clientMessageId })
+          }));
+        
+        // Even if there are no messages, set initialLoadDone to true
+        if (historyMessages.length === 0) {
+          setOldestMessageId(null);
+          setHasMoreMessages(false);
+          // Don't replace existing messages if we're paginating
+          if (!data.before) {
+            setMessages([]);
+          }
+        } else {
+          // If paginating (loading older messages), we need to find the oldest message
+          // If initial load, we'll use the first message from the response
+          const oldestMessageForPagination = data.before 
+            ? historyMessages.reduce((oldest: { createdAt: string | number | Date; }, current: { createdAt: string | number | Date; }) => 
+                new Date(oldest.createdAt).getTime() < new Date(current.createdAt).getTime() 
+                  ? oldest 
+                  : current
+              )
+            : historyMessages[0];
+            
+          setOldestMessageId(oldestMessageForPagination._id);
+          
+          // Update messages state based on whether this is pagination or initial load
+          if (data.before) {
+            // Pagination - prepend older messages
+            setMessages(prev => [...historyMessages, ...prev]);
+          } else {
+            // Initial load - replace all messages
+            setMessages(historyMessages);
+          }
+          
+          // Update hasMoreMessages flag
+          setHasMoreMessages(data.hasMore ?? false);
+          
+          // Restore scroll position after DOM update if paginating
+          if (data.before) {
+            setTimeout(() => {
+              if (chatBoxRef.current) {
+                const newScrollHeight = chatBoxRef.current.scrollHeight;
+                const heightDifference = newScrollHeight - lastScrollHeight.current;
+                chatBoxRef.current.scrollTop = scrollPositionRef.current + heightDifference;
+              }
+            }, 0);
+          } else {
+            // Scroll to bottom for initial load
+            setTimeout(() => {
+              if (chatBoxRef.current) {
+                chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+              }
+            }, 0);
+          }
+        }
+      }
+      else if (data.type === "typing") {
+        if (data.username !== username) {
+          setTypingIndicator({
+            username: data.username || '',
+            isTyping: data.isTyping || false
+          });
+          
+          // Clear typing indicator after 5 seconds if no update is received
+          if (data.isTyping) {
+            setTimeout(() => {
+              setTypingIndicator(current => 
+                current?.username === data.username ? null : current
+              );
+            }, 5000);
+          } else {
+            setTypingIndicator(null);
+          }
+        }
+      }
+    };
+    
+    // Set connection status based on current state
+    setConnectionStatus(wsService.isConnected() ? 'connected' : 'connecting');
+    
+    // Add event listeners
+    wsService.addConnectionListener(handleConnection);
+    wsService.addDisconnectionListener(handleDisconnection);
+    wsService.addErrorListener(handleError);
+    
+    // Store subscription reference for cleanup
+    messageSubscriptionRef.current = wsService.subscribe('*', handleMessage);
+    
+    // Ensure we're connected
+    wsService.connect(token).catch((error: any) => {
+      console.error("Failed to connect to WebSocket:", error);
+      setConnectionStatus('disconnected');
+    });
+    
+    return () => {
+      wsService.removeConnectionListener(handleConnection);
+      wsService.removeDisconnectionListener(handleDisconnection);
+      wsService.removeErrorListener(handleError);
+      
+      // Unsubscribe from messages
+      if (messageSubscriptionRef.current) {
+        wsService.unsubscribe(messageSubscriptionRef.current);
+        messageSubscriptionRef.current = null;
+      }
+      
+      // Clear any message retry timeouts
+      pendingMessages.forEach(info => {
+        if (info.timeout) {
+          clearTimeout(info.timeout);
+        }
+      });
+    };
+  }, [fetchMessages, pendingMessages, selection, sendJoinMessage, token, username, wsService, messages]);
+
+  // Setup cleanup on unmount
   useEffect(() => {
     isMounted.current = true;
+    
+    // Setup heartbeat
+    heartbeatInterval.current = wsService.setupHeartbeat(30000);
+    
     return () => {
       isMounted.current = false;
       clearHeartbeat();
@@ -397,51 +725,42 @@ const Messaging: React.FC<MessagingProps> = ({
         typingTimeout.current = null;
       }
     };
-  }, []);
+  }, [wsService]);
 
+  // Handle channel/DM switching
   useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
-
-  // WebSocket lifecycle management
-  useEffect(() => {
-    if (token && selection) {
-      if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-        connectWebSocket();
-      }
-    } else if (!selection && ws.current) {
-      ws.current.close(1000, "No selection");
-      ws.current = null;
+    // When no selection is made, immediately clear messages
+    if (!selection) {
+      setMessages([]);
+      setHasMoreMessages(false);
+      setOldestMessageId(null);
+      setIsLoadingHistory(false);
+      setInitialLoadDone(false);
+      setTypingIndicator(null);
+      return;
     }
-  
-    return () => {
-      clearHeartbeat();
-      if (ws.current) {
-        ws.current.close(1000, "Component unmounting");
-        ws.current = null;
-      }
-    };
-  }, [token, selection, connectWebSocket]);
-
-  // Handle channel/DM switching with existing connection
-  useEffect(() => {
-    if (!selection || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
+    
+    if (!wsService.isConnected()) return;
     
     const prevSelection = currentSelection.current;
     currentSelection.current = selection;
     
-    if (!prevSelection) return;
+    if (!prevSelection) {
+      // First selection, send join and fetch messages
+      sendJoinMessage(selection);
+      fetchMessages();
+      return;
+    }
     
     const hasSelectionChanged = 
       prevSelection.type !== selection.type ||
+      prevSelection.teamName !== selection.teamName ||
       (selection.type === 'channel' && 
        prevSelection.type === 'channel' && 
-       (prevSelection.teamName !== selection.teamName || 
-        prevSelection.channelName !== selection.channelName)) ||
+       prevSelection.channelName !== selection.channelName) ||
       (selection.type === 'directMessage' && 
        prevSelection.type === 'directMessage' && 
-       (prevSelection.teamName !== selection.teamName || 
-        prevSelection.username !== selection.username));
+       prevSelection.username !== selection.username);
     
     if (hasSelectionChanged) {
       console.log("Selection changed, sending join message");
@@ -456,8 +775,21 @@ const Messaging: React.FC<MessagingProps> = ({
           typingTimeout.current = null;
         }
       }
+      
+      // Reset pagination state
+      setHasMoreMessages(false);
+      setOldestMessageId(null);
+      setIsLoadingHistory(false);
+      setInitialLoadDone(false);
+      setMessages([]); // Clear messages when switching channels
+      
+      // Clear the processed message IDs set when changing selection
+      processedMessageIds.current = new Set();
+      
+      // Fetch new messages
+      fetchMessages();
     }
-  }, [isTyping, selection]);
+  }, [isTyping, selection, sendJoinMessage, fetchMessages, wsService]);
 
   const menuItems = [
     { label: 'Delete Message', onClick: handleDeleteMessage },
@@ -474,25 +806,107 @@ const Messaging: React.FC<MessagingProps> = ({
         </div>
       </div>
       
-      <div style={getStyledComponent(styles.chatBox)}>
-        {messages.length === 0 ? (
+      <div 
+        style={getStyledComponent(styles.chatBox)}
+        ref={chatBoxRef}
+      >
+        {/* Loading older messages indicator */}
+        {isLoadingHistory && (
+          <div style={{
+            textAlign: 'center',
+            padding: '10px',
+            fontSize: '14px',
+            color: theme === 'dark' ? '#aaa' : '#666'
+          }}>
+            Loading messages...
+          </div>
+        )}
+        
+        {/* Load more messages button */}
+        {hasMoreMessages && !isLoadingHistory && (
+          <div style={{
+            textAlign: 'center',
+            padding: '10px',
+            marginBottom: '5px'
+          }}>
+            <button
+              onClick={loadOlderMessages}
+              style={{
+                background: theme === 'dark' ? '#444' : '#eee',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '5px 10px',
+                cursor: 'pointer',
+                color: theme === 'dark' ? '#fff' : '#333',
+                fontSize: '13px'
+              }}
+            >
+              Load older messages
+            </button>
+          </div>
+        )}
+        
+        {/* No messages placeholder */}
+        {messages.length === 0 && !isLoadingHistory && initialLoadDone ? (
           <p style={getStyledComponent(styles.chatPlaceholder)}>
-            {selection ? "No messages yet." : "Select a channel or user to chat with."}
+            {selection ? "No messages yet. Say hello!" : "Select a channel or user to chat with."}
           </p>
         ) : (
-          messages.map((msg, index) => (
+          /* Message list */
+          messages.map((msg) => (
             <div
-              key={index}
+              key={msg._id || msg.clientMessageId || (msg.createdAt ? msg.createdAt.getTime() : Date.now() + Math.random())}
               onContextMenu={e => handleContextMenu(e, msg._id)}
               style={{
                 ...getStyledComponent(styles.chatMessage),
                 alignSelf: msg.username === username ? "flex-end" : "flex-start",
-                backgroundColor: msg.username === username ? "#DCF8C6" : "#FFF",
+                backgroundColor: msg.username === username ? 
+                  (theme === 'dark' ? '#2b5278' : '#DCF8C6') : 
+                  (theme === 'dark' ? '#383838' : '#FFF'),
+                opacity: msg.status === 'failed' ? 0.7 : 1,
               } as React.CSSProperties}
             >
               <div>
-                <strong>{msg.username}</strong>: {msg.text} 
-                <em>({msg.createdAt ? msg.createdAt.toLocaleString() : "Unknown Date"})</em>
+                <strong>{msg.username}</strong>: {msg.text}
+                <div style={{ 
+                  fontSize: '11px', 
+                  marginTop: '3px', 
+                  color: theme === 'dark' ? '#aaa' : '#777',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <span>
+                    {msg.createdAt ? msg.createdAt.toLocaleString() : "Unknown Date"}
+                  </span>
+                  
+                  {/* Message status indicator for sent messages */}
+                  {msg.username === username && (
+                    <MessageStatusIndicator 
+                      status={msg.status} 
+                      dark={theme === 'dark'}
+                    />
+                  )}
+                </div>
+                
+                {/* Retry button for failed messages */}
+                {msg.status === 'failed' && (
+                  <button
+                    onClick={() => handleResendMessage(msg)}
+                    style={{
+                      marginTop: '5px',
+                      padding: '2px 8px',
+                      background: theme === 'dark' ? '#444' : '#f0f0f0',
+                      border: '1px solid ' + (theme === 'dark' ? '#555' : '#ddd'),
+                      borderRadius: '3px',
+                      cursor: 'pointer',
+                      color: '#F15050',
+                      fontSize: '12px',
+                    }}
+                  >
+                    Retry
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -504,7 +918,7 @@ const Messaging: React.FC<MessagingProps> = ({
             padding: '8px 12px',
             margin: '4px 0',
             fontSize: '14px',
-            color: '#555',
+            color: theme === 'dark' ? '#ccc' : '#555',
             fontStyle: 'italic'
           }}>
             {typingIndicator.username} is typing...

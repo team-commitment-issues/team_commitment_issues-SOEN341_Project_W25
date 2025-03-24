@@ -5,6 +5,7 @@ import TeamMember from '../models/TeamMember';
 import { Schema, Types } from 'mongoose';
 import { Message } from '../models/Message';
 import { Role } from '../enums';
+import { get } from 'http';
 
 class ChannelService {
     static async createChannel(team: Types.ObjectId, channelName: string, createdBy: Types.ObjectId, username: string, role: Role, selectedTeamMembers: string[]): Promise<any> {
@@ -44,7 +45,7 @@ class ChannelService {
         if (!channelTeam) {
             throw new Error('Team not found');
         }
-        
+
         channelTeam.channels.push(channel._id as Schema.Types.ObjectId);
         await channelTeam.save();
         channel.members.push(teamMember._id as Schema.Types.ObjectId);
@@ -54,7 +55,7 @@ class ChannelService {
     }
 
     static async removeUserFromChannel(team: Types.ObjectId, channelName: string, username: string, userRole: string): Promise<any> {
-        const userToRemove = await User.findOne({ username: { $eq: username }  });
+        const userToRemove = await User.findOne({ username: { $eq: username } });
         if (!userToRemove) {
             throw new Error('User not found');
         }
@@ -110,16 +111,16 @@ class ChannelService {
     }
 
     static async deleteMessage(channel: Types.ObjectId, messageId: Schema.Types.ObjectId): Promise<any> {
-        const message = await Message.findOne({_id: { $eq: messageId }});
+        const message = await Message.findOne({ _id: { $eq: messageId } });
         if (!message) {
             throw new Error('Message not found');
         }
-        
+
         const channelData = await Channel.findById(channel);
         if (!channelData) {
             throw new Error('Channel not found');
         }
-        
+
         if (!channelData.messages.includes(messageId)) {
             throw new Error('Message not found');
         }
@@ -159,6 +160,43 @@ class ChannelService {
 
         return messages;
     }
+
+    static async updateMessageStatus(messageId: string, status: string): Promise<void> {
+        const result = await Channel.updateOne(
+            { "messages._id": messageId },
+            { "$set": { "messages.$.status": status } }
+        );
+
+        if (result.modifiedCount === 0) {
+            throw new Error(`Message ${messageId} not found or status already set to ${status}`);
+        }
+    }
+
+    static async getMessagesByCriteria(criteria: any, limit: number): Promise<any[]> {
+        const channel = await Channel.findOne(
+          { _id: criteria.channel }
+        ).exec();
+      
+        if (!channel) {
+          return [];
+        }
+        
+        // Create message query
+        let query: any = { channel: channel._id };
+        
+        // Add _id constraint if "before" parameter is provided
+        if (criteria._id) {
+          query._id = criteria._id;
+        }
+      
+        // Get messages sorted chronologically (oldest to newest)
+        const messages = await Message.find(query)
+          .sort({ createdAt: 1 }) // Changed from -1 to 1
+          .limit(limit)
+          .exec();
+      
+        return messages;
+      }
 }
 
 export default ChannelService;
