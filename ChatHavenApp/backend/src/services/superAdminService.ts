@@ -20,12 +20,12 @@ class SuperAdminService {
         });
 
         await team.save();
-        await SuperAdminService.addUserToTeam(username, team._id as Schema.Types.ObjectId, TeamRole.ADMIN);
-
+        
         for (const channel of Object.values(DefaultChannels)) {
             await ChannelService.createChannel(team._id as Types.ObjectId, channel, createdByUserID, username, Role.SUPER_ADMIN, []);
         }
-
+        
+        await SuperAdminService.addUserToTeam(username, team._id as Schema.Types.ObjectId, TeamRole.ADMIN);
         return team;
     }
 
@@ -58,8 +58,10 @@ class SuperAdminService {
         team.teamMembers.push(teamMember._id as ObjectId);
         await team.save();
 
-        for (const channel of Object.values(DefaultChannels)) {
-            await ChannelService.addUserToChannel(team._id as Types.ObjectId, channel, userName);
+        if (user.role !== Role.SUPER_ADMIN) {
+            for (const channel of Object.values(DefaultChannels)) {
+                await ChannelService.addUserToChannel(team._id as Types.ObjectId, channel, userName);
+            }
         }
 
         return teamMember;
