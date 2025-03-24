@@ -12,7 +12,6 @@ interface Subscription {
   callback: MessageCallback;
 }
 
-// Enhanced RetryInfo for tracking pending messages
 interface RetryInfo {
   message: WebSocketMessage;
   attempts: number;
@@ -159,7 +158,6 @@ class WebSocketClient {
         try {
           const data = JSON.parse(event.data);
           
-          // Handle message acknowledgements internally (fallback for backward compatibility)
           this.handleMessageResponse(data);
           
           // Dispatch to all relevant subscriptions
@@ -180,13 +178,7 @@ class WebSocketClient {
     this.enableRetries = enabled;
   }
 
-  /**
-   * Handle message responses to detect delivery confirmation
-   * This is a backward-compatibility function to handle messages without explicit acks
-   */
   private handleMessageResponse(data: any): void {
-    // For backward compatibility, we'll consider a message with the same ID as a response
-    // to be a confirmation of delivery
     if ((data.type === 'message' || data.type === 'directMessage') && 
         data.clientMessageId && this.pendingMessages.has(data.clientMessageId)) {
         
@@ -212,7 +204,6 @@ class WebSocketClient {
     
     // Handle explicit message acknowledgments if they exist
     if (data.type === 'messageAck' && data.messageId) {
-      // Since backend doesn't send clientMessageId with acks, we need to search
       // Check all callbacks and apply the status update
       this.messageStatusCallbacks.forEach((callback, id) => {
         callback(data.status || 'delivered');

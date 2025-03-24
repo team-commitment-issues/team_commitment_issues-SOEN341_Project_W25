@@ -55,8 +55,6 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         }
     }, [currentUsername]);
 
-    // Fetch user statuses - this now works by subscribing to team statuses
-    // The server will respond with statusUpdate messages for each user
     const refreshStatuses = useCallback(async (usernames: string[]): Promise<void> => {
         if (!usernames.length || !isConnected) {
             return Promise.resolve();
@@ -77,10 +75,6 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
             });
 
             setOnlineUsers(updatedUsers);
-
-            // Server doesn't have a direct "requestStatusUpdates" message type
-            // This is handled through subscribing to team statuses instead
-            // The statuses come as separate statusUpdate messages
 
             return Promise.resolve();
         } catch (error) {
@@ -133,7 +127,6 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
 
         const handleStatusUpdate = (data: any) => {
             if (data.type === "statusUpdate") {
-                // Server sends: username, status, lastSeen
                 updateUserStatus(
                     data.username,
                     data.status,

@@ -1,12 +1,10 @@
-// types/websocket.ts
 import { WebSocket } from 'ws';
-import { Schema } from 'mongoose';
 import { IUser } from '../models/User';
 import { ITeam } from '../models/Team';
 import { ITeamMember } from '../models/TeamMember';
 import { IChannel } from '../models/Channel';
 import { IDirectMessage } from '../models/DirectMessage';
-import { Role, Status } from '../enums';
+import { Status } from '../enums';
 
 /**
  * Extended WebSocket interface with additional properties for the application
@@ -68,7 +66,7 @@ export interface ChannelMessage extends BaseMessage {
 export interface DirectMessagePayload extends BaseMessage {
   teamName: string;
   username?: string; // Sender username
-  receiverUsername: string; // Receiver username - Renamed for clarity
+  receiverUsername: string;
   text?: string;
   _id?: string; // Server-assigned message ID
   createdAt?: string; // ISO string date
@@ -164,7 +162,7 @@ export type Message =
   | MessageAck
   | FetchHistoryMessage
   | HistoryResponse
-  | BaseMessage; // Include base message for simple types like ping
+  | BaseMessage;
 
 /**
  * Decoded JWT token structure

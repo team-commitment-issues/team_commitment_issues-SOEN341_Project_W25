@@ -34,8 +34,6 @@ const ChannelList: React.FC<ChannelListProps> = ({
   const navigate = useNavigate();
   const { theme } = useTheme();
   
-  // We'll keep the old selection prop for compatibility with the old components
-  // but we'll also use the ChatSelectionContext for the new components that support it
   const chatSelectionContext = useChatSelection();
 
   const handleDeleteChannel = async (channelToDelete: Channel) => {

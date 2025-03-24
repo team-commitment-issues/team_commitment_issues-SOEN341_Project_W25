@@ -18,7 +18,6 @@ const StatusSelector: React.FC = () => {
   
   const handleStatusChange = (status: Status) => {
     try {
-      // Send status update through WebSocket context
       setUserStatus(status);
       setIsOpen(false);
     } catch (error) {

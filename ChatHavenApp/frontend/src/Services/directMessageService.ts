@@ -1,5 +1,3 @@
-// directMessageService.ts - Update to match the new types
-
 /**
  * Creates a join request payload for establishing a direct message channel
  */
@@ -7,7 +5,7 @@ export const createDirectMessageRequest = (teamName: string, receiverUsername: s
     return {
         type: 'joinDirectMessage', 
         teamName,
-        username: receiverUsername  // This field name is kept for server compatibility
+        username: receiverUsername
     };
 };
 
@@ -16,15 +14,15 @@ export const createDirectMessageRequest = (teamName: string, receiverUsername: s
  */
 export const createDirectMessagePayload = (
     text: string, 
-    senderUsername: string,   // This is your username
+    senderUsername: string,
     teamName: string, 
-    receiverUsername: string  // This is who you're messaging
+    receiverUsername: string
 ): any => {
     return {
         type: 'directMessage',
         text,
         teamName,
-        receiverUsername      // Changed from "username" to "receiverUsername" for clarity
+        receiverUsername
     };
 };
 
@@ -40,7 +38,7 @@ export const getDirectMessagesRequest = (
     return {
         type: 'fetchHistory',
         teamName,
-        username: receiverUsername,  // This field name is kept for server compatibility
+        username: receiverUsername,
         before,
         limit
     };

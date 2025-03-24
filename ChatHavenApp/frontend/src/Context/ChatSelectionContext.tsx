@@ -38,8 +38,6 @@ export const ChatSelectionProvider: React.FC<ChatSelectionProviderProps> = ({ ch
     }
     
     try {
-      // For simplicity, we'll assume the team is valid if provided
-      // In a real implementation, this would verify against the backend
       setValidTeams(prev => new Set([...prev, teamName]));
       return true;
     } catch (error) {

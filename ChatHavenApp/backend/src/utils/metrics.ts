@@ -1,4 +1,3 @@
-// utils/metrics.ts
 import { WebSocketServer } from 'ws';
 import { createLogger } from './logger';
 import { ExtendedWebSocket } from '../types/websocket';

@@ -1,5 +1,3 @@
-// types/shared.ts - Comprehensive shared types for the application
-
 // Enum for user online status
 export enum Status {
   ONLINE = 'online',

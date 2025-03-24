@@ -45,8 +45,6 @@ const UserList: React.FC<UserListProps> = ({
   const [hasPermission, setHasPermission] = useState(true);
   const [fetchTrigger, setFetchTrigger] = useState(0); // Used to trigger fetches manually
   
-  // We'll keep the old selection prop for compatibility with the old components
-  // but we'll also use the ChatSelectionContext for the new components that support it
   const chatSelectionContext = useChatSelection();
 
   const getCurrentChannel = useCallback(() => {

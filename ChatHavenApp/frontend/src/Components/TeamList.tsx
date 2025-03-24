@@ -31,7 +31,6 @@ const TeamList: React.FC<TeamListProps> = ({
   const navigate = useNavigate();
   const { theme } = useTheme();
   
-  // Access the ChatSelectionContext if available (wrapped by AdminDashboard)
   const chatSelectionContext = useChatSelection();
 
   const handleDeleteTeam = async (team: Team) => {

@@ -350,7 +350,7 @@ const Messaging: React.FC<MessagingProps> = ({
           type: 'directMessage', 
           text: message, 
           teamName: selection.teamName,
-          receiverUsername: selection.username // Changed from username to receiverUsername
+          receiverUsername: selection.username
         }
       : { 
           type: 'message', 
@@ -412,7 +412,6 @@ const Messaging: React.FC<MessagingProps> = ({
     if (!contextMenu.selected || !selection || selection.type !== 'channel') return;
     
     try {
-      // This uses HTTP, but deletion is admin functionality that doesn't need real-time updates
       if (contextMenu.selected && selection.type === 'channel' && selection.channelName) {
         await deleteMessage(selection.teamName, selection.channelName, contextMenu.selected);
       } else {
@@ -471,7 +470,7 @@ const Messaging: React.FC<MessagingProps> = ({
     };
     
     const handleMessage = (data: any) => {
-      // Enhanced message deduplication - check both _id and clientMessageId
+      // check both _id and clientMessageId
       const isDuplicate = (messageData: any): boolean => {
         // Check if we've already processed this message ID
         if (messageData._id && processedMessageIds.current.has(messageData._id)) {
@@ -499,7 +498,7 @@ const Messaging: React.FC<MessagingProps> = ({
           return;
         }
         
-        // ADDED: Check if message matches current conversation context
+        // Check if message matches current conversation context
         if (data.type === "message") {
           // Only show channel messages if we're currently in a channel
           if (!selection || selection.type !== 'channel') {

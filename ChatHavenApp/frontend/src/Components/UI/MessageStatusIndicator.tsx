@@ -13,15 +13,15 @@ const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
   const getStatusIcon = () => {
     switch (status) {
       case 'pending':
-        return '⏱️'; // Clock
+        return '⏱️';
       case 'sent':
-        return '✓'; // Single checkmark
+        return '✓';
       case 'delivered':
-        return '✓✓'; // Double checkmark
+        return '✓✓';
       case 'read':
-        return <span style={{ color: '#34B7F1' }}>✓✓</span>; // Blue double checkmark
+        return <span style={{ color: '#34B7F1' }}>✓✓</span>;
       case 'failed':
-        return <span style={{ color: '#F15050' }}>⚠️</span>; // Warning
+        return <span style={{ color: '#F15050' }}>⚠️</span>;
       default:
         return null;
     }
@@ -47,13 +47,16 @@ const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
   if (!status) return null;
   
   return (
-    <span style={{ 
-      fontSize: '11px', 
-      marginLeft: '4px',
-      color: dark ? '#AAA' : '#777',
-      display: 'inline-flex',
-      alignItems: 'center'
-    }}>
+    <span 
+      style={{ 
+        fontSize: '11px', 
+        marginLeft: '4px',
+        color: dark ? '#AAA' : '#777',
+        display: 'inline-flex',
+        alignItems: 'center'
+      }}
+      title={getStatusText()}
+    >
       <span style={{ marginRight: '2px' }}>{getStatusIcon()}</span>
       {status === 'failed' && (
         <span style={{ marginLeft: '2px' }}>{getStatusText()}</span>

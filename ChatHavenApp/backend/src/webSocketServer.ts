@@ -204,21 +204,17 @@ const findOrCreateDirectMessage = async (
   teamName: string, 
   username: string
 ): Promise<{ team: ITeam; receiver: IUser; directMessage: IDirectMessage }> => {
-  // Find the team
   const team = await Team.findOne({ name: teamName }).exec();
   if (!team) throw new Error(`Team with name "${teamName}" not found`);
 
-  // Find sender user
   const user1 = await User.findById(userId).exec();
   if (!user1) throw new Error(`User with ID "${userId}" not found`);
   
-  // Verify sender is a team member
   if (user1.role !== 'SUPER_ADMIN') {
     const teamMember = await TeamMember.findOne({ user: userId, team: team._id }).exec();
     if (!teamMember) throw new Error(`User is not a member of team "${teamName}"`);
   }
 
-  // Find receiver user
   const user2 = await User.findOne({ username }).exec();
   if (!user2) throw new Error(`User with username "${username}" not found`);
   
@@ -454,8 +450,6 @@ static async handleDirectMessage(
   });
   
   // Check if receiverUsername is used correctly in the payload
-  // In some implementations, the username might be in message.username and 
-  // in others it might be in message.receiverUsername
   const receiverUsername = message.receiverUsername || message.username;
   
   // Prevent messaging yourself (with more detailed logging)
@@ -521,8 +515,7 @@ static async handleDirectMessage(
   if (!message.text) {
     throw new Error('Message text is required');
   }
-  
-  // Now use the correct directMessage
+
   const sentMessage = await DirectMessageService.sendDirectMessage(
     message.text, 
     user.username, 
@@ -723,8 +716,6 @@ static async handleDirectMessage(
     }
   }
 
-  // In webSocketServer.ts, add these handlers to the MessageHandlers class
-
   /**
    * Handles message acknowledgments
    */
@@ -836,7 +827,6 @@ static async handleDirectMessage(
           user.role
         );
         
-        // For pagination, we need a more sophisticated query
         const messagesQuery = before 
           ? { channel: channel._id, _id: { $lt: new Types.ObjectId(before) } }
           : { channel: channel._id };
@@ -861,7 +851,6 @@ static async handleDirectMessage(
           username
         );
         
-        // For pagination, we need a more sophisticated query
         const messagesQuery = before 
           ? { directMessage: directMessage._id, _id: { $lt: new Types.ObjectId(before) } }
           : { directMessage: directMessage._id };
@@ -987,7 +976,6 @@ export const setupWebSocketServer = async (server: any): Promise<WebSocketServer
     // Add permessage-deflate for compression
     perMessageDeflate: {
       zlibDeflateOptions: {
-        // See zlib defaults
         chunkSize: 1024,
         memLevel: 7,
         level: 3

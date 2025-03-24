@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../Context/ThemeContext";
-import "../Styles/Profile.css"; // ✅ Import Profile Styles
+import "../Styles/Profile.css";
 
 const EditProfile: React.FC = () => {
   const navigate = useNavigate();
