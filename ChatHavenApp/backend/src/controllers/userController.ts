@@ -97,6 +97,35 @@ class UserController {
             }
         }
     }
+    
+    static async getUserProfile(req: Request, res: Response): Promise<void> {
+        try {
+            // Get the username from the authenticated user object
+            const username = req.user.username;
+            
+            // Fetch the user profile
+            const userProfile = await UserService.getUserProfile(username);
+            
+            // Return the user profile data
+            res.status(200).json({
+                message: 'User profile retrieved successfully',
+                user: {
+                    email: userProfile.email,
+                    firstName: userProfile.firstName,
+                    lastName: userProfile.lastName,
+                    username: userProfile.username,
+                    role: userProfile.role
+                }
+            });
+        } catch (err) {
+            if ((err as any).message === 'User not found') {
+                res.status(404).json({ error: 'User not found' });
+            } else {
+                res.status(500).json({ error: 'Internal server error' });
+                console.error('Error fetching user profile:', err);
+            }
+        }
+    }
 }
 
 export default UserController;

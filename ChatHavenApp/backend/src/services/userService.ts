@@ -73,6 +73,15 @@ class UserService {
         
         return await user.save();
     }
+    
+    static async getUserProfile(username: string): Promise<any> {
+        const user = await User.findOne({ username }).select('-password');
+        if (!user) {
+            throw new Error('User not found');
+        }
+        
+        return user;
+    }
 }
 
 export default UserService;

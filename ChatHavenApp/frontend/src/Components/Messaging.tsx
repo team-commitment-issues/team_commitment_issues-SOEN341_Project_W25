@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import styles from "../Styles/dashboardStyles";
 import { deleteMessage } from "../Services/channelService";
-import { jwtDecode } from "jwt-decode";
 import ContextMenu from "./UI/ContextMenu";
 import { useTheme } from "../Context/ThemeContext";
 import UserStatusIndicator from "./UI/UserStatusIndicator";
 import MessageStatusIndicator from "./UI/MessageStatusIndicator";
 import WebSocketClient from "../Services/webSocketClient";
+import { useUser } from "../Context/UserContext";
 import { 
   Selection, 
   ContextMenuState, 
@@ -61,7 +61,8 @@ const Messaging: React.FC<MessagingProps> = ({
   
   const { theme } = useTheme();
   const token = localStorage.getItem("token");
-  const username = token ? jwtDecode<any>(token).username : "";
+  const { userData } = useUser();
+  const username = userData?.username || "";
 
   // Helper functions
   const getSelectionTitle = () => {
@@ -498,7 +499,21 @@ const Messaging: React.FC<MessagingProps> = ({
           return;
         }
         
-        // Check if this is a message we sent (by comparing usernames)
+        // ADDED: Check if message matches current conversation context
+        if (data.type === "message") {
+          // Only show channel messages if we're currently in a channel
+          if (!selection || selection.type !== 'channel') {
+            return; // Not viewing a channel, don't display this message
+          }
+        } else if (data.type === "directMessage") {
+          // Only show DMs if we're in the correct DM conversation
+          if (!selection || selection.type !== 'directMessage' ||
+              (data.username !== username && data.username !== selection.username)) {
+            return; // Not in the correct DM conversation, don't display this message
+          }
+        }
+        
+        // Check if this is a message we sent (by matching usernames)
         if (data.username === username) {
           // Find pending message by matching text/content
           const pendingMessage = messages.find(msg => 
@@ -715,7 +730,18 @@ const Messaging: React.FC<MessagingProps> = ({
 
   // Handle channel/DM switching
   useEffect(() => {
-    if (!selection || !wsService.isConnected()) return;
+    // When no selection is made, immediately clear messages
+    if (!selection) {
+      setMessages([]);
+      setHasMoreMessages(false);
+      setOldestMessageId(null);
+      setIsLoadingHistory(false);
+      setInitialLoadDone(false);
+      setTypingIndicator(null);
+      return;
+    }
+    
+    if (!wsService.isConnected()) return;
     
     const prevSelection = currentSelection.current;
     currentSelection.current = selection;

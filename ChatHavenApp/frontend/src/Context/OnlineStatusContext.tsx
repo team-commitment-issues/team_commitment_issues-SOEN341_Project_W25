@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import WebSocketClient from '../Services/webSocketClient';
 import { createStatusUpdatePayload, createOnlineStatusSubscriptionRequest, Status, UserStatus } from '../types/shared';
+import { useUser } from './UserContext';
 
 interface OnlineStatusContextType {
     onlineUsers: Record<string, UserStatus>;
@@ -31,7 +32,9 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
     const [onlineUsers, setOnlineUsers] = useState<Record<string, UserStatus>>({});
     const [isConnected, setIsConnected] = useState(false);
     const [currentUserStatus, setCurrentUserStatus] = useState<Status>(Status.ONLINE);
-    const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+    // Get current username from UserContext instead of localStorage
+    const { userData } = useUser();
+    const currentUsername = userData?.username || null;
 
     // Use the shared WebSocket service
     const wsService = WebSocketClient.getInstance();
@@ -112,14 +115,10 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        // Try to get current username from localStorage
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            const user = JSON.parse(userData);
-            setCurrentUsername(user.username);
-            console.log(`Current username set from localStorage: ${user.username}`);
+        if (!currentUsername) {
+            console.warn('Username not available. Status features may not work correctly.');
         } else {
-            console.warn('Username not found in localStorage. Status features may not work correctly.');
+            console.log(`Current username from context: ${currentUsername}`);
         }
 
         const handleConnection = () => {
@@ -171,7 +170,7 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
             wsService.unsubscribe(subscriptionId);
             wsService.unsubscribe(errorSubId);
         };
-    }, [updateUserStatus, wsService]);
+    }, [currentUsername, updateUserStatus, wsService]);
 
     // Initialize current user's status when connection is established
     useEffect(() => {

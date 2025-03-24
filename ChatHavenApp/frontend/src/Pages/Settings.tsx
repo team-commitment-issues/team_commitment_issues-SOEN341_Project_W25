@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "../Styles/Settings.css";
 import { FaEye, FaEyeSlash, FaMoon, FaSun } from "react-icons/fa";
 import { useTheme } from "../Context/ThemeContext";
-import { updateUsername, updatePassword } from "../Services/authService";
+import { updatePassword, updateUsername as authUpdateUsername } from "../Services/authService";
+import { useUser } from "../Context/UserContext";
 
 const languages = {
   en: "English",
@@ -15,8 +16,9 @@ const languages = {
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  // Use the UserContext
+  const { userData, updateUsername, refreshUserData } = useUser();
 
-  const [oldUsername, setOldUsername] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -38,29 +40,12 @@ const Settings: React.FC = () => {
       return;
     }
 
-    try {
-      const userData = localStorage.getItem("user");
-      console.log("User data from localStorage:", userData);
-      
-      if (userData) {
-        const currentUser = JSON.parse(userData);
-        console.log("Parsed user data:", currentUser);
-        
-        if (currentUser && currentUser.username) {
-          console.log("Setting oldUsername to:", currentUser.username);
-          setOldUsername(currentUser.username);
-        } else {
-          console.log("Username not found in user data");
-        }
-      } else {
-        console.log("No user data found in localStorage");
-        navigate("/login");
-      }
-    } catch (error) {
-      console.error("Error retrieving username:", error);
+    // Refresh user data from server when component mounts
+    refreshUserData().catch(error => {
+      console.error("Error refreshing user data:", error);
       navigate("/login");
-    }
-  }, [navigate]);
+    });
+  }, [navigate, refreshUserData]);
 
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
@@ -87,16 +72,21 @@ const Settings: React.FC = () => {
     return "";
   };
 
-  const validateUsername = (newUsername: string, oldUsername: string) => {
+  const validateUsername = (newUsername: string, currentUsername: string) => {
     if (!newUsername.trim()) 
       return "Username cannot be empty.";
-    if (newUsername === oldUsername)
-      return "New username cannot be the same as the old username.";
+    if (newUsername === currentUsername)
+      return "New username cannot be the same as the current username.";
     return "";
   };
 
   const handleUsernameUpdate = async () => {
-    const usernameValidation = validateUsername(newUsername, oldUsername);
+    if (!userData || !userData.username) {
+      setUsernameError("User data not available");
+      return;
+    }
+
+    const usernameValidation = validateUsername(newUsername, userData.username);
     if (usernameValidation) {
       setUsernameError(usernameValidation);
       return;
@@ -111,31 +101,17 @@ const Settings: React.FC = () => {
     setUsernameError("");
     
     try {
-      const response = await updateUsername(oldUsername, newUsername, oldPassword);
+      // Call the server API to update the username
+      await authUpdateUsername(userData.username, newUsername, oldPassword);
       
-      if (response && response.token) {
-        localStorage.setItem("token", response.token);
-        
-        try {
-          const userData = localStorage.getItem("user");
-          if (userData) {
-            const user = JSON.parse(userData);
-            user.username = newUsername;
-            localStorage.setItem("user", JSON.stringify(user));
-          }
-        } catch (error) {
-          console.error("Error updating username in localStorage:", error);
-        }
-        
-        setOldUsername(newUsername);
-        setNewUsername("");
-        setOldPassword("");
-        
-        setSuccessMessage("Username updated successfully!");
-        setTimeout(() => setSuccessMessage(""), 3000);
-      } else {
-        throw new Error("No token received from server. Username update failed.");
-      }
+      // Update the username in the UserContext - this will also update localStorage
+      updateUsername(newUsername);
+      
+      setNewUsername("");
+      setOldPassword("");
+      
+      setSuccessMessage("Username updated successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
       setUsernameError((error as Error).message);
     } finally {
@@ -186,7 +162,7 @@ const Settings: React.FC = () => {
             <input
               type="text"
               className="username-input"
-              value={oldUsername}
+              value={userData?.username || ""}
               readOnly
               style={{ backgroundColor: "#f5f5f5" }}
             />
