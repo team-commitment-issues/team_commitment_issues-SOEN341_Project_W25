@@ -227,6 +227,36 @@ class ChannelService {
 
         return channelData;
     }
+
+    static async leaveChannel(teamName: string, channelName: string, userId: Types.ObjectId): Promise<any> {
+        const team = await Team.findOne({name: {$eq: teamName}});
+        if (!team) {
+            throw new Error('Team not found');
+        }
+
+        const channelData = await Channel.findOne({name: {$eq: channelName}});
+        if (!channelData) {
+            throw new Error('Channel not found');
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        const teamMember = await TeamMember.findOne({ user: user._id, team: team._id });
+        if (!teamMember) {
+            throw new Error('User is not a member of the team');
+        }
+
+        teamMember.channels = teamMember.channels.filter((c) => String(c) !== String(channelData._id));
+        await teamMember.save();
+
+        channelData.members = channelData.members.filter((m) => String(m) !== String(teamMember._id));
+        await channelData.save();
+
+        return channelData;
+    }
 }
 
 export default ChannelService;

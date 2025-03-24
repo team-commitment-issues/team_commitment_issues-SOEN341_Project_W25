@@ -40,21 +40,6 @@ const ChannelList: React.FC<ChannelListProps> = ({ selectedTeam, selection, setS
 
   const handleDeleteChannel = async (channelToDelete: Channel) => {
     try {
-      await deleteChannel(selectedTeam!, channelToDelete.name);
-      setChannels((prevChannels) => prevChannels.filter((c) => c.name !== channelToDelete.name));
-      
-      // If the deleted channel was selected, clear the selection
-      if (selection?.type === "channel" && selection.channelName === channelToDelete.name) {
-        setSelection(null);
-        if (chatSelectionContext) {
-          chatSelectionContext.setSelection(null);
-        }
-      }
-      
-      // Check if any other selections are still valid
-      if (chatSelectionContext) {
-        chatSelectionContext.checkAndUpdateSelection();
-      }
       if (!selectedTeam) return [];
       const channelsList = await getChannels(selectedTeam);
       setChannels(channelsList);
@@ -64,49 +49,15 @@ const ChannelList: React.FC<ChannelListProps> = ({ selectedTeam, selection, setS
   };
 
   useEffect(() => {
-    const fetchChannels = async () => {
-      try {
-        if (!selectedTeam) {
-          setChannels([]);
-          return;
-        }
-        
-        const channelsList = await getChannels(selectedTeam);
-        setChannels(channelsList);
-        
-        // Verify if current selection is still valid
-        if (chatSelectionContext) {
-          chatSelectionContext.checkAndUpdateSelection();
-        }
-      } catch (err) {
-        console.error("Failed to fetch channels", err);
-        setChannels([]);
-      }
-    };
-
     fetchChannels();
   }, [selectedTeam]);
 
   const handleSetChannel = (channelName: string) => {
     if (selection?.type === "channel" && selection.channelName === channelName) {
-      // Deselect if clicking the same channel
       setSelection(null);
       return;
     }
-    
-    if (selectedTeam) {
-      const channelSelection = { 
-        type: "channel" as const, 
-        channelName, 
-        teamName: selectedTeam 
-      };
-      
-      // Update both the prop and context selection
-      setSelection(channelSelection);
-      if (chatSelectionContext) {
-        chatSelectionContext.setSelection(channelSelection);
-      }
-    }
+    setSelection({ type: "channel", channelName, teamName: selectedTeam! });
   };
 
   const handleLeaveChannel = async () => {
