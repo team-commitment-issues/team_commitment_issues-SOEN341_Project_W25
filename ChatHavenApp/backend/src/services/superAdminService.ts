@@ -1,10 +1,11 @@
-import { Role, TeamRole } from '../enums';
+import { Role, TeamRole, DefaultChannels } from '../enums';
 import Channel from '../models/Channel';
 import User from '../models/User';
 import Team from '../models/Team';
 import TeamMember from '../models/TeamMember';
 import { ObjectId, Schema, Types } from 'mongoose';
 import { Message } from '../models/Message';
+import ChannelService from './channelService';
 
 class SuperAdminService {
     static async createTeam(teamName: string, createdByUserID: Types.ObjectId, username: string): Promise<any> {
@@ -19,8 +20,12 @@ class SuperAdminService {
         });
 
         await team.save();
+        
+        for (const channel of Object.values(DefaultChannels)) {
+            await ChannelService.createChannel(team._id as Types.ObjectId, channel, createdByUserID, username, Role.SUPER_ADMIN, []);
+        }
+        
         await SuperAdminService.addUserToTeam(username, team._id as Schema.Types.ObjectId, TeamRole.ADMIN);
-
         return team;
     }
 
@@ -29,31 +34,61 @@ class SuperAdminService {
         if (!user) {
             throw new Error('User not found');
         }
-
-        if (user.teamMemberships.includes(teamId)) {
-            throw new Error('User is already a member of the team');
-        }
-
+    
         const team = await Team.findById(teamId);
         if (!team) {
             throw new Error('Team not found');
         }
+    
+        const existingMembership = await TeamMember.findOne({ user: user._id, team: teamId });
+        if (existingMembership) {
+            throw new Error('User is already a member of the team');
+        }
+    
+        try {
+            const teamMember = new TeamMember({
+                user: user._id,
+                team: teamId,
+                role: role,
+                channels: [],
+                directMessages: []
+            });
+    
+            await teamMember.save();
 
-        const teamMember = new TeamMember({
-            user: user._id,
-            team: teamId,
-            role: role,
-        });
-
-        await teamMember.save();
-
-        user.teamMemberships.push(teamMember._id as ObjectId);
-        await user.save();
-
-        team.teamMembers.push(teamMember._id as ObjectId);
-        await team.save();
-
-        return teamMember;
+            user.teamMemberships.push(teamMember._id as ObjectId);
+            await user.save();
+    
+            team.teamMembers.push(teamMember._id as ObjectId);
+            await team.save();
+    
+            if (user.role !== Role.SUPER_ADMIN) {
+                try {
+                    const channels = await Channel.find({ 
+                        team: teamId,
+                        name: { $in: Object.values(DefaultChannels) }
+                    });
+                    
+                    for (const channel of channels) {
+                        channel.members.push(teamMember._id as Schema.Types.ObjectId);
+                        await channel.save();
+                        
+                        teamMember.channels.push(channel._id as Schema.Types.ObjectId);
+                    }
+                    
+                    if (channels.length > 0) {
+                        await teamMember.save();
+                    }
+                } catch (channelError) {
+                    console.error('Error adding user to channels:', channelError);
+                }
+            }
+    
+            return teamMember;
+        } catch (error) {
+            console.error('Error in addUserToTeam:', error);
+            throw error;
+        }
     }
 
     static async removeUserFromTeam(username: string, teamId: Types.ObjectId): Promise<any> {

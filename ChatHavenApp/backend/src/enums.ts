@@ -31,3 +31,8 @@ export enum Status {
   BUSY = 'busy',
   OFFLINE = 'offline'
 }
+
+export enum DefaultChannels {
+  GENERAL = 'General',
+  RANDOM = 'Random'
+}
