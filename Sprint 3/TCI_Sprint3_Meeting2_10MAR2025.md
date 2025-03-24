@@ -28,7 +28,7 @@ Location: Discord
   - Continued implementation of private/public channel logic.  
   - Assigned GitHub issues: *[#157](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/157)* – “Implement default channels visibility”.
 
-- **Omar**  
+- **Kassem**  
   - Developing user presence tracking (online/offline status).  
   - Assigned GitHub issues: *[#160](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/160)* – “Display user online/offline/away statuses”.
 
@@ -42,7 +42,7 @@ Location: Discord
     - *[#166](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/166)* – Install and integrate emoji-picker-react.  
     - *[#167](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/167)* – Add emoji button to message input.  
 
-- **Kassem**  
+- **Omar** 
   - Started working on message enhancements and quoting.  
   - Assigned GitHub issues: *[#165](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/165)* – “Implement message quoting UI”.
 
