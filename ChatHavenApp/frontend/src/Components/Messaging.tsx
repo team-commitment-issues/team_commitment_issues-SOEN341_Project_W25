@@ -807,9 +807,9 @@ const Messaging: React.FC<MessagingProps> = ({
       <div style={getStyledComponent(styles.chatHeader)}>
         {getSelectionTitle()}
         <div style={{ fontSize: '12px', marginLeft: '8px' }}>
-          {connectionStatus === 'connected' ? ' Connected' : 
-           connectionStatus === 'connecting' ? ' Connecting...' : 
-           ' Disconnected'}
+          {connectionStatus === 'connected' ? '🟢 Connected' : 
+           connectionStatus === 'connecting' ? '🟠 Connecting...' : 
+           '🔴 Disconnected'}
         </div>
       </div>
       
