@@ -533,7 +533,7 @@ const Messaging: React.FC<MessagingProps> = ({
           onClick={() => setShowEmojiPicker((prev) => !prev)}
           style={getStyledComponent(styles.emojiButton)}
         >
-          
+          &#128512;
         </button>
         <button 
           onClick={handleSendMessage} 
