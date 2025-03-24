@@ -685,6 +685,40 @@ const styles = {
     fontSize: "12px",
     color: "#606770",
   },
+  emojiButton: {
+    backgroundColor: "transparent",
+    border: "none",
+    fontSize: "20px",
+    cursor: "pointer",
+    marginLeft: "8px",
+    padding: "5px",
+    borderRadius: "50%",
+    transition: "background-color 0.3s",
+    "&:hover": {
+      backgroundColor: "#f0f0f0",
+    },
+    "&.dark-mode": {
+      backgroundColor: "transparent",
+      color: "#e0e0e0",
+      "&:hover": {
+        backgroundColor: "#333",
+      },
+    },
+  },
+  emojiPickerContainer: {
+    position: "absolute" as const,
+    bottom: "60px", // Adjust based on the input box position
+    right: "20px", // Adjust based on layout
+    zIndex: 1000,
+    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+    borderRadius: "8px",
+    backgroundColor: "#fff",
+    padding: "10px",
+    "&.dark-mode": {
+      backgroundColor: "#242424",
+      boxShadow: "0px 4px 6px rgba(255, 255, 255, 0.1)",
+    },
+  },
 };
 
 export default styles;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react"; // Import the emoji picker
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import styles from "../Styles/dashboardStyles";
 import { deleteMessage, getMessages } from "../Services/channelService";
 import { getDirectMessages } from "../Services/directMessageService";
@@ -40,6 +40,7 @@ const Messaging: React.FC<MessagingProps> = ({
   const [messageQueue, setMessageQueue] = useState<WebSocketMessage[]>([]);
   const [typingIndicator, setTypingIndicator] = useState<{username: string, isTyping: boolean} | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false); // State for emoji picker visibility
   
   // Refs
   const ws = useRef<WebSocket | null>(null);
@@ -105,6 +106,11 @@ const Messaging: React.FC<MessagingProps> = ({
         };
         
     ws.current.send(JSON.stringify(typingMessage));
+  };
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setMessage((prevMessage) => prevMessage + emojiData.emoji);
+    setShowEmojiPicker(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -469,9 +475,9 @@ const Messaging: React.FC<MessagingProps> = ({
       <div style={getStyledComponent(styles.chatHeader)}>
         {getSelectionTitle()}
         <div style={{ fontSize: '12px', marginLeft: '8px' }}>
-          {connectionStatus === 'connected' ? '🟢 Connected' : 
-           connectionStatus === 'connecting' ? '🟠 Connecting...' : 
-           '🔴 Disconnected'}
+          {connectionStatus === 'connected' ? ' Connected' : 
+           connectionStatus === 'connecting' ? ' Connecting...' : 
+           ' Disconnected'}
         </div>
       </div>
       
@@ -524,6 +530,12 @@ const Messaging: React.FC<MessagingProps> = ({
           disabled={connectionStatus !== 'connected' || !selection}
         />
         <button 
+          onClick={() => setShowEmojiPicker((prev) => !prev)}
+          style={getStyledComponent(styles.emojiButton)}
+        >
+          
+        </button>
+        <button 
           onClick={handleSendMessage} 
           style={{ 
             ...getStyledComponent(styles.sendButton),
@@ -537,6 +549,12 @@ const Messaging: React.FC<MessagingProps> = ({
           Send
         </button>
       </div>
+      
+      {showEmojiPicker && (
+        <div style={getStyledComponent(styles.emojiPickerContainer)}>
+          <EmojiPicker onEmojiClick={handleEmojiClick} />
+        </div>
+      )}
       
       {contextMenu.visible && (
         <ContextMenu
