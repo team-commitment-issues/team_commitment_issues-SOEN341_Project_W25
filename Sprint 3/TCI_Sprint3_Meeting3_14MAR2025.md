@@ -30,7 +30,7 @@ Location: Discord
   - GitHub Issue:  
     - [#157](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/157) – Implement default channels visibility.
 
-- **Omar**  
+- **Kassem**  
   - In progress: developing user presence indicators (online, offline, away).  
   - Just started work on tracking and displaying “last seen” timestamps.  
   - GitHub Issue:  
@@ -52,7 +52,7 @@ Location: Discord
     - [#169](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/169) – Insert emoji into input  
     - [#170](https://github.com/team-commitment-issues/team_commitment_issues-SOEN341_Project_W25/issues/170) – Emoji rendering in chat
 
-- **Kassem**  
+- **Omar**  
   - Working on message quoting UI and UX.  
   - Coordinating with Fares to address UI conflicts with emoji placement.  
   - GitHub Issue:  
