@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react"; // Import the emoji picker
 import styles from "../Styles/dashboardStyles";
 import { deleteMessage } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
