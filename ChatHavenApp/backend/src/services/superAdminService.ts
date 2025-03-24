@@ -34,37 +34,61 @@ class SuperAdminService {
         if (!user) {
             throw new Error('User not found');
         }
-
-        if (user.teamMemberships.includes(teamId)) {
-            throw new Error('User is already a member of the team');
-        }
-
+    
         const team = await Team.findById(teamId);
         if (!team) {
             throw new Error('Team not found');
         }
-
-        const teamMember = new TeamMember({
-            user: user._id,
-            team: teamId,
-            role: role,
-        });
-
-        await teamMember.save();
-
-        user.teamMemberships.push(teamMember._id as ObjectId);
-        await user.save();
-
-        team.teamMembers.push(teamMember._id as ObjectId);
-        await team.save();
-
-        if (user.role !== Role.SUPER_ADMIN) {
-            for (const channel of Object.values(DefaultChannels)) {
-                await ChannelService.addUserToChannel(team._id as Types.ObjectId, channel, userName);
-            }
+    
+        const existingMembership = await TeamMember.findOne({ user: user._id, team: teamId });
+        if (existingMembership) {
+            throw new Error('User is already a member of the team');
         }
+    
+        try {
+            const teamMember = new TeamMember({
+                user: user._id,
+                team: teamId,
+                role: role,
+                channels: [],
+                directMessages: []
+            });
+    
+            await teamMember.save();
 
-        return teamMember;
+            user.teamMemberships.push(teamMember._id as ObjectId);
+            await user.save();
+    
+            team.teamMembers.push(teamMember._id as ObjectId);
+            await team.save();
+    
+            if (user.role !== Role.SUPER_ADMIN) {
+                try {
+                    const channels = await Channel.find({ 
+                        team: teamId,
+                        name: { $in: Object.values(DefaultChannels) }
+                    });
+                    
+                    for (const channel of channels) {
+                        channel.members.push(teamMember._id as Schema.Types.ObjectId);
+                        await channel.save();
+                        
+                        teamMember.channels.push(channel._id as Schema.Types.ObjectId);
+                    }
+                    
+                    if (channels.length > 0) {
+                        await teamMember.save();
+                    }
+                } catch (channelError) {
+                    console.error('Error adding user to channels:', channelError);
+                }
+            }
+    
+            return teamMember;
+        } catch (error) {
+            console.error('Error in addUserToTeam:', error);
+            throw error;
+        }
     }
 
     static async removeUserFromTeam(username: string, teamId: Types.ObjectId): Promise<any> {
