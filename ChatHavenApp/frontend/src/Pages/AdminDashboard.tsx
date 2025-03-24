@@ -10,8 +10,10 @@ import { useTheme } from "../Context/ThemeContext";
 import { Selection, ContextMenuState } from "../types/shared";
 import StatusSelector from "../Components/UI/StatusSelector";
 import { ChatSelectionProvider } from "../Context/ChatSelectionContext";
+import { useUser } from "../Context/UserContext";
 
 const AdminDashboard: React.FC = () => {
+  const { userData } = useUser();
   const navigate = useNavigate();
   const { theme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -87,6 +89,9 @@ const AdminDashboard: React.FC = () => {
   return (
     <ChatSelectionProvider>
       <div style={getStyledComponent(styles.container)}>
+        <div style={{ position: 'absolute', top: 10, left: 10, fontWeight: 'bold' }}>
+          {userData?.username ? `Welcome, ${userData.username}` : "Loading..."}
+        </div>
         <div style={getStyledComponent(styles.menuContainer)} ref={dropdownRef}>
           <button
             style={getStyledComponent(styles.menuButton)}
