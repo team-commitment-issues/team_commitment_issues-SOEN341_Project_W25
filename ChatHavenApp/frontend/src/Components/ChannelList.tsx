@@ -49,6 +49,26 @@ const ChannelList: React.FC<ChannelListProps> = ({ selectedTeam, selection, setS
   };
 
   useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        if (!selectedTeam) {
+          setChannels([]);
+          return;
+        }
+        
+        const channelsList = await getChannels(selectedTeam);
+        setChannels(channelsList);
+        
+        // Verify if current selection is still valid
+        if (chatSelectionContext) {
+          chatSelectionContext.checkAndUpdateSelection();
+        }
+      } catch (err) {
+        console.error("Failed to fetch channels", err);
+        setChannels([]);
+      }
+    };
+
     fetchChannels();
   }, [selectedTeam]);
 
