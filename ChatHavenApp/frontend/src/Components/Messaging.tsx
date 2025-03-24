@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import styles from "../Styles/dashboardStyles";
 import { deleteMessage } from "../Services/channelService";
 import ContextMenu from "./UI/ContextMenu";
@@ -39,6 +40,7 @@ const Messaging: React.FC<MessagingProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
   const [typingIndicator, setTypingIndicator] = useState<{username: string, isTyping: boolean} | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false); // State for emoji picker visibility
   const [pendingMessages, setPendingMessages] = useState<Map<string, RetryInfo>>(new Map());
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
@@ -298,6 +300,11 @@ const Messaging: React.FC<MessagingProps> = ({
       loadOlderMessages();
     }
   }, [hasMoreMessages, isLoadingHistory, loadOlderMessages]);
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setMessage((prevMessage) => prevMessage + emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value);
@@ -937,6 +944,12 @@ const Messaging: React.FC<MessagingProps> = ({
           disabled={connectionStatus !== 'connected' || !selection}
         />
         <button 
+          onClick={() => setShowEmojiPicker((prev) => !prev)}
+          style={getStyledComponent(styles.emojiButton)}
+        >
+          &#128512;
+        </button>
+        <button 
           onClick={handleSendMessage} 
           style={{ 
             ...getStyledComponent(styles.sendButton),
@@ -950,6 +963,12 @@ const Messaging: React.FC<MessagingProps> = ({
           Send
         </button>
       </div>
+      
+      {showEmojiPicker && (
+        <div style={getStyledComponent(styles.emojiPickerContainer)}>
+          <EmojiPicker onEmojiClick={handleEmojiClick} />
+        </div>
+      )}
       
       {contextMenu.visible && (
         <ContextMenu
