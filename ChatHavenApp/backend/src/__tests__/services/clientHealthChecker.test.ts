@@ -1,13 +1,13 @@
 // tests/services/clientHealthChecker.test.ts
-import ClientHealthChecker from '../services/clientHealthChecker';
+import ClientHealthChecker from '../../services/clientHealthChecker';
 import { WebSocketServer, WebSocket } from 'ws';
-import { ExtendedWebSocket } from '../types/websocket';
+import { ExtendedWebSocket } from '../../types/websocket';
 
 // Mock dependencies
 jest.mock('ws');
 
 // Mock the logger module
-jest.mock('../utils/logger', () => {
+jest.mock('../../utils/logger', () => {
   const mockInfo = jest.fn();
   const mockError = jest.fn();
   const mockWarn = jest.fn();
@@ -25,7 +25,7 @@ jest.mock('../utils/logger', () => {
 });
 
 // Import the mocked logger functions
-const { __mocks__: { mockInfo, mockError, mockWarn, mockDebug } } = require('../utils/logger');
+const { __mocks__: { mockInfo, mockError, mockWarn, mockDebug } } = require('../../utils/logger');
 
 describe('ClientHealthChecker', () => {
   let healthChecker: ClientHealthChecker;
@@ -47,7 +47,7 @@ describe('ClientHealthChecker', () => {
     // Create proper Jest mocks for timer functions
     mockSetInterval = jest.fn().mockReturnValue(123);
     mockClearInterval = jest.fn();
-    
+
     // Replace global timer functions with mocks
     global.setInterval = mockSetInterval as unknown as typeof global.setInterval;
     global.clearInterval = mockClearInterval as unknown as typeof global.clearInterval;
@@ -195,10 +195,10 @@ describe('ClientHealthChecker', () => {
 
       // Get the timeout function
       const timeoutFn = mockSetTimeout.mock.calls[0][0];
-      
+
       // Simulate the timeout callback - but since isAlive is true, it shouldn't terminate
       timeoutFn();
-      
+
       // Responsive client should still not be terminated
       expect(mockTerminateResponsive).not.toHaveBeenCalled();
     } finally {

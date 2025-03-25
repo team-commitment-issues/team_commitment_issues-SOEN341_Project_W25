@@ -1,8 +1,8 @@
 import request from 'supertest';
 import express from 'express';
-import userRoutes from '../routes/userRoutes';
-import TestHelpers from './testHelpers';
-import { Role } from '../enums';
+import userRoutes from '../../routes/userRoutes';
+import TestHelpers from '../testHelpers';
+import { Role } from '../../enums';
 
 const app = express();
 app.use(express.json());
@@ -36,7 +36,7 @@ describe('POST /user/login', () => {
             lastName: 'Doe',
             username: 'janedoe',
         };
-        
+
         const response = await request(app)
             .post('/user/SignUp')
             .send(testUser2)

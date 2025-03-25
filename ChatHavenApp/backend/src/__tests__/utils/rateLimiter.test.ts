@@ -1,9 +1,9 @@
 // tests/utils/rateLimiter.test.ts
-import { RateLimiter, shutdownDefaultRateLimiter, setLogger, defaultRateLimiter } from '../utils/rateLimiter';
+import { RateLimiter, shutdownDefaultRateLimiter, setLogger, defaultRateLimiter } from '../../utils/rateLimiter';
 
 describe('RateLimiter', () => {
   let rateLimiter: RateLimiter;
-  
+
   // Create mock logger functions
   const mockLogger = {
     warn: jest.fn(),
@@ -23,7 +23,7 @@ describe('RateLimiter', () => {
 
     // Reset all mocks before each test
     jest.clearAllMocks();
-    
+
     // Clear all mock functions
     mockLogger.warn.mockClear();
     mockLogger.info.mockClear();
@@ -173,18 +173,18 @@ describe('RateLimiter', () => {
 
     // Now verify the warning was logged
     expect(mockLogger.warn).toHaveBeenCalledWith('Rate limit exceeded', expect.any(Object));
-    
+
     // Clean up this rate limiter
     verboseRateLimiter.shutdown();
   });
-  
+
   test('defaultRateLimiter should function as a singleton', () => {
     // Test that the default rate limiter can be used directly
     const clientId = 'default-client';
-    
+
     // Should be able to call isAllowed() directly on the defaultRateLimiter
     expect(defaultRateLimiter.isAllowed(clientId)).toBe(true);
-    
+
     // Should also work when called directly on the instance
     expect(defaultRateLimiter.isAllowed(clientId)).toBe(true);
   });

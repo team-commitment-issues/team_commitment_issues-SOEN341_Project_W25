@@ -1,14 +1,14 @@
 import request from 'supertest';
 import express from 'express';
-import superAdminRoutes from '../routes/superAdminRoutes';
-import authenticate from '../middlewares/authMiddleware';
-import { checkTeamPermission, checkUserPermission, checkChannelPermission } from '../middlewares/permissionMiddleware';
-import { Role, TeamRole } from '../enums';
+import superAdminRoutes from '../../routes/superAdminRoutes';
+import authenticate from '../../middlewares/authMiddleware';
+import { checkTeamPermission, checkUserPermission, checkChannelPermission } from '../../middlewares/permissionMiddleware';
+import { Role, TeamRole } from '../../enums';
 import mongoose from 'mongoose';
-import TestHelpers from './testHelpers';
-import Team from '../models/Team';
-import TeamMember from '../models/TeamMember';
-import User from '../models/User';
+import TestHelpers from '../testHelpers';
+import Team from '../../models/Team';
+import TeamMember from '../../models/TeamMember';
+import User from '../../models/User';
 
 const app = express();
 app.use(express.json());

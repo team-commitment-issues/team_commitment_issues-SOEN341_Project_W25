@@ -1,10 +1,10 @@
 import request from 'supertest';
 import express from 'express';
-import dashboardRoutes from '../routes/dashboardRoutes';
-import authenticate from '../middlewares/authMiddleware';
-import { TeamRole } from '../enums';
-import TestHelpers from './testHelpers';
-import { Role } from '../enums';
+import dashboardRoutes from '../../routes/dashboardRoutes';
+import authenticate from '../../middlewares/authMiddleware';
+import { TeamRole } from '../../enums';
+import TestHelpers from '../testHelpers';
+import { Role } from '../../enums';
 
 const app = express();
 app.use(express.json());

@@ -1,16 +1,16 @@
 import request from 'supertest';
 import express from 'express';
-import channelRoutes from '../routes/channelRoutes';
-import authenticate from '../middlewares/authMiddleware';
-import { checkTeamPermission, checkChannelPermission } from '../middlewares/permissionMiddleware';
-import { Role, TeamRole } from '../enums';
+import channelRoutes from '../../routes/channelRoutes';
+import authenticate from '../../middlewares/authMiddleware';
+import { checkTeamPermission, checkChannelPermission } from '../../middlewares/permissionMiddleware';
+import { Role, TeamRole } from '../../enums';
 import mongoose from 'mongoose';
-import TestHelpers from './testHelpers';
-import Channel from '../models/Channel';
-import { Message } from '../models/Message';
-import Team from '../models/Team';
-import User from '../models/User';
-import TeamMember from '../models/TeamMember';
+import TestHelpers from '../testHelpers';
+import Channel from '../../models/Channel';
+import { Message } from '../../models/Message';
+import Team from '../../models/Team';
+import User from '../../models/User';
+import TeamMember from '../../models/TeamMember';
 
 const app = express();
 app.use(express.json());
@@ -39,7 +39,7 @@ describe('POST /channel/addUserToChannel', () => {
         team.channels.push(channel._id);
         await team.save();
 
-        const requestPayload = { 
+        const requestPayload = {
             username: user.username,
             teamName: team.name,
             channelName: channel.name
@@ -142,7 +142,7 @@ describe('POST /channel/removeUserFromChannel', () => {
 
         team.channels.push(channel._id);
         await team.save();
-        
+
         const requestPayload = {
             username: user.username,
             teamName: team.name,
@@ -288,7 +288,7 @@ describe('POST /channel/deleteMessage', () => {
             .expect(200);
 
         expect(response.body.message).toBe('Message deleted successfully');
-        
+
         const updatedChannel = await
             Channel.findOne({ name: channel.name }).populate('messages');
         expect(updatedChannel?.messages).not.toContain(message._id);

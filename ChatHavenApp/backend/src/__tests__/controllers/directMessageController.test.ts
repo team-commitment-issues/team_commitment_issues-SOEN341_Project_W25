@@ -1,13 +1,13 @@
 import request from 'supertest';
 import express from 'express';
-import directMessageRoutes from '../routes/directMessageRoutes';
-import authenticate from '../middlewares/authMiddleware';
-import { checkTeamPermission, checkDirectMessagePermission } from '../middlewares/permissionMiddleware';
-import { Role, TeamRole } from '../enums';
-import TestHelpers from './testHelpers';
-import DirectMessage from '../models/DirectMessage';
-import DMessage from '../models/DMessage';
-import TeamMember from '../models/TeamMember';
+import directMessageRoutes from '../../routes/directMessageRoutes';
+import authenticate from '../../middlewares/authMiddleware';
+import { checkTeamPermission, checkDirectMessagePermission } from '../../middlewares/permissionMiddleware';
+import { Role, TeamRole } from '../../enums';
+import TestHelpers from '../testHelpers';
+import DirectMessage from '../../models/DirectMessage';
+import DMessage from '../../models/DMessage';
+import TeamMember from '../../models/TeamMember';
 
 const app = express();
 app.use(express.json());

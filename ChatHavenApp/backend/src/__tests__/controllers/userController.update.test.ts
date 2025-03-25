@@ -1,10 +1,10 @@
 import request from 'supertest';
 import express from 'express';
-import userRoutes from '../routes/userRoutes';
-import authenticate from '../middlewares/authMiddleware';
-import TestHelpers from './testHelpers';
-import { Role } from '../enums';
-import User from '../models/User';
+import userRoutes from '../../routes/userRoutes';
+import authenticate from '../../middlewares/authMiddleware';
+import TestHelpers from '../testHelpers';
+import { Role } from '../../enums';
+import User from '../../models/User';
 import bcrypt from 'bcrypt';
 
 const app = express();
@@ -14,17 +14,17 @@ app.use('/user', authenticate, userRoutes);
 describe('POST /user/update-username', () => {
     it('should update the username for the authenticated user', async () => {
         const user = await TestHelpers.createTestUser(
-            'update-user@user.com', 
-            'testpassword', 
-            'Update', 
-            'User', 
-            'originalusername', 
-            Role.USER, 
+            'update-user@user.com',
+            'testpassword',
+            'Update',
+            'User',
+            'originalusername',
+            Role.USER,
             []
         );
 
         const token = await TestHelpers.generateToken(user.username, user.email);
-        
+
         const response = await request(app)
             .post('/user/update-username')
             .set('Authorization', `Bearer ${token}`)
@@ -36,7 +36,7 @@ describe('POST /user/update-username', () => {
             .expect(200);
 
         expect(response.body.message).toBe('Username updated successfully');
-        
+
         const updatedUser = await User.findById(user._id);
         expect(updatedUser?.username).toBe('newusername');
     });
@@ -56,17 +56,17 @@ describe('POST /user/update-username', () => {
 
     it('should return an error if the old username is not found', async () => {
         const user = await TestHelpers.createTestUser(
-            'notfound@user.com', 
-            'testpassword', 
-            'Not', 
-            'Found', 
-            'existingusername', 
-            Role.USER, 
+            'notfound@user.com',
+            'testpassword',
+            'Not',
+            'Found',
+            'existingusername',
+            Role.USER,
             []
         );
 
         const token = await TestHelpers.generateToken(user.username, user.email);
-        
+
         const response = await request(app)
             .post('/user/update-username')
             .set('Authorization', `Bearer ${token}`)
@@ -82,17 +82,17 @@ describe('POST /user/update-username', () => {
 
     it('should return an error if the password is incorrect', async () => {
         const user = await TestHelpers.createTestUser(
-            'wrongpass@user.com', 
-            'correctpassword', 
-            'Wrong', 
-            'Pass', 
-            'username', 
-            Role.USER, 
+            'wrongpass@user.com',
+            'correctpassword',
+            'Wrong',
+            'Pass',
+            'username',
+            Role.USER,
             []
         );
 
         const token = await TestHelpers.generateToken(user.username, user.email);
-        
+
         const response = await request(app)
             .post('/user/update-username')
             .set('Authorization', `Bearer ${token}`)
@@ -108,27 +108,27 @@ describe('POST /user/update-username', () => {
 
     it('should return an error if the new username already exists', async () => {
         const firstUser = await TestHelpers.createTestUser(
-            'first@user.com', 
-            'testpassword', 
-            'First', 
-            'User', 
-            'firstusername', 
-            Role.USER, 
+            'first@user.com',
+            'testpassword',
+            'First',
+            'User',
+            'firstusername',
+            Role.USER,
             []
         );
 
         const secondUser = await TestHelpers.createTestUser(
-            'second@user.com', 
-            'testpassword', 
-            'Second', 
-            'User', 
-            'secondusername', 
-            Role.USER, 
+            'second@user.com',
+            'testpassword',
+            'Second',
+            'User',
+            'secondusername',
+            Role.USER,
             []
         );
 
         const token = await TestHelpers.generateToken(firstUser.username, firstUser.email);
-        
+
         const response = await request(app)
             .post('/user/update-username')
             .set('Authorization', `Bearer ${token}`)
@@ -146,17 +146,17 @@ describe('POST /user/update-username', () => {
 describe('POST /user/update-password', () => {
     it('should update the password for the authenticated user', async () => {
         const user = await TestHelpers.createTestUser(
-            'password@user.com', 
-            'oldpassword', 
-            'Password', 
-            'User', 
-            'passworduser', 
-            Role.USER, 
+            'password@user.com',
+            'oldpassword',
+            'Password',
+            'User',
+            'passworduser',
+            Role.USER,
             []
         );
 
         const token = await TestHelpers.generateToken(user.username, user.email);
-        
+
         const response = await request(app)
             .post('/user/update-password')
             .set('Authorization', `Bearer ${token}`)
@@ -167,7 +167,7 @@ describe('POST /user/update-password', () => {
             .expect(200);
 
         expect(response.body.message).toBe('Password updated successfully');
-        
+
         const updatedUser = await User.findById(user._id);
         const passwordMatch = await bcrypt.compare('newpassword123!', updatedUser!.password);
         expect(passwordMatch).toBe(true);
@@ -187,17 +187,17 @@ describe('POST /user/update-password', () => {
 
     it('should return an error if the old password is incorrect', async () => {
         const user = await TestHelpers.createTestUser(
-            'correct@user.com', 
-            'correctpassword', 
-            'Correct', 
-            'User', 
-            'correctuser', 
-            Role.USER, 
+            'correct@user.com',
+            'correctpassword',
+            'Correct',
+            'User',
+            'correctuser',
+            Role.USER,
             []
         );
 
         const token = await TestHelpers.generateToken(user.username, user.email);
-        
+
         const response = await request(app)
             .post('/user/update-password')
             .set('Authorization', `Bearer ${token}`)

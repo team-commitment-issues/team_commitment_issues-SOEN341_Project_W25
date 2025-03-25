@@ -1,13 +1,13 @@
 import request from 'supertest';
 import express from 'express';
-import channelRoutes from '../routes/channelRoutes';
-import authenticate from '../middlewares/authMiddleware';
-import { checkTeamPermission, checkUserPermission, checkChannelPermission } from '../middlewares/permissionMiddleware';
-import { Role, TeamRole } from '../enums';
-import TestHelpers from './testHelpers';
-import Channel from '../models/Channel';
+import channelRoutes from '../../routes/channelRoutes';
+import authenticate from '../../middlewares/authMiddleware';
+import { checkTeamPermission, checkUserPermission, checkChannelPermission } from '../../middlewares/permissionMiddleware';
+import { Role, TeamRole } from '../../enums';
+import TestHelpers from '../testHelpers';
+import Channel from '../../models/Channel';
 import exp from 'constants';
-import { Message } from '../models/Message';
+import { Message } from '../../models/Message';
 
 const app = express();
 app.use(express.json());

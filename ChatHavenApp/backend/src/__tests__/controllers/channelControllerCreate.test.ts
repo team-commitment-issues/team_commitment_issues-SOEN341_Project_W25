@@ -1,10 +1,10 @@
 import request from 'supertest';
 import express from 'express';
-import channelRoutes from '../routes/channelRoutes';
-import authenticate from '../middlewares/authMiddleware';
-import { checkTeamPermission } from '../middlewares/permissionMiddleware';
-import { Role, TeamRole } from '../enums';
-import TestHelpers from './testHelpers';
+import channelRoutes from '../../routes/channelRoutes';
+import authenticate from '../../middlewares/authMiddleware';
+import { checkTeamPermission } from '../../middlewares/permissionMiddleware';
+import { Role, TeamRole } from '../../enums';
+import TestHelpers from '../testHelpers';
 
 const app = express();
 app.use(express.json());
@@ -95,5 +95,5 @@ describe('POST /channel/createChannel', () => {
         expect(response.body.message).toBe('Channel created successfully');
         expect(response.body.channel.name).toBe(name);
     });
-        
+
 });
