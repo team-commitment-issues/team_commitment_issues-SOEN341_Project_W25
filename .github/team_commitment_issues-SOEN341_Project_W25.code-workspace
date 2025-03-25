@@ -1,95 +1,42 @@
 {
   "folders": [
     {
-      "name": "Root",
-      "path": "."
+      "name": "ChatHaven Backend",
+      "path": "./ChatHavenApp/backend"
     },
     {
       "name": "ChatHaven Frontend",
-      "path": "../ChatHavenApp/frontend"
-    },
-    {
-      "name": "ChatHaven Backend",
-      "path": "../ChatHavenApp/backend"
+      "path": "./ChatHavenApp/frontend"
     }
   ],
   "settings": {
-    // Jest settings
-    "jest.disabledWorkspaceFolders": [
-      "Root"
-    ],
-    "jest.runMode": "watch",
+    // Settings that apply to all folders
+    "editor.formatOnSave": true,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/coverage": false
+    },
+    "jest.runMode": {
+      "type": "watch",
+      "jest.showCoverageOnLoad": true,
+      "jest.showInlineError": true
+    },
+    "jest.jestCommandLine": "npm test --",
     "jest.coverageColors": {
       "uncovered": "rgba(255,99,71,0.2)",
       "partially-covered": "rgba(255,215,0,0.2)",
       "covered": "rgba(73,204,144,0.2)"
-    },
-    "jest.jestCommandLine": "npm test --",
-    
-    // Editor settings
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "always"
-    },
-    
-    // TypeScript settings
-    "typescript.tsdk": "Root/node_modules/typescript/lib",
-    "typescript.enablePromptUseWorkspaceTsdk": true,
-    
-    // Project-specific settings
-    "files.exclude": {
-      "**/node_modules": true,
-      "**/build": false,
-      "**/dist": false,
-      "**/coverage": true
     }
-  },
-  "extensions": {
-    "recommendations": [
-      "dbaeumer.vscode-eslint",
-      "esbenp.prettier-vscode",
-      "orta.vscode-jest",
-      "ms-vscode.vscode-typescript-tslint-plugin",
-      "streetsidesoftware.code-spell-checker",
-      "eamodio.gitlens"
-    ]
   },
   "launch": {
     "version": "0.2.0",
     "configurations": [
       {
-        "name": "Debug Frontend",
-        "type": "chrome",
-        "request": "launch",
-        "url": "http://localhost:3000",
-        "webRoot": "${workspaceFolder:ChatHaven Frontend}"
-      },
-      {
-        "name": "Debug Backend",
         "type": "node",
+        "name": "Jest Current File",
         "request": "launch",
-        "program": "${workspaceFolder:ChatHaven Backend}/src/index.ts",
-        "preLaunchTask": "tsc: build - ChatHavenApp/backend/tsconfig.json",
-        "outFiles": ["${workspaceFolder:ChatHaven Backend}/dist/**/*.js"],
-        "sourceMaps": true
-      },
-      {
-        "name": "Debug Frontend Jest Tests",
-        "type": "node",
-        "request": "launch",
-        "cwd": "${workspaceFolder:ChatHaven Frontend}",
-        "program": "${workspaceFolder:ChatHaven Frontend}/node_modules/.bin/jest",
-        "args": ["${fileBasename}", "--runInBand", "--detectOpenHandles"],
-        "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen"
-      },
-      {
-        "name": "Debug Backend Jest Tests",
-        "type": "node",
-        "request": "launch",
-        "cwd": "${workspaceFolder:ChatHaven Backend}",
-        "program": "${workspaceFolder:ChatHaven Backend}/node_modules/.bin/jest",
-        "args": ["${fileBasename}", "--runInBand", "--detectOpenHandles"],
+        "program": "${workspaceFolder}/node_modules/.bin/jest",
+        "args": ["${relativeFile}"],
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen"
       }
