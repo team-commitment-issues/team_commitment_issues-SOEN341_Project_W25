@@ -1,0 +1,12 @@
+{
+    "jest.jestCommandLine": "npm test --",
+    "jest.rootPath": ".",
+    "jest.coverageColors": {
+      "uncovered": "rgba(255,99,71,0.2)",
+      "partially-covered": "rgba(255,215,0,0.2)",
+      "covered": "rgba(73,204,144,0.2)"
+    },
+    "jest.runMode": {
+      "type": "watch"
+    }
+  }
