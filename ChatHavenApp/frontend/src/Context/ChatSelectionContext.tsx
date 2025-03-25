@@ -38,7 +38,7 @@ export const ChatSelectionProvider: React.FC<ChatSelectionProviderProps> = ({ ch
     }
     
     try {
-      setValidTeams(prev => new Set([...prev, teamName]));
+      setValidTeams(prev => new Set([...Array.from(prev), teamName]));
       return true;
     } catch (error) {
       console.error(`Failed to validate team ${teamName}:`, error);

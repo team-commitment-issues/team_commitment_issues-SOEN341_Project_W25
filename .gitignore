@@ -11,6 +11,7 @@
 
 # testing
 /ChatHavenApp/backend/coverage
+/ChatHavenApp/frontend/coverage
 
 # production
 /ChatHavenApp/frontend/build

@@ -15,17 +15,14 @@ const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Routes>
-        <Route path="/login" element={React.createElement(Login)} />
-        <Route path="/signup" element={React.createElement(SignUp)} />
-        <Route path="/dashboard" element={React.createElement(Dashboard)} />
-        <Route path="/create-team" element={React.createElement(CreateTeam)} />
-        <Route
-          path="/create-channel"
-          element={React.createElement(CreateChannel)}
-        />
-        <Route path="/profile" element={React.createElement(Profile)} />
-        <Route path="/settings" element={React.createElement(Settings)} />
-        <Route path="/" element={React.createElement(LandingPage)} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/create-team" element={<CreateTeam />} />
+        <Route path="/create-channel" element={<CreateChannel />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Suspense>

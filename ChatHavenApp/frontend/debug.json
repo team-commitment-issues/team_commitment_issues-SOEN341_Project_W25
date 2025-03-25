@@ -1,0 +1,146 @@
+{
+  "numFailedTestSuites": 4,
+  "numFailedTests": 0,
+  "numPassedTestSuites": 0,
+  "numPassedTests": 0,
+  "numPendingTestSuites": 0,
+  "numPendingTests": 0,
+  "numRuntimeErrorTestSuites": 4,
+  "numTodoTests": 0,
+  "numTotalTestSuites": 4,
+  "numTotalTests": 0,
+  "openHandles": [],
+  "snapshot": {
+    "added": 0,
+    "didUpdate": false,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0
+  },
+  "startTime": 1742863721192,
+  "success": false,
+  "testResults": [
+    {
+      "failureMessage": "  \u001b[1m● \u001b[22mTest suite failed to run\n\n    \u001b[1m\u001b[31mJest encountered an unexpected token\u001b[39m\u001b[22m\n\n    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.\n\n    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.\n\n    By default \"node_modules\" folder is ignored by transformers.\n\n    Here's what you can do:\n     • If you are trying to use ECMAScript Modules, see \u001b[4mhttps://jestjs.io/docs/ecmascript-modules\u001b[24m for how to enable it.\n     • If you are trying to use TypeScript, see \u001b[4mhttps://jestjs.io/docs/getting-started#using-typescript\u001b[24m\n     • To have some of your \"node_modules\" files transformed, you can specify a custom \u001b[1m\"transformIgnorePatterns\"\u001b[22m in your config.\n     • If you need a custom transformation specify a \u001b[1m\"transform\"\u001b[22m option in your config.\n     • If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the \u001b[1m\"moduleNameMapper\"\u001b[22m config option.\n\n    You'll find more details and examples of these config options in the docs:\n    \u001b[36mhttps://jestjs.io/docs/configuration\u001b[39m\n    For information about custom transformations, see:\n    \u001b[36mhttps://jestjs.io/docs/code-transformation\u001b[39m\n\n    \u001b[1m\u001b[31mDetails:\u001b[39m\u001b[22m\n\n    C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\node_modules\\node-fetch\\src\\index.js:9\n    import http from 'node:http';\n    ^^^^^^\n\n    SyntaxError: Cannot use import statement outside a module\n\n    \u001b[0m \u001b[90m 14 |\u001b[39m   \u001b[90m// Fetch API polyfill\u001b[39m\n     \u001b[90m 15 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[36mtypeof\u001b[39m global\u001b[33m.\u001b[39mfetch \u001b[33m===\u001b[39m \u001b[32m'undefined'\u001b[39m) {\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m fetch \u001b[33m=\u001b[39m require(\u001b[32m'node-fetch'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 17 |\u001b[39m     global\u001b[33m.\u001b[39mfetch \u001b[33m=\u001b[39m fetch\u001b[33m;\u001b[39m\n     \u001b[90m 18 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m\u001b[33m;\u001b[39m\n     \u001b[90m 19 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m\u001b[33m;\u001b[39m\u001b[0m\n\n      \u001b[2mat Runtime.createScriptFromCode (\u001b[22mnode_modules/jest-runtime/build/index.js\u001b[2m:1505:14)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/jest.polyfills.js\u001b[2m:16:19)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/setupTests.ts\u001b[2m:1:1)\u001b[22m\n",
+      "leaks": false,
+      "numFailingTests": 0,
+      "numPassingTests": 0,
+      "numPendingTests": 0,
+      "numTodoTests": 0,
+      "openHandles": [],
+      "perfStats": {
+        "end": 0,
+        "runtime": 0,
+        "slow": false,
+        "start": 0
+      },
+      "skipped": false,
+      "snapshot": {
+        "added": 0,
+        "fileDeleted": false,
+        "matched": 0,
+        "unchecked": 0,
+        "uncheckedKeys": [],
+        "unmatched": 0,
+        "updated": 0
+      },
+      "testExecError": "Cannot use import statement outside a module",
+      "testFilePath": "C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\src\\Context\\__tests__\\ThemeContext.test.tsx",
+      "testResults": []
+    },
+    {
+      "failureMessage": "  \u001b[1m● \u001b[22mTest suite failed to run\n\n    \u001b[1m\u001b[31mJest encountered an unexpected token\u001b[39m\u001b[22m\n\n    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.\n\n    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.\n\n    By default \"node_modules\" folder is ignored by transformers.\n\n    Here's what you can do:\n     • If you are trying to use ECMAScript Modules, see \u001b[4mhttps://jestjs.io/docs/ecmascript-modules\u001b[24m for how to enable it.\n     • If you are trying to use TypeScript, see \u001b[4mhttps://jestjs.io/docs/getting-started#using-typescript\u001b[24m\n     • To have some of your \"node_modules\" files transformed, you can specify a custom \u001b[1m\"transformIgnorePatterns\"\u001b[22m in your config.\n     • If you need a custom transformation specify a \u001b[1m\"transform\"\u001b[22m option in your config.\n     • If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the \u001b[1m\"moduleNameMapper\"\u001b[22m config option.\n\n    You'll find more details and examples of these config options in the docs:\n    \u001b[36mhttps://jestjs.io/docs/configuration\u001b[39m\n    For information about custom transformations, see:\n    \u001b[36mhttps://jestjs.io/docs/code-transformation\u001b[39m\n\n    \u001b[1m\u001b[31mDetails:\u001b[39m\u001b[22m\n\n    C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\node_modules\\node-fetch\\src\\index.js:9\n    import http from 'node:http';\n    ^^^^^^\n\n    SyntaxError: Cannot use import statement outside a module\n\n    \u001b[0m \u001b[90m 14 |\u001b[39m   \u001b[90m// Fetch API polyfill\u001b[39m\n     \u001b[90m 15 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[36mtypeof\u001b[39m global\u001b[33m.\u001b[39mfetch \u001b[33m===\u001b[39m \u001b[32m'undefined'\u001b[39m) {\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m fetch \u001b[33m=\u001b[39m require(\u001b[32m'node-fetch'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 17 |\u001b[39m     global\u001b[33m.\u001b[39mfetch \u001b[33m=\u001b[39m fetch\u001b[33m;\u001b[39m\n     \u001b[90m 18 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m\u001b[33m;\u001b[39m\n     \u001b[90m 19 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m\u001b[33m;\u001b[39m\u001b[0m\n\n      \u001b[2mat Runtime.createScriptFromCode (\u001b[22mnode_modules/jest-runtime/build/index.js\u001b[2m:1505:14)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/jest.polyfills.js\u001b[2m:16:19)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/setupTests.ts\u001b[2m:1:1)\u001b[22m\n",
+      "leaks": false,
+      "numFailingTests": 0,
+      "numPassingTests": 0,
+      "numPendingTests": 0,
+      "numTodoTests": 0,
+      "openHandles": [],
+      "perfStats": {
+        "end": 0,
+        "runtime": 0,
+        "slow": false,
+        "start": 0
+      },
+      "skipped": false,
+      "snapshot": {
+        "added": 0,
+        "fileDeleted": false,
+        "matched": 0,
+        "unchecked": 0,
+        "uncheckedKeys": [],
+        "unmatched": 0,
+        "updated": 0
+      },
+      "testExecError": "Cannot use import statement outside a module",
+      "testFilePath": "C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\src\\Services\\__tests__\\authService.test.ts",
+      "testResults": []
+    },
+    {
+      "failureMessage": "  \u001b[1m● \u001b[22mTest suite failed to run\n\n    \u001b[1m\u001b[31mJest encountered an unexpected token\u001b[39m\u001b[22m\n\n    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.\n\n    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.\n\n    By default \"node_modules\" folder is ignored by transformers.\n\n    Here's what you can do:\n     • If you are trying to use ECMAScript Modules, see \u001b[4mhttps://jestjs.io/docs/ecmascript-modules\u001b[24m for how to enable it.\n     • If you are trying to use TypeScript, see \u001b[4mhttps://jestjs.io/docs/getting-started#using-typescript\u001b[24m\n     • To have some of your \"node_modules\" files transformed, you can specify a custom \u001b[1m\"transformIgnorePatterns\"\u001b[22m in your config.\n     • If you need a custom transformation specify a \u001b[1m\"transform\"\u001b[22m option in your config.\n     • If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the \u001b[1m\"moduleNameMapper\"\u001b[22m config option.\n\n    You'll find more details and examples of these config options in the docs:\n    \u001b[36mhttps://jestjs.io/docs/configuration\u001b[39m\n    For information about custom transformations, see:\n    \u001b[36mhttps://jestjs.io/docs/code-transformation\u001b[39m\n\n    \u001b[1m\u001b[31mDetails:\u001b[39m\u001b[22m\n\n    C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\node_modules\\node-fetch\\src\\index.js:9\n    import http from 'node:http';\n    ^^^^^^\n\n    SyntaxError: Cannot use import statement outside a module\n\n    \u001b[0m \u001b[90m 14 |\u001b[39m   \u001b[90m// Fetch API polyfill\u001b[39m\n     \u001b[90m 15 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[36mtypeof\u001b[39m global\u001b[33m.\u001b[39mfetch \u001b[33m===\u001b[39m \u001b[32m'undefined'\u001b[39m) {\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m fetch \u001b[33m=\u001b[39m require(\u001b[32m'node-fetch'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 17 |\u001b[39m     global\u001b[33m.\u001b[39mfetch \u001b[33m=\u001b[39m fetch\u001b[33m;\u001b[39m\n     \u001b[90m 18 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m\u001b[33m;\u001b[39m\n     \u001b[90m 19 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m\u001b[33m;\u001b[39m\u001b[0m\n\n      \u001b[2mat Runtime.createScriptFromCode (\u001b[22mnode_modules/jest-runtime/build/index.js\u001b[2m:1505:14)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/jest.polyfills.js\u001b[2m:16:19)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/setupTests.ts\u001b[2m:1:1)\u001b[22m\n",
+      "leaks": false,
+      "numFailingTests": 0,
+      "numPassingTests": 0,
+      "numPendingTests": 0,
+      "numTodoTests": 0,
+      "openHandles": [],
+      "perfStats": {
+        "end": 0,
+        "runtime": 0,
+        "slow": false,
+        "start": 0
+      },
+      "skipped": false,
+      "snapshot": {
+        "added": 0,
+        "fileDeleted": false,
+        "matched": 0,
+        "unchecked": 0,
+        "uncheckedKeys": [],
+        "unmatched": 0,
+        "updated": 0
+      },
+      "testExecError": "Cannot use import statement outside a module",
+      "testFilePath": "C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\src\\Services\\__tests__\\webSocketClient.test.ts",
+      "testResults": []
+    },
+    {
+      "failureMessage": "  \u001b[1m● \u001b[22mTest suite failed to run\n\n    \u001b[1m\u001b[31mJest encountered an unexpected token\u001b[39m\u001b[22m\n\n    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.\n\n    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.\n\n    By default \"node_modules\" folder is ignored by transformers.\n\n    Here's what you can do:\n     • If you are trying to use ECMAScript Modules, see \u001b[4mhttps://jestjs.io/docs/ecmascript-modules\u001b[24m for how to enable it.\n     • If you are trying to use TypeScript, see \u001b[4mhttps://jestjs.io/docs/getting-started#using-typescript\u001b[24m\n     • To have some of your \"node_modules\" files transformed, you can specify a custom \u001b[1m\"transformIgnorePatterns\"\u001b[22m in your config.\n     • If you need a custom transformation specify a \u001b[1m\"transform\"\u001b[22m option in your config.\n     • If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the \u001b[1m\"moduleNameMapper\"\u001b[22m config option.\n\n    You'll find more details and examples of these config options in the docs:\n    \u001b[36mhttps://jestjs.io/docs/configuration\u001b[39m\n    For information about custom transformations, see:\n    \u001b[36mhttps://jestjs.io/docs/code-transformation\u001b[39m\n\n    \u001b[1m\u001b[31mDetails:\u001b[39m\u001b[22m\n\n    C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\node_modules\\node-fetch\\src\\index.js:9\n    import http from 'node:http';\n    ^^^^^^\n\n    SyntaxError: Cannot use import statement outside a module\n\n    \u001b[0m \u001b[90m 14 |\u001b[39m   \u001b[90m// Fetch API polyfill\u001b[39m\n     \u001b[90m 15 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[36mtypeof\u001b[39m global\u001b[33m.\u001b[39mfetch \u001b[33m===\u001b[39m \u001b[32m'undefined'\u001b[39m) {\n    \u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m fetch \u001b[33m=\u001b[39m require(\u001b[32m'node-fetch'\u001b[39m)\u001b[33m;\u001b[39m\n     \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n     \u001b[90m 17 |\u001b[39m     global\u001b[33m.\u001b[39mfetch \u001b[33m=\u001b[39m fetch\u001b[33m;\u001b[39m\n     \u001b[90m 18 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mHeaders\u001b[39m\u001b[33m;\u001b[39m\n     \u001b[90m 19 |\u001b[39m     global\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m \u001b[33m=\u001b[39m fetch\u001b[33m.\u001b[39m\u001b[33mRequest\u001b[39m\u001b[33m;\u001b[39m\u001b[0m\n\n      \u001b[2mat Runtime.createScriptFromCode (\u001b[22mnode_modules/jest-runtime/build/index.js\u001b[2m:1505:14)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/jest.polyfills.js\u001b[2m:16:19)\u001b[22m\n      \u001b[2mat Object.<anonymous> (\u001b[22msrc/setupTests.ts\u001b[2m:1:1)\u001b[22m\n",
+      "leaks": false,
+      "numFailingTests": 0,
+      "numPassingTests": 0,
+      "numPendingTests": 0,
+      "numTodoTests": 0,
+      "openHandles": [],
+      "perfStats": {
+        "end": 0,
+        "runtime": 0,
+        "slow": false,
+        "start": 0
+      },
+      "skipped": false,
+      "snapshot": {
+        "added": 0,
+        "fileDeleted": false,
+        "matched": 0,
+        "unchecked": 0,
+        "uncheckedKeys": [],
+        "unmatched": 0,
+        "updated": 0
+      },
+      "testExecError": "Cannot use import statement outside a module",
+      "testFilePath": "C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend\\src\\Components\\__tests__\\LoginForm.test.tsx",
+      "testResults": []
+    }
+  ],
+  "wasInterrupted": false
+}
