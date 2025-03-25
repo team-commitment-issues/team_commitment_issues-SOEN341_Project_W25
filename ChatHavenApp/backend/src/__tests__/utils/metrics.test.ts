@@ -18,7 +18,7 @@ jest.mock('ws', () => {
 });
 
 // Mock the logger module before importing WebSocketMetrics
-jest.mock('../utils/logger', () => {
+jest.mock('../../utils/logger', () => {
   // Create mock functions
   const infoMock = jest.fn();
   const debugMock = jest.fn();
