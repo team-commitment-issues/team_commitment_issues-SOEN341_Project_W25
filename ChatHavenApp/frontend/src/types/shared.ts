@@ -28,6 +28,10 @@ export interface WebSocketMessage {
   type: string;
   clientMessageId?: string;
   [key: string]: any; // Allow additional properties
+  fileName?: string;
+  fileType?: string;
+  fileData?: string; // base64-encoded content
+
 }
 
 // Chat message for display in UI

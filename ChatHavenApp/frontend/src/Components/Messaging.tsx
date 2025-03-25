@@ -25,6 +25,7 @@ interface MessagingProps {
   selection: Selection | null;
   contextMenu: ContextMenuState;
   setContextMenu: (arg: ContextMenuState) => void;
+
 }
 
 type ConnectionStatus = 'connected' | 'connecting' | 'disconnected';
@@ -381,6 +382,39 @@ const Messaging: React.FC<MessagingProps> = ({
       }
     }
   };
+
+  //handle file and media
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !selection) return;
+  
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+  
+      reader.onload = () => {
+        const base64Content = reader.result as string;
+  
+        const mediaMessage: WebSocketMessage = {
+          type: selection.type === "directMessage" ? "directMessage" : "message",
+          text: `[File] ${file.name}`,
+          fileName: file.name,
+          fileType: file.type,
+          fileData: base64Content,
+          teamName: selection.teamName,
+          ...(selection.type === "directMessage"
+            ? { receiverUsername: selection.username }
+            : { channelName: selection.channelName }),
+        };
+  
+        sendMessage(mediaMessage);
+      };
+  
+      reader.readAsDataURL(file);
+    });
+  
+    e.target.value = "";
+  };
+  
 
   // Fetch messages using WebSocket
   const fetchMessages = useCallback(() => {
