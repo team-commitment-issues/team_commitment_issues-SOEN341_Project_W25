@@ -21,11 +21,7 @@ export class ClientHealthChecker {
    * @param pingIntervalMs How often to ping clients (default: 30 seconds)
    * @param timeoutMs How long to wait for pong before terminating connection (default: 10 seconds)
    */
-  constructor(
-    wss: WebSocketServer, 
-    pingIntervalMs: number = 30000, 
-    timeoutMs: number = 10000
-  ) {
+  constructor(wss: WebSocketServer, pingIntervalMs: number = 30000, timeoutMs: number = 10000) {
     this.wss = wss;
     this.pingIntervalMs = pingIntervalMs;
     this.timeoutMs = timeoutMs;
@@ -40,11 +36,11 @@ export class ClientHealthChecker {
     }
 
     this.pingInterval = setInterval(() => this.pingClients(), this.pingIntervalMs);
-    logger.info('Client health checker started', { 
+    logger.info('Client health checker started', {
       pingIntervalMs: this.pingIntervalMs,
-      timeoutMs: this.timeoutMs 
+      timeoutMs: this.timeoutMs
     });
-    
+
     return;
   }
 
@@ -65,20 +61,20 @@ export class ClientHealthChecker {
   private pingClients(): void {
     const clients = Array.from(this.wss.clients);
     const timestamp = Date.now();
-    
+
     let activeCount = 0;
     let terminatedCount = 0;
-    
+
     clients.forEach((client: WebSocket) => {
       const extClient = client as ExtendedWebSocket;
-      
+
       if (extClient.readyState !== WebSocket.OPEN) {
         return;
       }
-      
+
       // Check if client has been unresponsive
       if (extClient.isAlive === false) {
-        logger.warn('Terminating unresponsive client', { 
+        logger.warn('Terminating unresponsive client', {
           sessionId: extClient.sessionId,
           username: extClient.user?.username
         });
@@ -86,38 +82,38 @@ export class ClientHealthChecker {
         extClient.terminate();
         return;
       }
-      
+
       // Mark as requiring response
       extClient.isAlive = false;
-      
+
       // Set a ping timeout
       const pingTimeout = setTimeout(() => {
         if (extClient.isAlive === false) {
-          logger.warn('Client ping timeout', { 
+          logger.warn('Client ping timeout', {
             sessionId: extClient.sessionId,
             username: extClient.user?.username
           });
           extClient.terminate();
         }
       }, this.timeoutMs);
-      
+
       // Send ping and wait for pong (which sets isAlive back to true)
-      extClient.ping(Buffer.from(timestamp.toString()), undefined, (err) => {
+      extClient.ping(Buffer.from(timestamp.toString()), undefined, err => {
         if (err) {
           clearTimeout(pingTimeout);
-          logger.error('Error sending ping', { 
+          logger.error('Error sending ping', {
             sessionId: extClient.sessionId,
             error: err.message
           });
           extClient.terminate();
         }
       });
-      
+
       activeCount++;
     });
 
     if (terminatedCount > 0) {
-      logger.info('Health check complete', { 
+      logger.info('Health check complete', {
         activeClients: activeCount,
         terminatedClients: terminatedCount
       });
@@ -130,22 +126,22 @@ export class ClientHealthChecker {
    */
   setupClient(ws: ExtendedWebSocket): void {
     ws.isAlive = true;
-    
-    ws.on('pong', (data) => {
+
+    ws.on('pong', data => {
       // Mark client as responsive
       ws.isAlive = true;
-      
+
       // Calculate round-trip time if timestamp was included
       try {
         const timestamp = parseInt(data.toString());
         const rtt = Date.now() - timestamp;
-        
+
         // Only log if RTT seems unusually high
         if (rtt > 1000) {
-          logger.debug('High ping latency detected', { 
+          logger.debug('High ping latency detected', {
             sessionId: ws.sessionId,
             username: ws.user?.username,
-            rttMs: rtt 
+            rttMs: rtt
           });
         }
       } catch (err) {

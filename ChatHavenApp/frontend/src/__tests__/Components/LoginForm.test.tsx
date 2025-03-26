@@ -13,13 +13,13 @@ const mockLogin = login as jest.MockedFunction<typeof login>;
 // Mock react-router-dom's useNavigate (already done in testUtils, but included here for clarity)
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
-  useNavigate: () => mockNavigate,
+  useNavigate: () => mockNavigate
 }));
 
 // Mock react-icons
 jest.mock('react-icons/fa', () => ({
   FaEye: () => <span data-testid="eye-icon">👁️</span>,
-  FaEyeSlash: () => <span data-testid="eye-slash-icon">🔒</span>,
+  FaEyeSlash: () => <span data-testid="eye-slash-icon">🔒</span>
 }));
 
 describe('LoginForm', () => {
@@ -49,11 +49,11 @@ describe('LoginForm', () => {
 
     // Fill in form
     fireEvent.change(screen.getByLabelText(/Username:/i), {
-      target: { value: 'testuser' },
+      target: { value: 'testuser' }
     });
 
     fireEvent.change(screen.getByLabelText(/Password:/i), {
-      target: { value: 'password123' },
+      target: { value: 'password123' }
     });
 
     // Submit form
@@ -77,11 +77,11 @@ describe('LoginForm', () => {
 
     // Fill in form
     fireEvent.change(screen.getByLabelText(/Username:/i), {
-      target: { value: 'testuser' },
+      target: { value: 'testuser' }
     });
 
     fireEvent.change(screen.getByLabelText(/Password:/i), {
-      target: { value: 'wrongpassword' },
+      target: { value: 'wrongpassword' }
     });
 
     // Submit form

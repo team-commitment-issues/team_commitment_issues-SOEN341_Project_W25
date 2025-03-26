@@ -12,6 +12,6 @@ export default function scheduleStatusCleanup(): void {
       console.error('Error during status cleanup:', error);
     }
   });
-  
+
   console.log('Status cleanup scheduled');
-};
+}

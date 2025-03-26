@@ -8,7 +8,7 @@ import winston from 'winston';
 export const createLogger = (module: string) => {
   // Determine log level based on environment
   const logLevel = process.env.NODE_ENV === 'production' ? 'info' : 'debug';
-  
+
   // Create format that includes timestamp, service name, and log level
   const format = winston.format.combine(
     winston.format.timestamp(),
@@ -24,30 +24,27 @@ export const createLogger = (module: string) => {
       });
     })
   );
-  
+
   // Create transports based on environment
   const transports: winston.transport[] = [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple())
     })
   ];
-  
+
   // Add file transport in production
   if (process.env.NODE_ENV === 'production') {
     transports.push(
-      new winston.transports.File({ 
-        filename: 'logs/error.log', 
-        level: 'error' 
+      new winston.transports.File({
+        filename: 'logs/error.log',
+        level: 'error'
       }),
-      new winston.transports.File({ 
-        filename: 'logs/combined.log' 
+      new winston.transports.File({
+        filename: 'logs/combined.log'
       })
     );
   }
-  
+
   return winston.createLogger({
     level: logLevel,
     format,

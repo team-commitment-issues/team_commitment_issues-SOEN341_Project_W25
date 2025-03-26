@@ -39,7 +39,7 @@ jest.mock('../../utils/logger', () => {
 // Mock os module
 jest.mock('os', () => ({
   totalmem: jest.fn().mockReturnValue(16000000000), // 16GB
-  freemem: jest.fn().mockReturnValue(8000000000),   // 8GB
+  freemem: jest.fn().mockReturnValue(8000000000), // 8GB
   loadavg: jest.fn().mockReturnValue([1.5, 1.2, 1.0])
 }));
 

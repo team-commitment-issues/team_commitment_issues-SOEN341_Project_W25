@@ -21,10 +21,10 @@ describe('authService', () => {
       const result = await login('testuser', 'password123');
 
       // Verify axios was called correctly
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        'http://localhost:5000/user/login',
-        { username: 'testuser', password: 'password123' }
-      );
+      expect(mockedAxios.post).toHaveBeenCalledWith('http://localhost:5000/user/login', {
+        username: 'testuser',
+        password: 'password123'
+      });
 
       // Verify correct result is returned
       expect(result).toEqual({ token: 'test-token' });
@@ -60,25 +60,16 @@ describe('authService', () => {
       mockedAxios.post.mockResolvedValueOnce(mockResponse);
 
       // Call signUp function
-      const result = await signUp(
-        'test@example.com',
-        'password123',
-        'Test',
-        'User',
-        'testuser'
-      );
+      const result = await signUp('test@example.com', 'password123', 'Test', 'User', 'testuser');
 
       // Verify axios was called correctly
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        'http://localhost:5000/user/signup',
-        {
-          email: 'test@example.com',
-          password: 'password123',
-          firstName: 'Test',
-          lastName: 'User',
-          username: 'testuser'
-        }
-      );
+      expect(mockedAxios.post).toHaveBeenCalledWith('http://localhost:5000/user/signup', {
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'Test',
+        lastName: 'User',
+        username: 'testuser'
+      });
 
       // Verify correct result is returned
       expect(result).toEqual(mockResponse.data);
@@ -94,13 +85,9 @@ describe('authService', () => {
       mockedAxios.post.mockRejectedValueOnce(errorResponse);
 
       // Verify error is thrown
-      await expect(signUp(
-        'existing@example.com',
-        'password',
-        'Test',
-        'User',
-        'testuser'
-      )).rejects.toThrow('Email already exists');
+      await expect(
+        signUp('existing@example.com', 'password', 'Test', 'User', 'testuser')
+      ).rejects.toThrow('Email already exists');
     });
   });
 

@@ -1,24 +1,24 @@
-import React, { useState } from "react";
-import { login } from "../Services/authService";
-import { useNavigate } from "react-router-dom";
-import Input from "./UI/Input";
-import Button from "./UI/Button";
-import FormGroup from "./UI/FormGroup";
-import styles from "../Styles/loginStyles";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import TextLink from "./UI/TextLink";
-import { useUser } from "../Context/UserContext";
+import React, { useState } from 'react';
+import { login } from '../Services/authService';
+import { useNavigate } from 'react-router-dom';
+import Input from './UI/Input';
+import Button from './UI/Button';
+import FormGroup from './UI/FormGroup';
+import styles from '../Styles/loginStyles';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import TextLink from './UI/TextLink';
+import { useUser } from '../Context/UserContext';
 
 const LoginForm: React.FC = () => {
-  const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const navigate = useNavigate();
   const { setUserData } = useUser();
 
   const toggleShowPassword = () => {
-    setShowPassword((prevState) => !prevState);
+    setShowPassword(prevState => !prevState);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,19 +26,19 @@ const LoginForm: React.FC = () => {
     try {
       const response = await login(username, password);
       if (response.token) {
-        localStorage.setItem("token", response.token);
-        
+        localStorage.setItem('token', response.token);
+
         const userData = {
-          username: username,
+          username: username
         };
-        
+
         // Update both context and localStorage
         setUserData(userData);
-        
-        navigate("/dashboard");
+
+        navigate('/dashboard');
       }
     } catch (err) {
-      setError("Invalid username or password");
+      setError('Invalid username or password');
     }
   };
 
@@ -51,27 +51,27 @@ const LoginForm: React.FC = () => {
           <Input
             type="text"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={e => setUsername(e.target.value)}
             required
           />
         </FormGroup>
         <FormGroup label="Password:">
-          <div style={{ position: "relative" }}>
+          <div style={{ position: 'relative' }}>
             <Input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               required
             />
             <span
               onClick={toggleShowPassword}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 right: 8,
-                top: "50%",
-                transform: "translateY(-50%)",
-                cursor: "pointer",
-                color: "#555",
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+                color: '#555'
               }}
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}

@@ -30,7 +30,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ items, position, onClose }) =
       className="context-menu"
       style={{
         top: position.y,
-        left: position.x,
+        left: position.x
       }}
     >
       {items.map((item, index) => (

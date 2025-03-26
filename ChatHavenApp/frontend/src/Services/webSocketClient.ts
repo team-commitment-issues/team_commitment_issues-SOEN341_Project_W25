@@ -1,4 +1,4 @@
-import { WebSocketMessage } from "../types/shared";
+import { WebSocketMessage } from '../types/shared';
 
 // Define event types for WebSocket events
 type MessageCallback = (data: any) => void;
@@ -32,7 +32,7 @@ class WebSocketClient {
   private readonly RECONNECT_INTERVAL_MS = 1000;
   private readonly MAX_RETRY_ATTEMPTS = 3;
   private readonly RETRY_DELAY_MS = 3000;
-  
+
   private subscriptions: Subscription[] = [];
   private connectionCallbacks: ConnectionCallback[] = [];
   private disconnectionCallbacks: ConnectionCallback[] = [];
@@ -41,7 +41,7 @@ class WebSocketClient {
   private pendingMessages: Map<string, RetryInfo> = new Map();
   private isConnecting = false;
   private messageStatusCallbacks: Map<string, (status: string) => void> = new Map();
-  
+
   // Flag to disable retries for backward compatibility
   private enableRetries = false;
 
@@ -82,7 +82,7 @@ class WebSocketClient {
       this.isConnecting = true;
 
       if (this.ws) {
-        this.ws.close(1000, "Creating new connection");
+        this.ws.close(1000, 'Creating new connection');
         this.ws = null;
       }
 
@@ -91,7 +91,7 @@ class WebSocketClient {
       this.ws = new WebSocket(`${wsProtocol}//${wsHost}/ws?token=${token}`);
 
       this.ws.onopen = () => {
-        console.log("WebSocket connection established");
+        console.log('WebSocket connection established');
         this.isConnecting = false;
         this.reconnectAttempts = 0;
 
@@ -123,8 +123,8 @@ class WebSocketClient {
         resolve();
       };
 
-      this.ws.onclose = (event) => {
-        console.log("WebSocket connection closed:", event.code, event.reason);
+      this.ws.onclose = event => {
+        console.log('WebSocket connection closed:', event.code, event.reason);
         this.isConnecting = false;
 
         // Notify listeners
@@ -142,30 +142,30 @@ class WebSocketClient {
           console.log(`Attempting to reconnect in ${delay}ms...`);
           setTimeout(() => this.connect(token), delay);
         } else {
-          console.error("Max reconnection attempts reached");
-          reject(new Error("Max reconnection attempts reached"));
+          console.error('Max reconnection attempts reached');
+          reject(new Error('Max reconnection attempts reached'));
         }
       };
 
-      this.ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
+      this.ws.onerror = error => {
+        console.error('WebSocket error:', error);
         this.errorCallbacks.forEach(callback => callback(error));
         this.isConnecting = false;
         reject(error);
       };
 
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = event => {
         try {
           const data = JSON.parse(event.data);
-          
+
           this.handleMessageResponse(data);
-          
+
           // Dispatch to all relevant subscriptions
           this.subscriptions
             .filter(sub => sub.type === data.type || sub.type === '*')
             .forEach(sub => sub.callback(data));
         } catch (error) {
-          console.error("Failed to parse incoming message:", error);
+          console.error('Failed to parse incoming message:', error);
         }
       };
     });
@@ -179,21 +179,23 @@ class WebSocketClient {
   }
 
   private handleMessageResponse(data: any): void {
-    if ((data.type === 'message' || data.type === 'directMessage') && 
-        data.clientMessageId && this.pendingMessages.has(data.clientMessageId)) {
-        
+    if (
+      (data.type === 'message' || data.type === 'directMessage') &&
+      data.clientMessageId &&
+      this.pendingMessages.has(data.clientMessageId)
+    ) {
       // This is a message with a clientMessageId, consider it acknowledged
       const pendingInfo = this.pendingMessages.get(data.clientMessageId);
       if (pendingInfo?.timeout) {
         clearTimeout(pendingInfo.timeout);
       }
       this.pendingMessages.delete(data.clientMessageId);
-      
+
       // Call status callback if registered
       const statusCallback = this.messageStatusCallbacks.get(data.clientMessageId);
       if (statusCallback) {
         statusCallback('sent');
-        
+
         // Keep callback for potential read receipts
         setTimeout(() => {
           // If we don't receive a read receipt within 5 seconds, clean up
@@ -201,7 +203,7 @@ class WebSocketClient {
         }, 5000);
       }
     }
-    
+
     // Handle explicit message acknowledgments if they exist
     if (data.type === 'messageAck' && data.messageId) {
       // Check all callbacks and apply the status update
@@ -217,13 +219,13 @@ class WebSocketClient {
   private setupRetry(clientMessageId: string, info: RetryInfo): void {
     // Skip if retries are disabled
     if (!this.enableRetries) return;
-    
+
     // Clear existing timeout if any
     if (info.timeout) {
       clearTimeout(info.timeout);
       info.timeout = null;
     }
-    
+
     // If max retries reached, mark as failed
     if (info.attempts >= this.MAX_RETRY_ATTEMPTS) {
       const statusCallback = this.messageStatusCallbacks.get(clientMessageId);
@@ -234,16 +236,16 @@ class WebSocketClient {
       this.pendingMessages.delete(clientMessageId);
       return;
     }
-    
+
     // Setup new retry timeout
     const timeout = setTimeout(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
         console.log(`Retrying message ${clientMessageId}, attempt ${info.attempts + 1}`);
-        
+
         // Clone the message to avoid potential mutations
-        const messageToRetry = {...info.message};
+        const messageToRetry = { ...info.message };
         this.sendWithoutQueuing(messageToRetry);
-        
+
         // Update retry info
         const updatedInfo = this.pendingMessages.get(clientMessageId);
         if (updatedInfo) {
@@ -255,7 +257,7 @@ class WebSocketClient {
         // It will be retried when connection is restored
       }
     }, this.RETRY_DELAY_MS);
-    
+
     // Store updated info
     info.timeout = timeout;
     this.pendingMessages.set(clientMessageId, info);
@@ -270,7 +272,7 @@ class WebSocketClient {
         this.ws.send(JSON.stringify(message));
         return true;
       } catch (error) {
-        console.error("Failed to send message:", error);
+        console.error('Failed to send message:', error);
         return false;
       }
     }
@@ -282,18 +284,18 @@ class WebSocketClient {
    */
   public send(message: WebSocketMessage): string {
     // Generate a client-side message ID if not provided
-    const clientMessageId = message.clientMessageId || 
-      `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+    const clientMessageId =
+      message.clientMessageId || `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // Create a clone of the message with the client ID
-    const messageWithId = { 
-      ...message, 
-      clientMessageId 
+    const messageWithId = {
+      ...message,
+      clientMessageId
     };
-    
+
     if (this.ws?.readyState === WebSocket.OPEN) {
       const result = this.sendWithoutQueuing(messageWithId);
-      
+
       if (result && this.enableRetries) {
         // Add to pending messages for tracking/retry
         this.pendingMessages.set(clientMessageId, {
@@ -303,16 +305,16 @@ class WebSocketClient {
           clientMessageId,
           createdAt: Date.now()
         });
-        
+
         // Setup retry mechanism
         this.setupRetry(clientMessageId, this.pendingMessages.get(clientMessageId)!);
       }
-      
+
       return clientMessageId;
     } else {
       // Queue message if not connected
       this.messageQueue.push(messageWithId);
-      
+
       if (this.enableRetries) {
         // Add to pending for tracking
         this.pendingMessages.set(clientMessageId, {
@@ -323,7 +325,7 @@ class WebSocketClient {
           createdAt: Date.now()
         });
       }
-      
+
       return clientMessageId;
     }
   }
@@ -332,11 +334,11 @@ class WebSocketClient {
    * Register a callback for message status updates
    */
   public registerMessageStatusCallback(
-    clientMessageId: string, 
+    clientMessageId: string,
     callback: (status: string) => void
   ): void {
     this.messageStatusCallbacks.set(clientMessageId, callback);
-    
+
     // Set up a cleanup timeout for backward compatibility
     setTimeout(() => {
       // If we don't receive a confirmation within 10 seconds, consider it sent anyway
@@ -425,7 +427,7 @@ class WebSocketClient {
   /**
    * Close the WebSocket connection
    */
-  public close(reason: string = "User initiated disconnect"): void {
+  public close(reason: string = 'User initiated disconnect'): void {
     if (this.ws) {
       this.ws.close(1000, reason);
       this.ws = null;
@@ -438,18 +440,18 @@ class WebSocketClient {
   public setupHeartbeat(intervalMs: number = 30000): NodeJS.Timeout {
     return setInterval(() => {
       if (this.isConnected()) {
-        this.send({ type: "ping" });
+        this.send({ type: 'ping' });
       }
     }, intervalMs);
   }
-  
+
   /**
    * Get pending messages
    */
   public getPendingMessages(): Map<string, RetryInfo> {
     return new Map(this.pendingMessages);
   }
-  
+
   /**
    * Manually cancel retries for a message
    */

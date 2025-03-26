@@ -5,14 +5,14 @@ const mockLoggerFunctions = {
   info: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
-  debug: jest.fn(),
+  debug: jest.fn()
 };
 
 // Mock dependencies
 jest.mock('../../services/onlineStatusService');
 jest.mock('ws');
 jest.mock('../../utils/logger', () => ({
-  createLogger: jest.fn(() => mockLoggerFunctions),
+  createLogger: jest.fn(() => mockLoggerFunctions)
 }));
 
 import ConnectionManager from '../../services/connectionManager';
@@ -48,7 +48,10 @@ describe('ConnectionManager', () => {
       username: 'testuser'
     });
     (OnlineStatusService.getUserTeams as jest.Mock).mockResolvedValue(['team-id']);
-    (OnlineStatusService.getTeamSubscribers as jest.Mock).mockResolvedValue(['testuser', 'otheruser']);
+    (OnlineStatusService.getTeamSubscribers as jest.Mock).mockResolvedValue([
+      'testuser',
+      'otheruser'
+    ]);
   });
 
   // Cleanup after each test
@@ -160,7 +163,9 @@ describe('ConnectionManager', () => {
     expect(connections.length).toBe(2);
     expect(connections).toContainEqual(expect.objectContaining({ sessionId: 'test-session-1' }));
     expect(connections).toContainEqual(expect.objectContaining({ sessionId: 'test-session-2' }));
-    expect(connections).not.toContainEqual(expect.objectContaining({ sessionId: 'test-session-3' }));
+    expect(connections).not.toContainEqual(
+      expect.objectContaining({ sessionId: 'test-session-3' })
+    );
   });
 
   test('should send message to all user connections', () => {
@@ -225,11 +230,14 @@ describe('ConnectionManager', () => {
     (connectionManager as any).logStats();
 
     // Verify logging occurred using the shared mock logger functions
-    expect(mockLoggerFunctions.info).toHaveBeenCalledWith('Connection statistics', expect.objectContaining({
-      currentConnections: 1,
-      totalConnections: 1,
-      totalMessages: 1
-    }));
+    expect(mockLoggerFunctions.info).toHaveBeenCalledWith(
+      'Connection statistics',
+      expect.objectContaining({
+        currentConnections: 1,
+        totalConnections: 1,
+        totalMessages: 1
+      })
+    );
   });
 
   test('should handle errors in status update broadcasting', async () => {
@@ -240,6 +248,9 @@ describe('ConnectionManager', () => {
     await connectionManager.broadcastStatusUpdate('testuser', Status.AWAY, new Date());
 
     // Verify error was logged using the shared mock logger functions
-    expect(mockLoggerFunctions.error).toHaveBeenCalledWith('Error broadcasting status update', expect.any(Object));
+    expect(mockLoggerFunctions.error).toHaveBeenCalledWith(
+      'Error broadcasting status update',
+      expect.any(Object)
+    );
   });
 });

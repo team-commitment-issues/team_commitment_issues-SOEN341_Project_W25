@@ -5,7 +5,7 @@
  */
 export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',
-  USER = 'USER',
+  USER = 'USER'
 }
 
 /**
@@ -24,7 +24,7 @@ export enum TeamRole {
  * @property {string} AWAY - Represents the away status.
  * @property {string} BUSY - Represents the busy status.
  * @property {string} OFFLINE - Represents the offline status.
-*/
+ */
 export enum Status {
   ONLINE = 'online',
   AWAY = 'away',

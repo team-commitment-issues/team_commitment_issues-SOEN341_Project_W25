@@ -23,8 +23,8 @@ const styles = {
     backgroundColor: '#007bff',
     border: 'none',
     borderRadius: '4px',
-    cursor: 'pointer',
-  },
+    cursor: 'pointer'
+  }
 };
 
 export default Button;

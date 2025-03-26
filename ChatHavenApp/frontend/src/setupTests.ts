@@ -6,7 +6,7 @@ import './jest.polyfills';
 import '@testing-library/jest-dom';
 
 // Create consistent mock for localStorage that can be used across all tests
-const localStorageMock = (function() {
+const localStorageMock = (function () {
   let store: Record<string, string> = {};
   return {
     getItem: jest.fn((key: string) => store[key] || null),
@@ -51,7 +51,7 @@ class MockWebSocket {
   extensions = '';
   bufferedAmount = 0;
   binaryType: 'blob' | 'arraybuffer' = 'blob';
-  
+
   constructor(url: string, protocols?: string | string[]) {
     this.url = url;
     if (protocols && typeof protocols === 'string') {
@@ -59,26 +59,26 @@ class MockWebSocket {
     } else if (protocols && Array.isArray(protocols) && protocols.length > 0) {
       this.protocol = protocols[0];
     }
-    
+
     // Simulate connection after a brief delay
     setTimeout(() => {
       this.readyState = this.OPEN;
       if (this.onopen) this.onopen({ target: this });
     }, 0);
   }
-  
+
   send = jest.fn((data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
     // Implementation can be added if needed for specific tests
     return true;
   });
-  
+
   close = jest.fn((code?: number, reason?: string) => {
     this.readyState = this.CLOSED;
     if (this.onclose) {
       this.onclose({ code: code || 1000, reason: reason || 'Normal closure', wasClean: true });
     }
   });
-  
+
   // Helper test methods
   mockReceiveMessage(data: any) {
     if (this.onmessage) {
@@ -92,27 +92,27 @@ class MockWebSocket {
       this.onmessage(messageEvent);
     }
   }
-  
+
   mockDisconnect(code: number = 1006, reason: string = 'Connection closed abnormally') {
     this.readyState = this.CLOSED;
     if (this.onclose) {
       this.onclose({ code, reason, wasClean: code === 1000 });
     }
   }
-  
+
   mockError(message: string = 'WebSocket error') {
     if (this.onerror) {
       this.onerror({ message, error: new Error(message) });
     }
   }
-  
+
   addEventListener(type: string, listener: EventListener) {
     if (type === 'open') this.onopen = listener;
     if (type === 'close') this.onclose = listener;
     if (type === 'message') this.onmessage = listener;
     if (type === 'error') this.onerror = listener;
   }
-  
+
   removeEventListener(type: string, listener: EventListener) {
     if (type === 'open' && this.onopen === listener) this.onopen = null;
     if (type === 'close' && this.onclose === listener) this.onclose = null;
@@ -125,7 +125,7 @@ class MockWebSocket {
 global.WebSocket = MockWebSocket as any;
 
 // Mock fetch API if needed
-global.fetch = jest.fn().mockImplementation(() => 
+global.fetch = jest.fn().mockImplementation(() =>
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve({}),
@@ -156,22 +156,26 @@ beforeAll(() => {
       'Error: Not implemented: navigation',
       'Warning: An update to %s inside a test was not wrapped in act'
     ];
-    
+
     // Only suppress specific known warnings
-    if (args[0] && typeof args[0] === 'string' && 
-        suppressedPatterns.some(pattern => args[0].includes(pattern))) {
+    if (
+      args[0] &&
+      typeof args[0] === 'string' &&
+      suppressedPatterns.some(pattern => args[0].includes(pattern))
+    ) {
       return;
     }
     originalConsoleError(...args);
   };
-  
+
   console.warn = (...args) => {
-    const suppressedPatterns = [
-      'Warning: Using UNSAFE_'
-    ];
-    
-    if (args[0] && typeof args[0] === 'string' && 
-        suppressedPatterns.some(pattern => args[0].includes(pattern))) {
+    const suppressedPatterns = ['Warning: Using UNSAFE_'];
+
+    if (
+      args[0] &&
+      typeof args[0] === 'string' &&
+      suppressedPatterns.some(pattern => args[0].includes(pattern))
+    ) {
       return;
     }
     originalConsoleWarn(...args);
@@ -181,7 +185,7 @@ beforeAll(() => {
 afterAll(() => {
   console.error = originalConsoleError;
   console.warn = originalConsoleWarn;
-  
+
   // Clean up any fake timers
   jest.useRealTimers();
 });
@@ -191,7 +195,7 @@ afterEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
   document.body.innerHTML = '';
-  
+
   // Reset any mock timers for the next test
   jest.runOnlyPendingTimers();
 });

@@ -15,9 +15,7 @@ const AllProviders = ({ children }: AllProvidersProps) => {
   return (
     <ThemeProvider>
       <UserProvider>
-        <OnlineStatusProvider>
-          {children}
-        </OnlineStatusProvider>
+        <OnlineStatusProvider>{children}</OnlineStatusProvider>
       </UserProvider>
     </ThemeProvider>
   );
@@ -29,9 +27,7 @@ const ExtendedProviders = ({ children }: AllProvidersProps) => {
     <ThemeProvider>
       <UserProvider>
         <OnlineStatusProvider>
-          <ChatSelectionProvider>
-            {children}
-          </ChatSelectionProvider>
+          <ChatSelectionProvider>{children}</ChatSelectionProvider>
         </OnlineStatusProvider>
       </UserProvider>
     </ThemeProvider>
@@ -39,26 +35,25 @@ const ExtendedProviders = ({ children }: AllProvidersProps) => {
 };
 
 // Standard render with BrowserRouter and base providers
-const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
-): RenderResult => render(
-  <BrowserRouter>
-    <AllProviders>{ui}</AllProviders>
-  </BrowserRouter>,
-  options
-);
+const customRender = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>): RenderResult =>
+  render(
+    <BrowserRouter>
+      <AllProviders>{ui}</AllProviders>
+    </BrowserRouter>,
+    options
+  );
 
 // Render with extended providers including ChatSelectionProvider
 const renderWithExtendedProviders = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
-): RenderResult => render(
-  <BrowserRouter>
-    <ExtendedProviders>{ui}</ExtendedProviders>
-  </BrowserRouter>,
-  options
-);
+  options?: Omit<RenderOptions, 'wrapper'>
+): RenderResult =>
+  render(
+    <BrowserRouter>
+      <ExtendedProviders>{ui}</ExtendedProviders>
+    </BrowserRouter>,
+    options
+  );
 
 // Render with memory router for testing specific routes
 interface RenderWithRouteOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -68,11 +63,7 @@ interface RenderWithRouteOptions extends Omit<RenderOptions, 'wrapper'> {
 
 const renderWithRoute = (
   ui: ReactElement,
-  { 
-    route = '/', 
-    paths = {}, 
-    ...options 
-  }: RenderWithRouteOptions = {}
+  { route = '/', paths = {}, ...options }: RenderWithRouteOptions = {}
 ): RenderResult => {
   return render(
     <MemoryRouter initialEntries={[route]}>
@@ -91,7 +82,7 @@ const renderWithRoute = (
 
 // Re-export everything from testing-library
 export * from '@testing-library/react';
-export { 
+export {
   customRender as render,
   renderWithExtendedProviders,
   renderWithRoute,
@@ -119,13 +110,15 @@ jest.mock('react-router-dom', () => ({
 }));
 
 // Authentication helpers
-export const mockAuthenticatedUser = (userData = { 
-  username: 'testuser', 
-  email: 'test@example.com',
-  firstName: 'Test',
-  lastName: 'User',
-  role: 'USER'
-}) => {
+export const mockAuthenticatedUser = (
+  userData = {
+    username: 'testuser',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+    role: 'USER'
+  }
+) => {
   localStorage.setItem('token', 'fake-jwt-token');
   localStorage.setItem('user', JSON.stringify(userData));
 };
@@ -159,26 +152,26 @@ export const mockWebSocketMessage = (message: any) => {
 
 // Wait for condition helper
 export const waitForCondition = (
-  condition: () => boolean, 
+  condition: () => boolean,
   { timeout = 1000, interval = 50 } = {}
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
-    
+
     const checkCondition = () => {
       if (condition()) {
         resolve();
         return;
       }
-      
+
       if (Date.now() - startTime >= timeout) {
         reject(new Error(`Timed out waiting for condition after ${timeout}ms`));
         return;
       }
-      
+
       setTimeout(checkCondition, interval);
     };
-    
+
     checkCondition();
   });
 };

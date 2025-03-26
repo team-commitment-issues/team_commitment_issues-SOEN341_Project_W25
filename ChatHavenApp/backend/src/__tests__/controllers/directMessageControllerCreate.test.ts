@@ -31,7 +31,15 @@ afterAll(async () => {
 
 describe('POST /directMessage/createDirectMessage', () => {
   it('should create a direct message successfully', async () => {
-    const user = await TestHelpers.createTestUser('test@test.com', 'testpassword', 'Test', 'User', 'testuser', Role.USER, []);
+    const user = await TestHelpers.createTestUser(
+      'test@test.com',
+      'testpassword',
+      'Test',
+      'User',
+      'testuser',
+      Role.USER,
+      []
+    );
 
     const token = await TestHelpers.generateToken(user.username, user.email);
 
@@ -39,7 +47,12 @@ describe('POST /directMessage/createDirectMessage', () => {
 
     const team = await TestHelpers.createTestTeam('Test Team', superAdminUser._id, [], []);
 
-    const teamMember = await TestHelpers.createTestTeamMember(user._id, team._id, TeamRole.MEMBER, []);
+    const teamMember = await TestHelpers.createTestTeamMember(
+      user._id,
+      team._id,
+      TeamRole.MEMBER,
+      []
+    );
 
     team.teamMembers.push(teamMember._id);
     await team.save();
@@ -47,9 +60,22 @@ describe('POST /directMessage/createDirectMessage', () => {
     user.teamMemberships.push(teamMember._id);
     await user.save();
 
-    const receiver = await TestHelpers.createTestUser('test2@test2.com', 'testpassword', 'Test2', 'User2', 'testuser2', Role.USER, []);
+    const receiver = await TestHelpers.createTestUser(
+      'test2@test2.com',
+      'testpassword',
+      'Test2',
+      'User2',
+      'testuser2',
+      Role.USER,
+      []
+    );
 
-    const receiverTeamMember = await TestHelpers.createTestTeamMember(receiver._id, team._id, TeamRole.MEMBER, []);
+    const receiverTeamMember = await TestHelpers.createTestTeamMember(
+      receiver._id,
+      team._id,
+      TeamRole.MEMBER,
+      []
+    );
 
     team.teamMembers.push(receiverTeamMember._id);
     await team.save();
@@ -68,7 +94,9 @@ describe('POST /directMessage/createDirectMessage', () => {
       .send(payload)
       .expect(201);
 
-    const foundDirectMessage = await DirectMessage.findOne({ users: { $all: [user._id, receiver._id] } });
+    const foundDirectMessage = await DirectMessage.findOne({
+      users: { $all: [user._id, receiver._id] }
+    });
     expect(foundDirectMessage).toBeTruthy();
   });
 });

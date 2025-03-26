@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface TextLinkProps {
   text: string;
@@ -11,8 +11,8 @@ interface TextLinkProps {
 const TextLink: React.FC<TextLinkProps> = ({ text, linkText, to, style }) => {
   return (
     <p style={{ ...styles.text, ...style }}>
-      {" "}
-      {text}{" "}
+      {' '}
+      {text}{' '}
       <Link to={to} style={styles.link}>
         {linkText}
       </Link>
@@ -22,14 +22,14 @@ const TextLink: React.FC<TextLinkProps> = ({ text, linkText, to, style }) => {
 
 const styles = {
   text: {
-    marginTop: "15px",
-    fontSize: "14px",
-    color: "#000",
+    marginTop: '15px',
+    fontSize: '14px',
+    color: '#000'
   },
   link: {
-    color: "#007bff",
-    textDecoration: "none",
-  },
+    color: '#007bff',
+    textDecoration: 'none'
+  }
 };
 
 export default TextLink;

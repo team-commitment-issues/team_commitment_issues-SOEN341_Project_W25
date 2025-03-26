@@ -31,11 +31,14 @@ console.log('JWT_SECRET loaded successfully.');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chathavendb';
 
-mongoose.connect(MONGO_URI).then(() => {
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
     console.log('Connected to ' + MONGO_URI);
-}).catch((err) => {
+  })
+  .catch(err => {
     console.log(err);
-});
+  });
 
 const backend = express();
 
@@ -45,7 +48,7 @@ backend.use(express.static(path.join(__dirname, '../', '../', './frontend', './b
 
 const limiter = rateLimit({
   windowMs: 30 * 1000,
-  max: 30 * 5,
+  max: 30 * 5
 });
 
 backend.use(limiter);
@@ -62,27 +65,18 @@ const server = http.createServer(backend);
 
 // Start the server and then setup WebSocket properly
 server.listen(PORT, async () => {
-    console.log('Backend is listening on port ' + PORT);
+  console.log('Backend is listening on port ' + PORT);
 
-    try {
-        const wss = await setupWebSocketServer(server);
-        console.log('WebSocket server initialized successfully');
-    } catch (error) {
-        console.error('Failed to initialize WebSocket server:', error);
-    }
+  try {
+    const wss = await setupWebSocketServer(server);
+    console.log('WebSocket server initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize WebSocket server:', error);
+  }
 
-    scheduleStatusCleanup();
+  scheduleStatusCleanup();
 });
 
-backend.get("*", (req, res) => {
-    res.sendFile(
-        path.join(
-            __dirname,
-            "../",
-            "../",
-            "./frontend",
-            "./build",
-            "index.html"
-        )
-    );
+backend.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../', '../', './frontend', './build', 'index.html'));
 });

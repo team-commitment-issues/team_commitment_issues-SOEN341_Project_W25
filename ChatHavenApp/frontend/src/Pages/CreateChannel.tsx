@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { createChannel } from "../Services/channelService";
-import styles from "../Styles/createChannelStyle";
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { createChannel } from '../Services/channelService';
+import styles from '../Styles/createChannelStyle';
 
 const CreateChannel: React.FC = () => {
   const navigate = useNavigate();
-  const [channelName, setChannelName] = useState("");
+  const [channelName, setChannelName] = useState('');
   const location = useLocation();
   const { selectedTeam, selectedTeamMembers } = location.state;
 
@@ -14,13 +14,13 @@ const CreateChannel: React.FC = () => {
 
     try {
       await createChannel(channelName, selectedTeam, selectedTeamMembers);
-      alert("Channel created successfully");
-      navigate("/dashboard");
+      alert('Channel created successfully');
+      navigate('/dashboard');
     } catch (err) {
-      alert("Failed to create channel");
+      alert('Failed to create channel');
     }
     alert(`Channel Created: ${channelName}`);
-    navigate("/dashboard");
+    navigate('/dashboard');
   };
 
   return (
@@ -32,16 +32,12 @@ const CreateChannel: React.FC = () => {
           type="text"
           style={styles.formInput}
           value={channelName}
-          onChange={(e) => setChannelName(e.target.value)}
+          onChange={e => setChannelName(e.target.value)}
           required
         />
 
         <div style={styles.formButtons}>
-          <button
-            type="button"
-            style={styles.cancelButton}
-            onClick={() => navigate("/dashboard")}
-          >
+          <button type="button" style={styles.cancelButton} onClick={() => navigate('/dashboard')}>
             Cancel
           </button>
           <button type="submit" style={styles.submitButton}>

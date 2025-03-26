@@ -18,14 +18,16 @@ jest.mock('../../utils/logger', () => {
       info: mockInfo,
       error: mockError,
       warn: mockWarn,
-      debug: mockDebug,
+      debug: mockDebug
     }),
-    __mocks__: { mockInfo, mockError, mockWarn, mockDebug },
+    __mocks__: { mockInfo, mockError, mockWarn, mockDebug }
   };
 });
 
 // Import the mocked logger functions
-const { __mocks__: { mockInfo, mockError, mockWarn, mockDebug } } = require('../../utils/logger');
+const {
+  __mocks__: { mockInfo, mockError, mockWarn, mockDebug }
+} = require('../../utils/logger');
 
 describe('ClientHealthChecker', () => {
   let healthChecker: ClientHealthChecker;
@@ -57,7 +59,7 @@ describe('ClientHealthChecker', () => {
     mockWss = {
       clients: mockClients,
       on: jest.fn(),
-      close: jest.fn(),
+      close: jest.fn()
     } as unknown as WebSocketServer;
 
     // Create health checker with short intervals for testing

@@ -1,7 +1,7 @@
-import React from "react";
-import LoginForm from "../Components/LoginForm";
-import styles from "../Styles/loginStyles";
-import { useTheme } from "../Context/ThemeContext";
+import React from 'react';
+import LoginForm from '../Components/LoginForm';
+import styles from '../Styles/loginStyles';
+import { useTheme } from '../Context/ThemeContext';
 
 const Login: React.FC = () => {
   const { theme } = useTheme();
@@ -10,7 +10,7 @@ const Login: React.FC = () => {
     <div
       style={{
         ...styles.container,
-        ...(theme === "dark" && styles.container["&.dark-mode"]),
+        ...(theme === 'dark' && styles.container['&.dark-mode'])
       }}
     >
       <LoginForm />

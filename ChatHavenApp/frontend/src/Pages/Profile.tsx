@@ -1,36 +1,36 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTheme } from "../Context/ThemeContext";
-import "../Styles/Profile.css";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../Context/ThemeContext';
+import '../Styles/Profile.css';
 
 const EditProfile: React.FC = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
-  const [bio, setBio] = useState("");
-  const [dateJoined, setDateJoined] = useState("");
+  const [bio, setBio] = useState('');
+  const [dateJoined, setDateJoined] = useState('');
 
-  const USER_ID = "12345";
+  const USER_ID = '12345';
 
   useEffect(() => {
     fetch(`/api/users/profile/${USER_ID}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setName(data.firstName + " " + data.lastName);
+      .then(res => res.json())
+      .then(data => {
+        setName(data.firstName + ' ' + data.lastName);
         setEmail(data.email);
         setProfilePreview(data.profilePicture);
-        setBio(data.bio || "");
+        setBio(data.bio || '');
         if (data.dateJoined) {
           setDateJoined(new Date(data.dateJoined).toLocaleDateString());
         } else {
-          setDateJoined("N/A");
+          setDateJoined('N/A');
         }
       })
-      .catch((error) => console.error("Error fetching profile:", error));
+      .catch(error => console.error('Error fetching profile:', error));
   }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,30 +45,30 @@ const EditProfile: React.FC = () => {
 
   const handleSave = async () => {
     const formData = new FormData();
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("bio", bio);
-    if (profilePicture) formData.append("profilePicture", profilePicture);
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('bio', bio);
+    if (profilePicture) formData.append('profilePicture', profilePicture);
 
     try {
       const response = await fetch(`/api/users/profile/${USER_ID}`, {
-        method: "PUT",
-        body: formData,
+        method: 'PUT',
+        body: formData
       });
 
       if (response.ok) {
-        alert("Profile updated successfully!");
-        navigate("/dashboard");
+        alert('Profile updated successfully!');
+        navigate('/dashboard');
       } else {
-        alert("Failed to update profile");
+        alert('Failed to update profile');
       }
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error('Error updating profile:', error);
     }
   };
 
   return (
-    <div className={`profile-container ${theme === "dark" ? "dark-mode" : ""}`}>
+    <div className={`profile-container ${theme === 'dark' ? 'dark-mode' : ''}`}>
       <h2 className="profile-title">Edit Profile</h2>
 
       {/* Edit Profile Picture */}
@@ -77,19 +77,11 @@ const EditProfile: React.FC = () => {
           <div className="profile-section-title">Edit Profile Picture</div>
           <div className="profile-picture-container">
             {profilePreview ? (
-              <img
-                src={profilePreview}
-                alt="Profile Preview"
-                className="profile-preview"
-              />
+              <img src={profilePreview} alt="Profile Preview" className="profile-preview" />
             ) : (
               <p>No profile picture selected</p>
             )}
-            <input
-              type="file"
-              className="file-input"
-              onChange={handleFileChange}
-            />
+            <input type="file" className="file-input" onChange={handleFileChange} />
           </div>
         </div>
       </div>
@@ -99,7 +91,7 @@ const EditProfile: React.FC = () => {
           className="profile-input"
           placeholder="Tell us a bit about yourself"
           value={bio}
-          onChange={(e) => setBio(e.target.value)}
+          onChange={e => setBio(e.target.value)}
           rows={3}
         />
       </div>
@@ -115,7 +107,7 @@ const EditProfile: React.FC = () => {
             className="profile-input"
             placeholder="Enter full name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={e => setName(e.target.value)}
           />
         </div>
 
@@ -126,7 +118,7 @@ const EditProfile: React.FC = () => {
             className="profile-input"
             placeholder="Enter email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={e => setEmail(e.target.value)}
           />
         </div>
       </div>
@@ -134,15 +126,12 @@ const EditProfile: React.FC = () => {
       <button className="profile-button save" onClick={handleSave}>
         Save Changes
       </button>
-      <button
-        className="profile-button back"
-        onClick={() => navigate("/dashboard")}
-      >
+      <button className="profile-button back" onClick={() => navigate('/dashboard')}>
         Back to Dashboard
       </button>
 
       <div className="profile-date-container">
-        <span className="profile-section-title">Date Joined:</span>{" "}
+        <span className="profile-section-title">Date Joined:</span>{' '}
         <span className="profile-date">{dateJoined}</span>
       </div>
     </div>

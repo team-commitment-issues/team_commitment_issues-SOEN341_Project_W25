@@ -171,9 +171,7 @@ describe('WebSocketClient', () => {
 
       client.send(message);
 
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"test"')
-      );
+      expect(mockWebSocket.send).toHaveBeenCalledWith(expect.stringContaining('"type":"test"'));
     });
 
     it('should queue messages when not connected', async () => {
@@ -187,18 +185,14 @@ describe('WebSocketClient', () => {
       client.send(message);
 
       // Verify message wasn't sent immediately
-      expect(mockWebSocket.send).not.toHaveBeenCalledWith(
-        expect.stringContaining('"type":"test"')
-      );
+      expect(mockWebSocket.send).not.toHaveBeenCalledWith(expect.stringContaining('"type":"test"'));
 
       // Now reconnect
       await client.connect('test-token');
       mockWebSocket.onopen?.({ target: mockWebSocket } as any);
 
       // Verify queued message was sent after reconnection
-      expect(mockWebSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"test"')
-      );
+      expect(mockWebSocket.send).toHaveBeenCalledWith(expect.stringContaining('"type":"test"'));
     });
 
     it('should add clientMessageId to messages', () => {
@@ -361,9 +355,7 @@ describe('WebSocketClient', () => {
       jest.advanceTimersByTime(1000);
 
       // Verify ping message was sent
-      expect(sendSpy).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"ping"')
-      );
+      expect(sendSpy).toHaveBeenCalledWith(expect.stringContaining('"type":"ping"'));
 
       // Clean up the interval
       clearInterval(heartbeatInterval);

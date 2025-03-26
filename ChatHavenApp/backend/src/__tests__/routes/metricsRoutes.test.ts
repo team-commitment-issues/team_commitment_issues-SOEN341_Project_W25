@@ -11,8 +11,8 @@ jest.mock('../../utils/logger', () => ({
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
-    debug: jest.fn(),
-  })),
+    debug: jest.fn()
+  }))
 }));
 
 describe('Metrics Routes', () => {
@@ -62,9 +62,7 @@ describe('Metrics Routes', () => {
         cpuLoad: [1.0, 0.8, 0.6]
       },
       trends: {
-        hourlyData: [
-          { timestamp: Date.now(), connections: 10, messagesReceived: 500 }
-        ]
+        hourlyData: [{ timestamp: Date.now(), connections: 10, messagesReceived: 500 }]
       }
     });
 
@@ -106,7 +104,9 @@ describe('Metrics Routes', () => {
     expect(response.body).toHaveProperty('errors');
 
     // Should be more concise than full metrics
-    expect(Object.keys(response.body).length).toBeLessThan(Object.keys(mockMetrics.getMetrics()).length);
+    expect(Object.keys(response.body).length).toBeLessThan(
+      Object.keys(mockMetrics.getMetrics()).length
+    );
   });
 
   test('should return connection details from connections endpoint', async () => {
@@ -163,9 +163,7 @@ describe('Metrics Routes', () => {
     expect(responseNoKey.status).toBe(401);
 
     // Wrong API key
-    const responseWrongKey = await request(app)
-      .get('/api/metrics')
-      .set('x-api-key', 'wrong-key');
+    const responseWrongKey = await request(app).get('/api/metrics').set('x-api-key', 'wrong-key');
     expect(responseWrongKey.status).toBe(401);
 
     // Correct API key

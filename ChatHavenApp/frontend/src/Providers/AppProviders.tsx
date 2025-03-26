@@ -14,39 +14,29 @@ interface ProvidersProps {
 export const AppProviders: React.FC<ProvidersProps> = ({
   children,
   withRouter = true,
-  withChatSelection = true  // Changed default to true
+  withChatSelection = true // Changed default to true
 }) => {
   let wrappedChildren = children;
-  
+
   // Wrap with ChatSelectionProvider if requested
   if (withChatSelection) {
-    wrappedChildren = (
-      <ChatSelectionProvider>
-        {wrappedChildren}
-      </ChatSelectionProvider>
-    );
+    wrappedChildren = <ChatSelectionProvider>{wrappedChildren}</ChatSelectionProvider>;
   }
-  
+
   // Wrap with core providers
   wrappedChildren = (
     <ThemeProvider>
       <UserProvider>
-        <OnlineStatusProvider>
-          {wrappedChildren}
-        </OnlineStatusProvider>
+        <OnlineStatusProvider>{wrappedChildren}</OnlineStatusProvider>
       </UserProvider>
     </ThemeProvider>
   );
-  
+
   // Wrap with BrowserRouter if requested
   if (withRouter) {
-    wrappedChildren = (
-      <BrowserRouter>
-        {wrappedChildren}
-      </BrowserRouter>
-    );
+    wrappedChildren = <BrowserRouter>{wrappedChildren}</BrowserRouter>;
   }
-  
+
   return <>{wrappedChildren}</>;
 };
 

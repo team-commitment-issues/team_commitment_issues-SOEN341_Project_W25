@@ -1,5 +1,10 @@
 // tests/utils/rateLimiter.test.ts
-import { RateLimiter, shutdownDefaultRateLimiter, setLogger, defaultRateLimiter } from '../../utils/rateLimiter';
+import {
+  RateLimiter,
+  shutdownDefaultRateLimiter,
+  setLogger,
+  defaultRateLimiter
+} from '../../utils/rateLimiter';
 
 describe('RateLimiter', () => {
   let rateLimiter: RateLimiter;
@@ -154,7 +159,7 @@ describe('RateLimiter', () => {
     const verboseRateLimiter = new RateLimiter({
       maxRequests: 3,
       windowMs: 1000,
-      verbose: true  // This is crucial!
+      verbose: true // This is crucial!
     });
 
     const clientId = 'verbose-client';

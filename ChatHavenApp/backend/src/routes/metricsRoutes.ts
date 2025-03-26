@@ -15,17 +15,17 @@ const authenticateMetricsRequest = (req: Request, res: Response, next: NextFunct
     next();
     return;
   }
-  
+
   const apiKey = req.headers['x-api-key'];
   const metricsApiKey = process.env.METRICS_API_KEY;
-  
+
   // Verify API key is configured
   if (!metricsApiKey) {
     logger.warn('METRICS_API_KEY environment variable not set');
     res.status(500).json({ error: 'Server configuration error' });
     return;
   }
-  
+
   // Verify API key is correct
   if (!apiKey || apiKey !== metricsApiKey) {
     logger.warn('Unauthorized metrics access attempt', {
@@ -35,7 +35,7 @@ const authenticateMetricsRequest = (req: Request, res: Response, next: NextFunct
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
-  
+
   next();
 };
 
@@ -46,10 +46,10 @@ const authenticateMetricsRequest = (req: Request, res: Response, next: NextFunct
  */
 export const createMetricsRouter = (metrics: WebSocketMetrics) => {
   const router = express.Router();
-  
+
   // Apply authentication middleware to all routes
   router.use(authenticateMetricsRequest);
-  
+
   // GET /api/metrics - Full metrics
   router.get('/', (req: Request, res: Response) => {
     try {
@@ -62,12 +62,12 @@ export const createMetricsRouter = (metrics: WebSocketMetrics) => {
       res.status(500).json({ error: 'Failed to retrieve metrics' });
     }
   });
-  
+
   // GET /api/metrics/summary - Condensed metrics summary
   router.get('/summary', (req: Request, res: Response) => {
     try {
       const fullMetrics = metrics.getMetrics();
-      
+
       // Create a condensed summary
       const summary = {
         timestamp: fullMetrics.timestamp,
@@ -84,7 +84,7 @@ export const createMetricsRouter = (metrics: WebSocketMetrics) => {
           cpuLoad: fullMetrics.system.cpuLoad
         }
       };
-      
+
       res.json(summary);
     } catch (error) {
       logger.error('Error retrieving metrics summary', {
@@ -93,7 +93,7 @@ export const createMetricsRouter = (metrics: WebSocketMetrics) => {
       res.status(500).json({ error: 'Failed to retrieve metrics summary' });
     }
   });
-  
+
   // GET /api/metrics/connections - Connection details
   router.get('/connections', (req: Request, res: Response) => {
     try {
@@ -106,7 +106,7 @@ export const createMetricsRouter = (metrics: WebSocketMetrics) => {
       res.status(500).json({ error: 'Failed to retrieve connection metrics' });
     }
   });
-  
+
   // GET /api/metrics/messages - Message statistics
   router.get('/messages', (req: Request, res: Response) => {
     try {
@@ -119,7 +119,7 @@ export const createMetricsRouter = (metrics: WebSocketMetrics) => {
       res.status(500).json({ error: 'Failed to retrieve message metrics' });
     }
   });
-  
+
   // GET /api/metrics/system - System resource usage
   router.get('/system', (req: Request, res: Response) => {
     try {
@@ -132,7 +132,7 @@ export const createMetricsRouter = (metrics: WebSocketMetrics) => {
       res.status(500).json({ error: 'Failed to retrieve system metrics' });
     }
   });
-  
+
   // GET /api/metrics/trends - Historical data and trends
   router.get('/trends', (req: Request, res: Response) => {
     try {
@@ -145,7 +145,7 @@ export const createMetricsRouter = (metrics: WebSocketMetrics) => {
       res.status(500).json({ error: 'Failed to retrieve trend metrics' });
     }
   });
-  
+
   return router;
 };
 
