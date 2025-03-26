@@ -43,14 +43,14 @@ jest.mock('../utils/logger', () => ({
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
-    debug: jest.fn(),
-  })),
+    debug: jest.fn()
+  }))
 }));
 
 // Mock RateLimiter - FIX for open handle #1
 jest.mock('../utils/rateLimiter', () => ({
   defaultRateLimiter: {
-    isAllowed: jest.fn().mockReturnValue(true),
+    isAllowed: jest.fn().mockReturnValue(true)
   }
 }));
 
@@ -59,11 +59,11 @@ jest.mock('../services/clientHealthChecker', () => {
   return jest.fn().mockImplementation(() => ({
     start: jest.fn(),
     setupClient: jest.fn(),
-    stop: jest.fn(),
+    stop: jest.fn()
   }));
 });
 
-// === FIX #1: Properly mock JWT to match user data === 
+// === FIX #1: Properly mock JWT to match user data ===
 jest.mock('jsonwebtoken', () => ({
   verify: jest.fn().mockImplementation((token, secret) => {
     if (token === 'invalid-token') throw new Error('Invalid token');
@@ -75,7 +75,7 @@ jest.mock('jsonwebtoken', () => ({
   sign: jest.fn().mockReturnValue('mock-jwt-token')
 }));
 
-// === FIX #2: Mock mongoose models with exec() === 
+// === FIX #2: Mock mongoose models with exec() ===
 jest.mock('../models/User', () => ({
   findOne: jest.fn(),
   findById: jest.fn()
@@ -107,14 +107,14 @@ const Channel = require('../models/Channel');
 const TeamMember = require('../models/TeamMember');
 const DirectMessage = require('../models/DirectMessage');
 
-// === FIX #3: Helper functions for WebSocket testing with proper timeout cleanup === 
+// === FIX #3: Helper functions for WebSocket testing with proper timeout cleanup ===
 /**
  * Waits for a specific WebSocket message type
  */
 const waitForMessage = (client: WebSocket, messageType: string, timeout = 5000): Promise<any> => {
   return new Promise((resolve, reject) => {
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     const handler = (data: Buffer | ArrayBuffer | Buffer[] | string) => {
       try {
         const message = JSON.parse(data.toString());
@@ -127,9 +127,9 @@ const waitForMessage = (client: WebSocket, messageType: string, timeout = 5000):
         // Ignore parsing errors
       }
     };
-    
+
     client.on('message', handler);
-    
+
     timeoutId = setTimeout(() => {
       client.off('message', handler);
       reject(new Error(`Timeout waiting for message type: ${messageType}`));
@@ -146,16 +146,16 @@ const waitForOpen = (client: WebSocket, timeout = 5000): Promise<void> => {
       resolve();
       return;
     }
-    
+
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     const openHandler = () => {
       if (timeoutId) clearTimeout(timeoutId);
       resolve();
     };
-    
+
     client.on('open', openHandler);
-    
+
     timeoutId = setTimeout(() => {
       client.off('open', openHandler);
       reject(new Error('Timeout waiting for connection to open'));
@@ -169,15 +169,15 @@ const waitForOpen = (client: WebSocket, timeout = 5000): Promise<void> => {
 const closeWebSocket = (client: WebSocket, timeout = 5000): Promise<void> => {
   return new Promise((resolve, reject) => {
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     const closeHandler = () => {
       if (timeoutId) clearTimeout(timeoutId);
       resolve();
     };
-    
+
     client.on('close', closeHandler);
     client.close();
-    
+
     timeoutId = setTimeout(() => {
       client.off('close', closeHandler);
       reject(new Error('Timeout waiting for connection to close'));
@@ -190,7 +190,7 @@ describe.skip('WebSocket Server', () => {
   let wss: WebSocket.Server;
   let port: number;
   let baseUrl: string;
-  
+
   // Test data
   let superAdmin: any;
   let regularUser1: any;
@@ -210,75 +210,75 @@ describe.skip('WebSocket Server', () => {
   beforeAll(async () => {
     // Create HTTP server
     server = http.createServer();
-    
+
     // Create test data
-    superAdmin = { 
-      _id: new mongoose.Types.ObjectId(), 
+    superAdmin = {
+      _id: new mongoose.Types.ObjectId(),
       username: 'superadmin',
       email: 'superadmin@example.com',
       role: Role.SUPER_ADMIN
     };
-    
-    regularUser1 = { 
-      _id: new mongoose.Types.ObjectId(), 
+
+    regularUser1 = {
+      _id: new mongoose.Types.ObjectId(),
       username: 'regularuser1',
       email: 'user1@example.com',
       role: Role.USER
     };
-    
-    regularUser2 = { 
-      _id: new mongoose.Types.ObjectId(), 
+
+    regularUser2 = {
+      _id: new mongoose.Types.ObjectId(),
       username: 'regularuser2',
       email: 'user2@example.com',
       role: Role.USER
     };
-    
-    team = { 
-      _id: new mongoose.Types.ObjectId(), 
+
+    team = {
+      _id: new mongoose.Types.ObjectId(),
       name: 'testteam',
       channels: []
     };
-    
-    channel = { 
-      _id: new mongoose.Types.ObjectId(), 
+
+    channel = {
+      _id: new mongoose.Types.ObjectId(),
       name: 'general',
       team: team._id,
       members: []
     };
 
     team.channels.push(channel._id);
-    
-    teamMember1 = { 
-      _id: new mongoose.Types.ObjectId(), 
+
+    teamMember1 = {
+      _id: new mongoose.Types.ObjectId(),
       user: regularUser1._id,
       team: team._id,
       role: TeamRole.MEMBER
     };
-    
-    teamMember2 = { 
-      _id: new mongoose.Types.ObjectId(), 
+
+    teamMember2 = {
+      _id: new mongoose.Types.ObjectId(),
       user: regularUser2._id,
       team: team._id,
       role: TeamRole.MEMBER
     };
 
     channel.members.push(teamMember1._id, teamMember2._id);
-    
-    directMessage = { 
-      _id: new mongoose.Types.ObjectId(), 
+
+    directMessage = {
+      _id: new mongoose.Types.ObjectId(),
       users: [regularUser1._id, regularUser2._id]
     };
-    
+
     // Setup tokens
     superAdminToken = 'superadmin-token';
     user1Token = 'user1-token';
     user2Token = 'user2-token';
-    
-    // === FIX #4: Properly mock Mongoose methods with exec() === 
+
+    // === FIX #4: Properly mock Mongoose methods with exec() ===
     // Set up User model mocks with exec() pattern
-    User.findOne.mockImplementation((query: { username: string; }) => {
+    User.findOne.mockImplementation((query: { username: string }) => {
       let result = null;
-      
+
       if (query.username === 'superadmin') {
         result = superAdmin;
       } else if (query.username === 'regularuser1') {
@@ -286,15 +286,15 @@ describe.skip('WebSocket Server', () => {
       } else if (query.username === 'regularuser2') {
         result = regularUser2;
       }
-      
+
       return {
         exec: jest.fn().mockResolvedValue(result)
       };
     });
-    
-    User.findById.mockImplementation((id: { toString: () => any; }) => {
+
+    User.findById.mockImplementation((id: { toString: () => any }) => {
       let result = null;
-      
+
       if (id.toString() === superAdmin._id.toString()) {
         result = superAdmin;
       } else if (id.toString() === regularUser1._id.toString()) {
@@ -302,84 +302,94 @@ describe.skip('WebSocket Server', () => {
       } else if (id.toString() === regularUser2._id.toString()) {
         result = regularUser2;
       }
-      
+
       return {
         exec: jest.fn().mockResolvedValue(result)
       };
     });
-    
+
     // Set up Team model mocks
-    Team.findOne.mockImplementation((query: { name: any; }) => {
+    Team.findOne.mockImplementation((query: { name: any }) => {
       let result = null;
-      
+
       if (query.name === team.name) {
         result = team;
       }
-      
+
       return {
         exec: jest.fn().mockResolvedValue(result)
       };
     });
-    
+
     // Set up Channel model mocks
-    Channel.findOne.mockImplementation((query: { name: any; team: { toString: () => any; }; }) => {
+    Channel.findOne.mockImplementation((query: { name: any; team: { toString: () => any } }) => {
       let result = null;
-      
-      if (query.name === channel.name && query.team && query.team.toString() === team._id.toString()) {
+
+      if (
+        query.name === channel.name &&
+        query.team &&
+        query.team.toString() === team._id.toString()
+      ) {
         result = channel;
       }
-      
+
       return {
         exec: jest.fn().mockResolvedValue(result)
       };
     });
-    
+
     // Set up TeamMember model mocks
-    TeamMember.findOne.mockImplementation((query: { user: { toString: () => any; }; team: { toString: () => any; }; }) => {
-      let result = null;
-      
-      if (query.user && query.team) {
-        if (query.user.toString() === regularUser1._id.toString() && 
-            query.team.toString() === team._id.toString()) {
-          result = teamMember1;
-        } else if (query.user.toString() === regularUser2._id.toString() && 
-                 query.team.toString() === team._id.toString()) {
-          result = teamMember2;
+    TeamMember.findOne.mockImplementation(
+      (query: { user: { toString: () => any }; team: { toString: () => any } }) => {
+        let result = null;
+
+        if (query.user && query.team) {
+          if (
+            query.user.toString() === regularUser1._id.toString() &&
+            query.team.toString() === team._id.toString()
+          ) {
+            result = teamMember1;
+          } else if (
+            query.user.toString() === regularUser2._id.toString() &&
+            query.team.toString() === team._id.toString()
+          ) {
+            result = teamMember2;
+          }
         }
+
+        return {
+          exec: jest.fn().mockResolvedValue(result)
+        };
       }
-      
-      return {
-        exec: jest.fn().mockResolvedValue(result)
-      };
-    });
-    
+    );
+
     // Set up DirectMessage model mocks
     DirectMessage.findOne.mockImplementation(() => {
       return {
         exec: jest.fn().mockResolvedValue(directMessage)
       };
     });
-    
+
     // Start server on a random port
     port = 3100 + Math.floor(Math.random() * 900);
-    
+
     // Start server and wait for it to be ready
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       server.listen(port, () => {
         console.log(`Test server listening on port ${port}`);
         resolve();
       });
     });
-    
+
     // Setup WebSocket server after HTTP server is listening
     wss = await setupWebSocketServer(server);
-    
+
     baseUrl = `ws://localhost:${port}`;
   });
-  
+
   // Helper function to check if server is ready
   const ensureServerReady = (): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (server.listening) {
         // Server is already listening, resolve immediately
         resolve();
@@ -398,10 +408,10 @@ describe.skip('WebSocket Server', () => {
     if (!server.listening) {
       throw new Error('Server is not listening before test');
     }
-    
+
     // Reset mock counters
     jest.clearAllMocks();
-    
+
     // Reset service mocks with default implementations
     channelService.sendMessage.mockResolvedValue({
       _id: new mongoose.Types.ObjectId(),
@@ -409,7 +419,7 @@ describe.skip('WebSocket Server', () => {
       username: regularUser1.username,
       createdAt: new Date()
     });
-    
+
     directMessageService.createDirectMessage.mockResolvedValue(directMessage);
     directMessageService.sendDirectMessage.mockResolvedValue({
       _id: new mongoose.Types.ObjectId(),
@@ -417,10 +427,10 @@ describe.skip('WebSocket Server', () => {
       username: regularUser1.username,
       createdAt: new Date()
     });
-    
+
     onlineStatusService.getUserTeams.mockResolvedValue([team._id]);
     onlineStatusService.getTeamSubscribers.mockResolvedValue([
-      regularUser1.username, 
+      regularUser1.username,
       regularUser2.username
     ]);
     onlineStatusService.getUserOnlineStatus.mockResolvedValue([
@@ -432,7 +442,7 @@ describe.skip('WebSocket Server', () => {
   afterAll(async () => {
     // Make sure any lingering timeouts or intervals are cleared
     jest.useRealTimers();
-    
+
     // Close server properly with better error handling
     await new Promise<void>((resolve, reject) => {
       // First close all WebSocket connections (with timeout)
@@ -441,13 +451,13 @@ describe.skip('WebSocket Server', () => {
         if (server.listening) server.close();
         resolve();
       }, 5000);
-      
+
       try {
         if (wss) {
           wss.close(() => {
             // Then close the HTTP server
             if (server && server.listening) {
-              server.close((err) => {
+              server.close(err => {
                 clearTimeout(timeoutId);
                 if (err) {
                   console.error('Error closing server:', err);
@@ -477,7 +487,7 @@ describe.skip('WebSocket Server', () => {
         resolve(); // Still resolve to let tests finish
       }
     });
-    
+
     // Clear all mocks
     jest.restoreAllMocks();
   });
@@ -486,19 +496,19 @@ describe.skip('WebSocket Server', () => {
     test('should successfully connect with valid token', async () => {
       // Check server is listening
       expect(server.listening).toBe(true);
-      
+
       // Create WebSocket with retry logic
       let client;
       let retries = 3;
-      
+
       while (retries > 0) {
         try {
           client = new WebSocket(`${baseUrl}?token=${user1Token}`);
-          
+
           // Wait for connection to open with a timeout
           await waitForOpen(client);
           expect(client.readyState).toBe(WebSocket.OPEN);
-          
+
           await closeWebSocket(client);
           return; // Success, exit the test
         } catch (error) {
@@ -507,7 +517,7 @@ describe.skip('WebSocket Server', () => {
           } else {
             console.error('Connection attempt failed with unknown error:', error);
           }
-          
+
           // Clean up if needed
           if (client) {
             try {
@@ -516,10 +526,10 @@ describe.skip('WebSocket Server', () => {
               // Ignore errors during cleanup
             }
           }
-          
+
           retries--;
           if (retries === 0) throw error;
-          
+
           // Wait a bit before retrying
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
@@ -528,22 +538,22 @@ describe.skip('WebSocket Server', () => {
 
     test('should reject connection with invalid token', async () => {
       const client = new WebSocket(`${baseUrl}?token=${invalidToken}`);
-      
+
       // Wait for close or error with proper timeout handling
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const closeHandler = () => {
           clearTimeout(timeoutId);
           resolve();
         };
-        
+
         const errorHandler = () => {
           clearTimeout(timeoutId);
           resolve();
         };
-        
+
         client.addEventListener('close', closeHandler);
         client.addEventListener('error', errorHandler);
-        
+
         // Safety timeout with cleanup
         const timeoutId = setTimeout(() => {
           client.removeEventListener('close', closeHandler);
@@ -552,28 +562,28 @@ describe.skip('WebSocket Server', () => {
           resolve();
         }, 5000);
       });
-      
+
       expect(client.readyState).not.toBe(WebSocket.OPEN);
     });
 
     test('should reject connection with no token', async () => {
       const client = new WebSocket(baseUrl);
-      
+
       // Wait for close or error with proper timeout handling
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const closeHandler = () => {
           clearTimeout(timeoutId);
           resolve();
         };
-        
+
         const errorHandler = () => {
           clearTimeout(timeoutId);
           resolve();
         };
-        
+
         client.addEventListener('close', closeHandler);
         client.addEventListener('error', errorHandler);
-        
+
         // Safety timeout with cleanup
         const timeoutId = setTimeout(() => {
           client.removeEventListener('close', closeHandler);
@@ -582,7 +592,7 @@ describe.skip('WebSocket Server', () => {
           resolve();
         }, 5000);
       });
-      
+
       expect(client.readyState).not.toBe(WebSocket.OPEN);
     });
   });
@@ -590,21 +600,23 @@ describe.skip('WebSocket Server', () => {
   describe('Channel Tests', () => {
     test('should successfully join a channel', async () => {
       const client = new WebSocket(`${baseUrl}?token=${user1Token}`);
-      
+
       try {
         // Wait for connection to open
         await waitForOpen(client);
-        
+
         // Send join message
-        client.send(JSON.stringify({
-          type: 'join',
-          teamName: team.name,
-          channelName: channel.name
-        }));
-        
+        client.send(
+          JSON.stringify({
+            type: 'join',
+            teamName: team.name,
+            channelName: channel.name
+          })
+        );
+
         // Wait for join response
         const joinResponse = await waitForMessage(client, 'join');
-        
+
         expect(joinResponse.teamName).toBe(team.name);
         expect(joinResponse.channelName).toBe(channel.name);
       } finally {
@@ -619,33 +631,35 @@ describe.skip('WebSocket Server', () => {
 
     test('should receive error when joining non-existent channel', async () => {
       const client = new WebSocket(`${baseUrl}?token=${user1Token}`);
-      
+
       try {
         // Store original implementation
         const originalChannelFindOne = Channel.findOne;
-        
+
         // Override Channel.findOne for this test only
         Channel.findOne.mockImplementation(() => {
           return {
             exec: jest.fn().mockResolvedValue(null)
           };
         });
-        
+
         // Wait for connection to open
         await waitForOpen(client);
-        
+
         // Send join message for non-existent channel
-        client.send(JSON.stringify({
-          type: 'join',
-          teamName: team.name,
-          channelName: 'nonexistent'
-        }));
-        
+        client.send(
+          JSON.stringify({
+            type: 'join',
+            teamName: team.name,
+            channelName: 'nonexistent'
+          })
+        );
+
         // Wait for error response
         const errorResponse = await waitForMessage(client, 'error');
-        
+
         expect(errorResponse.message).toContain('not found');
-        
+
         // Restore original implementation
         Channel.findOne = originalChannelFindOne;
       } finally {
@@ -661,46 +675,53 @@ describe.skip('WebSocket Server', () => {
     test.skip('should successfully send and receive channel message', async () => {
       // Ensure server is ready
       await ensureServerReady();
-      
-      let client1: WebSocket | null = null, client2: WebSocket | null = null;
-      
+
+      let client1: WebSocket | null = null,
+        client2: WebSocket | null = null;
+
       try {
         // Create two clients
         client1 = new WebSocket(`${baseUrl}?token=${user1Token}`);
         client2 = new WebSocket(`${baseUrl}?token=${user2Token}`);
-        
+
         // Wait for connections to open
         await waitForOpen(client1);
         await waitForOpen(client2);
-        
+
         // Join channel from both clients
-        client1.send(JSON.stringify({
-          type: 'join',
-          teamName: team.name,
-          channelName: channel.name
-        }));
-        
-        client2.send(JSON.stringify({
-          type: 'join',
-          teamName: team.name,
-          channelName: channel.name
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'join',
+            teamName: team.name,
+            channelName: channel.name
+          })
+        );
+
+        client2.send(
+          JSON.stringify({
+            type: 'join',
+            teamName: team.name,
+            channelName: channel.name
+          })
+        );
+
         // Wait for join confirmations
         await waitForMessage(client1, 'join');
         await waitForMessage(client2, 'join');
-        
+
         // Send message from client1
-        client1.send(JSON.stringify({
-          type: 'message',
-          teamName: team.name,
-          channelName: channel.name,
-          text: 'Hello, world!'
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'message',
+            teamName: team.name,
+            channelName: channel.name,
+            text: 'Hello, world!'
+          })
+        );
+
         // Wait for message in client2
         const receivedMessage = await waitForMessage(client2, 'message');
-        
+
         expect(receivedMessage.text).toBe('Hello, world!');
         expect(receivedMessage.username).toBe(regularUser1.username);
       } finally {
@@ -718,18 +739,20 @@ describe.skip('WebSocket Server', () => {
   describe('Direct Message Tests', () => {
     test('should successfully join a direct message conversation', async () => {
       const client = new WebSocket(`${baseUrl}?token=${user1Token}`);
-      
+
       try {
         await waitForOpen(client);
-        
-        client.send(JSON.stringify({
-          type: 'joinDirectMessage',
-          teamName: team.name,
-          username: regularUser2.username
-        }));
-        
+
+        client.send(
+          JSON.stringify({
+            type: 'joinDirectMessage',
+            teamName: team.name,
+            username: regularUser2.username
+          })
+        );
+
         const joinResponse = await waitForMessage(client, 'joinDirectMessage');
-        
+
         expect(joinResponse.teamName).toBe(team.name);
         expect(joinResponse.username).toBe(regularUser2.username);
       } finally {
@@ -742,42 +765,49 @@ describe.skip('WebSocket Server', () => {
     });
 
     test('should successfully send and receive direct messages', async () => {
-      let client1: WebSocket | null = null, client2: WebSocket | null = null;
-      
+      let client1: WebSocket | null = null,
+        client2: WebSocket | null = null;
+
       try {
         client1 = new WebSocket(`${baseUrl}?token=${user1Token}`);
         client2 = new WebSocket(`${baseUrl}?token=${user2Token}`);
-        
+
         await waitForOpen(client1);
         await waitForOpen(client2);
-        
+
         // Join direct message conversation
-        client1.send(JSON.stringify({
-          type: 'joinDirectMessage',
-          teamName: team.name,
-          username: regularUser2.username
-        }));
-        
-        client2.send(JSON.stringify({
-          type: 'joinDirectMessage',
-          teamName: team.name,
-          username: regularUser1.username
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'joinDirectMessage',
+            teamName: team.name,
+            username: regularUser2.username
+          })
+        );
+
+        client2.send(
+          JSON.stringify({
+            type: 'joinDirectMessage',
+            teamName: team.name,
+            username: regularUser1.username
+          })
+        );
+
         await waitForMessage(client1, 'joinDirectMessage');
         await waitForMessage(client2, 'joinDirectMessage');
-        
+
         // Send direct message
-        client1.send(JSON.stringify({
-          type: 'directMessage',
-          teamName: team.name,
-          username: regularUser2.username,
-          text: 'Hello, direct!'
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'directMessage',
+            teamName: team.name,
+            username: regularUser2.username,
+            text: 'Hello, direct!'
+          })
+        );
+
         // Receive the message
         const receivedMessage = await waitForMessage(client2, 'directMessage');
-        
+
         expect(receivedMessage.text).toBe('Hello, direct!');
         expect(receivedMessage.username).toBe(regularUser1.username);
       } finally {
@@ -793,119 +823,131 @@ describe.skip('WebSocket Server', () => {
 
   describe('Status Tests', () => {
     // Fix Option 1: Wait for BOTH users specifically instead of just counting updates
-test('should successfully subscribe to online status', async () => {
-    // Set up mock to return statuses for both users
-    onlineStatusService.getUserOnlineStatus.mockResolvedValue([
-      { username: regularUser1.username, status: Status.ONLINE, lastSeen: new Date() },
-      { username: regularUser2.username, status: Status.OFFLINE, lastSeen: new Date() }
-    ]);
-    
-    const client = new WebSocket(`${baseUrl}?token=${user1Token}`);
-    
-    try {
-      await waitForOpen(client);
-      
-      // Subscribe to online status
-      client.send(JSON.stringify({
-        type: 'subscribeOnlineStatus',
-        teamName: team.name
-      }));
-      
-      // Track which users we've received updates for
-      const receivedUsers = new Set<string>();
-      const statusUpdates: any[] = [];
-      
-      // Set up a promise that resolves when we get updates for both users or timeout
-      await new Promise<void>((resolve, reject) => {
-        const messageHandler = (data: Buffer | ArrayBuffer | Buffer[] | string) => {
-          try {
-            const message = JSON.parse(data.toString());
-            if (message.type === 'statusUpdate') {
-              console.log(`Received status update for ${message.username}: ${message.status}`);
-              statusUpdates.push(message);
-              receivedUsers.add(message.username);
-              
-              // Resolve when we've received updates for both specific users
-              if (receivedUsers.has(regularUser1.username) && receivedUsers.has(regularUser2.username)) {
-                clearTimeout(timeoutId);
-                client.off('message', messageHandler);
-                resolve();
+    test('should successfully subscribe to online status', async () => {
+      // Set up mock to return statuses for both users
+      onlineStatusService.getUserOnlineStatus.mockResolvedValue([
+        { username: regularUser1.username, status: Status.ONLINE, lastSeen: new Date() },
+        { username: regularUser2.username, status: Status.OFFLINE, lastSeen: new Date() }
+      ]);
+
+      const client = new WebSocket(`${baseUrl}?token=${user1Token}`);
+
+      try {
+        await waitForOpen(client);
+
+        // Subscribe to online status
+        client.send(
+          JSON.stringify({
+            type: 'subscribeOnlineStatus',
+            teamName: team.name
+          })
+        );
+
+        // Track which users we've received updates for
+        const receivedUsers = new Set<string>();
+        const statusUpdates: any[] = [];
+
+        // Set up a promise that resolves when we get updates for both users or timeout
+        await new Promise<void>((resolve, reject) => {
+          const messageHandler = (data: Buffer | ArrayBuffer | Buffer[] | string) => {
+            try {
+              const message = JSON.parse(data.toString());
+              if (message.type === 'statusUpdate') {
+                console.log(`Received status update for ${message.username}: ${message.status}`);
+                statusUpdates.push(message);
+                receivedUsers.add(message.username);
+
+                // Resolve when we've received updates for both specific users
+                if (
+                  receivedUsers.has(regularUser1.username) &&
+                  receivedUsers.has(regularUser2.username)
+                ) {
+                  clearTimeout(timeoutId);
+                  client.off('message', messageHandler);
+                  resolve();
+                }
               }
+            } catch (error) {
+              // Ignore parsing errors
             }
-          } catch (error) {
-            // Ignore parsing errors
-          }
-        };
-        
-        client.on('message', messageHandler);
-        
-        // Set a timeout to stop waiting after a reasonable time
-        const timeoutId = setTimeout(() => {
-          client.off('message', messageHandler);
-          if (receivedUsers.size > 0) {
-            // If we got at least one update, consider it a success
-            resolve();
-          } else {
-            reject(new Error('Timeout waiting for status updates'));
-          }
-        }, 5000); // Increased timeout to 5 seconds
-      });
-      
-      // Log what we received to help with debugging
-      console.log(`Received ${statusUpdates.length} status updates from ${receivedUsers.size} users`);
-      statusUpdates.forEach((update, i) => {
-        console.log(`  Update ${i+1}: ${update.username} - ${update.status}`);
-      });
-      
-      // Check that we got updates for at least one user
-      expect(receivedUsers.size).toBeGreaterThan(0);
-      
-      // Check specific users if we received multiple updates
-      if (receivedUsers.size > 1) {
-        expect(receivedUsers.has(regularUser1.username)).toBe(true);
-        expect(receivedUsers.has(regularUser2.username)).toBe(true);
+          };
+
+          client.on('message', messageHandler);
+
+          // Set a timeout to stop waiting after a reasonable time
+          const timeoutId = setTimeout(() => {
+            client.off('message', messageHandler);
+            if (receivedUsers.size > 0) {
+              // If we got at least one update, consider it a success
+              resolve();
+            } else {
+              reject(new Error('Timeout waiting for status updates'));
+            }
+          }, 5000); // Increased timeout to 5 seconds
+        });
+
+        // Log what we received to help with debugging
+        console.log(
+          `Received ${statusUpdates.length} status updates from ${receivedUsers.size} users`
+        );
+        statusUpdates.forEach((update, i) => {
+          console.log(`  Update ${i + 1}: ${update.username} - ${update.status}`);
+        });
+
+        // Check that we got updates for at least one user
+        expect(receivedUsers.size).toBeGreaterThan(0);
+
+        // Check specific users if we received multiple updates
+        if (receivedUsers.size > 1) {
+          expect(receivedUsers.has(regularUser1.username)).toBe(true);
+          expect(receivedUsers.has(regularUser2.username)).toBe(true);
+        }
+      } finally {
+        // Ensure cleanup happens even if test fails
+        if (client && client.readyState === WebSocket.OPEN) {
+          await closeWebSocket(client).catch(() => client.terminate());
+        } else if (client) {
+          client.terminate();
+        }
       }
-    } finally {
-      // Ensure cleanup happens even if test fails
-      if (client && client.readyState === WebSocket.OPEN) {
-        await closeWebSocket(client).catch(() => client.terminate());
-      } else if (client) {
-        client.terminate();
-      }
-    }
-  });
+    });
 
     test('should successfully set and broadcast status change', async () => {
-      let client1: WebSocket | null = null, client2: WebSocket | null = null;
-      
+      let client1: WebSocket | null = null,
+        client2: WebSocket | null = null;
+
       try {
         client1 = new WebSocket(`${baseUrl}?token=${user1Token}`);
         client2 = new WebSocket(`${baseUrl}?token=${user2Token}`);
-        
+
         await waitForOpen(client1);
         await waitForOpen(client2);
-        
+
         // Setup status change service mock
         onlineStatusService.setUserStatus.mockResolvedValue({
           status: Status.AWAY,
           lastSeen: new Date()
         });
-        
+
         // Both clients subscribe to status updates
-        client1.send(JSON.stringify({
-          type: 'subscribeOnlineStatus',
-          teamName: team.name
-        }));
-        
-        client2.send(JSON.stringify({
-          type: 'subscribeOnlineStatus',
-          teamName: team.name
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'subscribeOnlineStatus',
+            teamName: team.name
+          })
+        );
+
+        client2.send(
+          JSON.stringify({
+            type: 'subscribeOnlineStatus',
+            teamName: team.name
+          })
+        );
+
         // Wait for initial status updates using Promise.race with timeout
         const waitForInitialUpdates = async (client: WebSocket) => {
           let updateCount = 0;
-          
+
           await new Promise<void>((resolve, reject) => {
             const messageHandler = (data: Buffer | ArrayBuffer | Buffer[] | string) => {
               try {
@@ -922,32 +964,36 @@ test('should successfully subscribe to online status', async () => {
                 // Ignore parsing errors
               }
             };
-            
+
             client.on('message', messageHandler);
-            
+
             const timeoutId = setTimeout(() => {
               client.off('message', messageHandler);
               resolve(); // Still resolve to continue test
             }, 3000);
           });
         };
-        
+
         // Wait for initial updates (or timeout)
         await waitForInitialUpdates(client1);
         await waitForInitialUpdates(client2);
-        
+
         // Client1 changes status
-        client1.send(JSON.stringify({
-          type: 'setStatus',
-          status: Status.AWAY
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'setStatus',
+            status: Status.AWAY
+          })
+        );
+
         // Client2 should receive the status update
         const statusUpdate = await Promise.race([
           waitForMessage(client2, 'statusUpdate'),
-          new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Timeout waiting for status update')), 3000))
+          new Promise<any>((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout waiting for status update')), 3000)
+          )
         ]).catch(() => ({ username: regularUser1.username, status: Status.AWAY })); // Default value if timeout
-        
+
         // Verify the status update if we received one
         if (statusUpdate) {
           expect(statusUpdate.username).toBe(regularUser1.username);
@@ -966,40 +1012,47 @@ test('should successfully subscribe to online status', async () => {
 
   describe('Typing Indicator Tests', () => {
     test.skip('should broadcast typing indicator in a channel', async () => {
-      let client1: WebSocket | null = null, client2: WebSocket | null = null;
-      
+      let client1: WebSocket | null = null,
+        client2: WebSocket | null = null;
+
       try {
         client1 = new WebSocket(`${baseUrl}?token=${user1Token}`);
         client2 = new WebSocket(`${baseUrl}?token=${user2Token}`);
-        
+
         await waitForOpen(client1);
         await waitForOpen(client2);
-        
+
         // Join channel from both clients
-        client1.send(JSON.stringify({
-          type: 'join',
-          teamName: team.name,
-          channelName: channel.name
-        }));
-        
-        client2.send(JSON.stringify({
-          type: 'join',
-          teamName: team.name,
-          channelName: channel.name
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'join',
+            teamName: team.name,
+            channelName: channel.name
+          })
+        );
+
+        client2.send(
+          JSON.stringify({
+            type: 'join',
+            teamName: team.name,
+            channelName: channel.name
+          })
+        );
+
         // Wait for join confirmations
         await waitForMessage(client1, 'join');
         await waitForMessage(client2, 'join');
-        
+
         // Send typing indicator from client1
-        client1.send(JSON.stringify({
-          type: 'typing',
-          teamName: team.name,
-          channelName: channel.name,
-          isTyping: true
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'typing',
+            teamName: team.name,
+            channelName: channel.name,
+            isTyping: true
+          })
+        );
+
         // Wait for typing indicator in client2 with proper timeout handling
         const typingIndicator = await Promise.race([
           waitForMessage(client2, 'typing'),
@@ -1010,7 +1063,7 @@ test('should successfully subscribe to online status', async () => {
             return () => clearTimeout(timeoutId);
           })
         ]).catch(() => null);
-        
+
         // If we got a typing indicator, verify it
         if (typingIndicator) {
           expect(typingIndicator.isTyping).toBe(true);
@@ -1029,39 +1082,46 @@ test('should successfully subscribe to online status', async () => {
     });
 
     test('should broadcast typing indicator in direct message', async () => {
-      let client1: WebSocket | null = null, client2: WebSocket | null = null;
-      
+      let client1: WebSocket | null = null,
+        client2: WebSocket | null = null;
+
       try {
         client1 = new WebSocket(`${baseUrl}?token=${user1Token}`);
         client2 = new WebSocket(`${baseUrl}?token=${user2Token}`);
-        
+
         await waitForOpen(client1);
         await waitForOpen(client2);
-        
+
         // Join direct message conversation
-        client1.send(JSON.stringify({
-          type: 'joinDirectMessage',
-          teamName: team.name,
-          username: regularUser2.username
-        }));
-        
-        client2.send(JSON.stringify({
-          type: 'joinDirectMessage',
-          teamName: team.name,
-          username: regularUser1.username
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'joinDirectMessage',
+            teamName: team.name,
+            username: regularUser2.username
+          })
+        );
+
+        client2.send(
+          JSON.stringify({
+            type: 'joinDirectMessage',
+            teamName: team.name,
+            username: regularUser1.username
+          })
+        );
+
         await waitForMessage(client1, 'joinDirectMessage');
         await waitForMessage(client2, 'joinDirectMessage');
-        
+
         // Send typing indicator from client1
-        client1.send(JSON.stringify({
-          type: 'typing',
-          teamName: team.name,
-          receiverUsername: regularUser2.username,
-          isTyping: true
-        }));
-        
+        client1.send(
+          JSON.stringify({
+            type: 'typing',
+            teamName: team.name,
+            receiverUsername: regularUser2.username,
+            isTyping: true
+          })
+        );
+
         // Wait for typing indicator in client2 with proper timeout handling
         const typingIndicator = await Promise.race([
           waitForMessage(client2, 'typing'),
@@ -1072,7 +1132,7 @@ test('should successfully subscribe to online status', async () => {
             return () => clearTimeout(timeoutId);
           })
         ]).catch(() => null);
-        
+
         // If we got a typing indicator, verify it
         if (typingIndicator) {
           expect(typingIndicator.isTyping).toBe(true);

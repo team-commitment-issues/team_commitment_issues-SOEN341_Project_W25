@@ -6,11 +6,46 @@ import { checkTeamPermission, checkUserPermission } from '../middlewares/permiss
 
 const superAdminRoutes = Router();
 
-superAdminRoutes.post('/createTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), SuperAdminController.createTeam);
-superAdminRoutes.post('/addUserToTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.addUserToTeam);
-superAdminRoutes.post('/removeUserFromTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.removeUserFromTeam);
-superAdminRoutes.post('/deleteTeam', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.deleteTeam);
-superAdminRoutes.post('/promoteToAdmin', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.promoteToAdmin);
-superAdminRoutes.post('/demoteToUser', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), SuperAdminController.demoteToUser);
+superAdminRoutes.post(
+  '/createTeam',
+  authenticate,
+  checkUserPermission(Role.SUPER_ADMIN),
+  SuperAdminController.createTeam
+);
+superAdminRoutes.post(
+  '/addUserToTeam',
+  authenticate,
+  checkUserPermission(Role.SUPER_ADMIN),
+  checkTeamPermission(TeamRole.ADMIN),
+  SuperAdminController.addUserToTeam
+);
+superAdminRoutes.post(
+  '/removeUserFromTeam',
+  authenticate,
+  checkUserPermission(Role.SUPER_ADMIN),
+  checkTeamPermission(TeamRole.ADMIN),
+  SuperAdminController.removeUserFromTeam
+);
+superAdminRoutes.post(
+  '/deleteTeam',
+  authenticate,
+  checkUserPermission(Role.SUPER_ADMIN),
+  checkTeamPermission(TeamRole.ADMIN),
+  SuperAdminController.deleteTeam
+);
+superAdminRoutes.post(
+  '/promoteToAdmin',
+  authenticate,
+  checkUserPermission(Role.SUPER_ADMIN),
+  checkTeamPermission(TeamRole.ADMIN),
+  SuperAdminController.promoteToAdmin
+);
+superAdminRoutes.post(
+  '/demoteToUser',
+  authenticate,
+  checkUserPermission(Role.SUPER_ADMIN),
+  checkTeamPermission(TeamRole.ADMIN),
+  SuperAdminController.demoteToUser
+);
 
 export default superAdminRoutes;

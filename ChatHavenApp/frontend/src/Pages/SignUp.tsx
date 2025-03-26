@@ -1,6 +1,6 @@
 import React from 'react';
-import SignUpForm from '../Components/SignUpForm';
-import styles from '../Styles/signUpStyles';
+import SignUpForm from '../Components/SignUpForm.tsx';
+import styles from '../Styles/signUpStyles.ts';
 
 const SignUp: React.FC = () => {
   return (

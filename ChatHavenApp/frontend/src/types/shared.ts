@@ -233,9 +233,7 @@ export const createDirectMessageTypingIndicator = (
 };
 
 // Create status update payload
-export const createStatusUpdatePayload = (
-  status: Status
-): StatusUpdatePayload => {
+export const createStatusUpdatePayload = (status: Status): StatusUpdatePayload => {
   return {
     type: 'setStatus',
     status
@@ -255,10 +253,7 @@ export const createOnlineStatusSubscriptionRequest = (
 };
 
 // Create message acknowledgment
-export const createMessageAck = (
-  messageId: string,
-  status: MessageStatus
-): MessageAckPayload => {
+export const createMessageAck = (messageId: string, status: MessageStatus): MessageAckPayload => {
   return {
     type: 'messageAck',
     messageId,

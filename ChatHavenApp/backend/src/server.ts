@@ -4,7 +4,7 @@ dotenv.config();
 import http from 'http';
 
 import express from 'express';
-import mongoose, { Schema, set, Types } from 'mongoose';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes';
 import channelRoutes from './routes/channelRoutes';
@@ -13,7 +13,7 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import directMessageRoutes from './routes/directMessageRoutes';
 import onlineStatusRoutes from './routes/onlineStatusRoutes';
 import path from 'path';
-import rateLimit from 'express-rate-limit';
+import { defaultHttpRateLimiter } from './utils/httpRateLimiter';
 import { setupWebSocketServer } from './webSocketServer';
 import scheduleStatusCleanup from './statusCleanup';
 
@@ -31,11 +31,14 @@ console.log('JWT_SECRET loaded successfully.');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/chathavendb';
 
-mongoose.connect(MONGO_URI).then(() => {
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
     console.log('Connected to ' + MONGO_URI);
-}).catch((err) => {
+  })
+  .catch(err => {
     console.log(err);
-});
+  });
 
 const backend = express();
 
@@ -43,12 +46,8 @@ backend.use(express.json());
 backend.use(cors());
 backend.use(express.static(path.join(__dirname, '../', '../', './frontend', './build')));
 
-const limiter = rateLimit({
-  windowMs: 30 * 1000,
-  max: 30 * 5,
-});
-
-backend.use(limiter);
+// Apply the rate limiter middleware
+backend.use(defaultHttpRateLimiter);
 
 backend.use('/user', userRoutes);
 backend.use('/channel', channelRoutes);
@@ -62,27 +61,18 @@ const server = http.createServer(backend);
 
 // Start the server and then setup WebSocket properly
 server.listen(PORT, async () => {
-    console.log('Backend is listening on port ' + PORT);
+  console.log('Backend is listening on port ' + PORT);
 
-    try {
-        const wss = await setupWebSocketServer(server);
-        console.log('WebSocket server initialized successfully');
-    } catch (error) {
-        console.error('Failed to initialize WebSocket server:', error);
-    }
+  try {
+    const wss = await setupWebSocketServer(server);
+    console.log('WebSocket server initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize WebSocket server:', error);
+  }
 
-    scheduleStatusCleanup();
+  scheduleStatusCleanup();
 });
 
-backend.get("*", (req, res) => {
-    res.sendFile(
-        path.join(
-            __dirname,
-            "../",
-            "../",
-            "./frontend",
-            "./build",
-            "index.html"
-        )
-    );
+backend.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../', '../', './frontend', './build', 'index.html'));
 });

@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "name": "Jest Backend Tests",
+        "request": "launch",
+        "program": "${workspaceFolder}/ChatHavenApp/backend/node_modules/.bin/jest",
+        "args": ["--runInBand"],
+        "cwd": "${workspaceFolder}/ChatHavenApp/backend",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "windows": {
+          "program": "${workspaceFolder}/ChatHavenApp/backend/node_modules/jest/bin/jest"
+        }
+      },
+      {
+        "type": "node",
+        "name": "Jest Frontend Tests",
+        "request": "launch",
+        "program": "${workspaceFolder}/ChatHavenApp/frontend/node_modules/.bin/jest",
+        "args": ["--runInBand"],
+        "cwd": "${workspaceFolder}/ChatHavenApp/frontend",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "windows": {
+          "program": "${workspaceFolder}/ChatHavenApp/frontend/node_modules/jest/bin/jest"
+        }
+      }
+    ]
+  }

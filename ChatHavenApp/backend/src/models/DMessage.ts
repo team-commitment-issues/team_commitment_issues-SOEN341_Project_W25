@@ -5,30 +5,30 @@ import { Document, Schema, model } from 'mongoose';
  * @interface IDMessage
  * @extends Document
  */
-interface IDMessage extends Document {
-    /**
-     * The text of the message.
-     * @type {string}
-     */
-    text: string;
-    /**
-     * The username of the user who sent the message.
-     * @type {string}
-     * @see {@link User}
-     */
-    username: string;
-    /**
-     * The DirectMessage that the message belongs to.
-     * @type {Schema.Types.ObjectId}
-     * @see {@link DirectMessage}
-     */
-    directMessage: Schema.Types.ObjectId;
-    /**
-     * The date and time the message was sent.
-     * @type {Date}
-     */
-    createdAt: Date;
-    status: string;
+export interface IDMessage extends Document {
+  /**
+   * The text of the message.
+   * @type {string}
+   */
+  text: string;
+  /**
+   * The username of the user who sent the message.
+   * @type {string}
+   * @see {@link User}
+   */
+  username: string;
+  /**
+   * The DirectMessage that the message belongs to.
+   * @type {Schema.Types.ObjectId}
+   * @see {@link DirectMessage}
+   */
+  directMessage: Schema.Types.ObjectId;
+  /**
+   * The date and time the message was sent.
+   * @type {Date}
+   */
+  createdAt: Date;
+  status: string;
 }
 
 /**
@@ -36,28 +36,28 @@ interface IDMessage extends Document {
  * @const {Schema<IDMessage>}
  */
 const DMessageSchema = new Schema<IDMessage>({
-    text: {
-        type: String,
-        required: true,
-    },
-    username: {
-        type: String,
-        required: true,
-    },
-    directMessage: {
-        type: Schema.Types.ObjectId,
-        ref: 'DirectMessage',
-        required: true,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'sent', 'delivered', 'read', 'failed'], 
-        default: 'sent',
-    },
+  text: {
+    type: String,
+    required: true
+  },
+  username: {
+    type: String,
+    required: true
+  },
+  directMessage: {
+    type: Schema.Types.ObjectId,
+    ref: 'DirectMessage',
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'sent', 'delivered', 'read', 'failed'],
+    default: 'sent'
+  }
 });
 
 /**

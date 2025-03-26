@@ -1,0 +1,45 @@
+{
+  "folders": [
+    {
+      "name": "ChatHaven Backend",
+      "path": "./ChatHavenApp/backend"
+    },
+    {
+      "name": "ChatHaven Frontend",
+      "path": "./ChatHavenApp/frontend"
+    }
+  ],
+  "settings": {
+    // Settings that apply to all folders
+    "editor.formatOnSave": true,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/coverage": false
+    },
+    "jest.runMode": {
+      "type": "watch",
+      "jest.showCoverageOnLoad": true,
+      "jest.showInlineError": true
+    },
+    "jest.jestCommandLine": "npm test --",
+    "jest.coverageColors": {
+      "uncovered": "rgba(255,99,71,0.2)",
+      "partially-covered": "rgba(255,215,0,0.2)",
+      "covered": "rgba(73,204,144,0.2)"
+    }
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "node",
+        "name": "Jest Current File",
+        "request": "launch",
+        "program": "${workspaceFolder}/node_modules/.bin/jest",
+        "args": ["${relativeFile}"],
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen"
+      }
+    ]
+  }
+}

@@ -53,11 +53,11 @@ export class ConnectionManager {
    */
   trackConnection(ws: ExtendedWebSocket): void {
     this.stats.totalConnections++;
-    
+
     if (this.wss.clients.size > this.stats.peakConnections) {
       this.stats.peakConnections = this.wss.clients.size;
     }
-    
+
     if (ws.user) {
       this.stats.activeUsers.add(ws.user.username);
     }
@@ -76,24 +76,20 @@ export class ConnectionManager {
    * @param status New status
    * @param lastSeen Last seen timestamp
    */
-  async broadcastStatusUpdate(
-    username: string, 
-    status: Status, 
-    lastSeen: Date
-  ): Promise<void> {
+  async broadcastStatusUpdate(username: string, status: Status, lastSeen: Date): Promise<void> {
     try {
       const user = await OnlineStatusService.getUserByUsername(username);
       if (!user) return;
-      
+
       const teamIds = await OnlineStatusService.getUserTeams(user._id as Schema.Types.ObjectId);
-      
+
       // Collect all subscribers across teams
       const subscribers = new Set<string>();
       for (const teamId of teamIds) {
         const teamSubscribers = await OnlineStatusService.getTeamSubscribers(teamId);
         teamSubscribers.forEach(sub => subscribers.add(sub));
       }
-      
+
       // Format the status update
       const statusUpdate = {
         type: 'statusUpdate',
@@ -101,27 +97,28 @@ export class ConnectionManager {
         status,
         lastSeen: lastSeen.toISOString()
       };
-      
+
       // Send to all subscribed clients
       let sentCount = 0;
-      this.wss.clients.forEach((client) => {
+      this.wss.clients.forEach(client => {
         const extendedClient = client as ExtendedWebSocket;
-        
-        if (extendedClient.readyState === WebSocket.OPEN && 
-            extendedClient.user && 
-            subscribers.has(extendedClient.user.username)) {
-          
+
+        if (
+          extendedClient.readyState === WebSocket.OPEN &&
+          extendedClient.user &&
+          subscribers.has(extendedClient.user.username)
+        ) {
           extendedClient.send(JSON.stringify(statusUpdate));
           sentCount++;
         }
       });
-      
+
       logger.debug('Broadcast status update', { username, status, sentCount });
     } catch (error) {
-      logger.error('Error broadcasting status update', { 
-        username, 
-        status, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      logger.error('Error broadcasting status update', {
+        username,
+        status,
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -133,14 +130,14 @@ export class ConnectionManager {
    */
   getUserConnections(username: string): ExtendedWebSocket[] {
     const connections: ExtendedWebSocket[] = [];
-    
-    this.wss.clients.forEach((client) => {
+
+    this.wss.clients.forEach(client => {
       const extendedClient = client as ExtendedWebSocket;
       if (extendedClient.user && extendedClient.user.username === username) {
         connections.push(extendedClient);
       }
     });
-    
+
     return connections;
   }
 
@@ -152,16 +149,16 @@ export class ConnectionManager {
   sendToUser(username: string, message: any): void {
     const connections = this.getUserConnections(username);
     const messageStr = JSON.stringify(message);
-    
+
     for (const connection of connections) {
       if (connection.readyState === WebSocket.OPEN) {
         connection.send(messageStr);
       }
     }
-    
-    logger.debug('Sent message to user', { 
-      username, 
-      connections: connections.length 
+
+    logger.debug('Sent message to user', {
+      username,
+      connections: connections.length
     });
   }
 

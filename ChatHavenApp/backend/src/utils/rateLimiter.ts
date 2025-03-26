@@ -69,9 +69,9 @@ export class RateLimiter {
   isAllowed(id: string): boolean {
     // Ensure cleanup interval is running
     this.setupCleanupInterval();
-    
+
     const now = Date.now();
-    
+
     // Get or create rate tracker
     let tracker = this.trackers.get(id);
     if (!tracker) {
@@ -97,10 +97,10 @@ export class RateLimiter {
 
     // Increment and check
     tracker.count++;
-    
+
     if (tracker.count > this.config.maxRequests) {
       tracker.blocked = true;
-      
+
       if (this.config.verbose) {
         loggerInstance.warn('Rate limit exceeded', {
           id,
@@ -108,10 +108,10 @@ export class RateLimiter {
           windowMs: this.config.windowMs
         });
       }
-      
+
       return false;
     }
-    
+
     return true;
   }
 
@@ -121,14 +121,14 @@ export class RateLimiter {
   private cleanup(): void {
     const now = Date.now();
     let cleanedCount = 0;
-    
+
     for (const [id, tracker] of this.trackers.entries()) {
       if (now >= tracker.resetAt + this.config.windowMs) {
         this.trackers.delete(id);
         cleanedCount++;
       }
     }
-    
+
     if (this.config.verbose && cleanedCount > 0) {
       loggerInstance.debug('Cleaned up rate limiter entries', { count: cleanedCount });
     }
@@ -154,8 +154,8 @@ export function shutdownDefaultRateLimiter(): void {
 function getDefaultRateLimiter(): RateLimiter {
   if (!defaultLimiterInstance) {
     defaultLimiterInstance = new RateLimiter({
-      maxRequests: 200,  // 200 messages per minute
-      windowMs: 60000,   // 1 minute window
+      maxRequests: 200, // 200 messages per minute
+      windowMs: 60000, // 1 minute window
       verbose: true
     });
   }
@@ -163,25 +163,25 @@ function getDefaultRateLimiter(): RateLimiter {
 }
 
 const defaultRateLimiterProxy = new Proxy(getDefaultRateLimiter(), {
-  apply: function(target, thisArg, argumentsList) {
+  apply: function (target, thisArg, argumentsList) {
     // When called as a function, delegate to the instance's isAllowed method
     if (argumentsList.length === 1 && typeof argumentsList[0] === 'string') {
       return getDefaultRateLimiter().isAllowed.apply(target, argumentsList as [string]);
     }
     throw new Error('Invalid arguments passed to defaultRateLimiter');
   },
-  get: function(target, prop) {
+  get: function (target, prop) {
     if (prop === 'isAllowed') {
       return (...args: [string]) => getDefaultRateLimiter().isAllowed(...args);
     }
     if (prop === 'shutdown') {
       return () => shutdownDefaultRateLimiter();
     }
-    
+
     // @ts-ignore
     return target[prop];
   }
 });
 
-export const defaultRateLimiter = defaultRateLimiterProxy as unknown as RateLimiter & 
+export const defaultRateLimiter = defaultRateLimiterProxy as unknown as RateLimiter &
   ((id: string) => boolean);

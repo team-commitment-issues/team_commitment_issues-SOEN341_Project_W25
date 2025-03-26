@@ -1,14 +1,14 @@
 import React from 'react';
-import { MessageStatus } from '../../types/shared';
+import { MessageStatus } from '../../types/shared.ts';
 
 interface MessageStatusIndicatorProps {
   status?: MessageStatus;
   dark?: boolean;
 }
 
-const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({ 
+const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
   status = 'pending',
-  dark = false 
+  dark = false
 }) => {
   const getStatusIcon = () => {
     switch (status) {
@@ -26,7 +26,7 @@ const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
         return null;
     }
   };
-  
+
   const getStatusText = () => {
     switch (status) {
       case 'pending':
@@ -43,13 +43,13 @@ const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
         return '';
     }
   };
-  
+
   if (!status) return null;
-  
+
   return (
-    <span 
-      style={{ 
-        fontSize: '11px', 
+    <span
+      style={{
+        fontSize: '11px',
         marginLeft: '4px',
         color: dark ? '#AAA' : '#777',
         display: 'inline-flex',
@@ -58,9 +58,7 @@ const MessageStatusIndicator: React.FC<MessageStatusIndicatorProps> = ({
       title={getStatusText()}
     >
       <span style={{ marginRight: '2px' }}>{getStatusIcon()}</span>
-      {status === 'failed' && (
-        <span style={{ marginLeft: '2px' }}>{getStatusText()}</span>
-      )}
+      {status === 'failed' && <span style={{ marginLeft: '2px' }}>{getStatusText()}</span>}
     </span>
   );
 };

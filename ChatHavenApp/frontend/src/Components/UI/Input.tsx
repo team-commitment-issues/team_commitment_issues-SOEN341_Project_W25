@@ -28,8 +28,8 @@ const styles = {
     fontSize: '14px',
     border: '1px solid #ccc',
     borderRadius: '4px',
-    boxSizing: 'border-box' as const,
-  },
+    boxSizing: 'border-box' as const
+  }
 };
 
 export default Input;

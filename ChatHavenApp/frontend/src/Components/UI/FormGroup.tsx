@@ -18,14 +18,14 @@ const styles = {
   formGroup: {
     marginBottom: '15px',
     width: '100%',
-    textAlign: 'left' as const,
+    textAlign: 'left' as const
   },
   label: {
     display: 'block',
     marginBottom: '5px',
     fontSize: '14px',
-    color: '#555',
-  },
+    color: '#555'
+  }
 };
 
 export default FormGroup;

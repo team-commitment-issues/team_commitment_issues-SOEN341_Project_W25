@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getUserProfile } from '../Services/userService';
+import { getUserProfile } from '../Services/userService.ts';
 
 interface UserData {
   username: string;
@@ -35,32 +35,35 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Function to refresh user data from the server
   const refreshUserData = async () => {
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
       setUserData(null);
       setIsAuthenticated(false);
       return;
     }
-    
+
     try {
       // Fetch the latest user data from the server
       const profileData = await getUserProfile();
-      
+
       // Update state and localStorage
       setUserData({
-        username: profileData.username,
+        username: profileData.username
         // Add other properties as needed
       });
-      
-      localStorage.setItem('user', JSON.stringify({
-        username: profileData.username,
-        // Add other properties as needed
-      }));
-      
+
+      localStorage.setItem(
+        'user',
+        JSON.stringify({
+          username: profileData.username
+          // Add other properties as needed
+        })
+      );
+
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
-      
+
       // Fallback to localStorage if server request fails
       const storedUserData = localStorage.getItem('user');
       if (storedUserData) {
@@ -79,7 +82,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // Initialize user data on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
-    
+
     if (token) {
       // First load from localStorage for immediate UI display
       const storedUserData = localStorage.getItem('user');
@@ -93,7 +96,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           localStorage.removeItem('user');
         }
       }
-      
+
       // Then refresh from server to get the latest data
       refreshUserData().catch(err => {
         console.error('Error refreshing user data on init:', err);
@@ -106,18 +109,18 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     if (!userData) {
       return;
     }
-    
+
     const updatedUserData = {
       ...userData,
       username: newUsername
     };
-    
+
     // Update state
     setUserData(updatedUserData);
-    
+
     // Update localStorage
     localStorage.setItem('user', JSON.stringify(updatedUserData));
-    
+
     console.log(`Username updated to: ${newUsername}`);
   };
 
@@ -136,11 +139,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     refreshUserData
   };
 
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 
 export default UserContext;

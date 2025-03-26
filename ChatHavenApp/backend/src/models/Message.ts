@@ -6,28 +6,28 @@ import { Document, Schema, model } from 'mongoose';
  * @extends Document
  */
 interface IMessage extends Document {
-    /**
-     * The text of the message.
-     * @type {string}
-     */
-    text: string;
-    /**
-     * The username of the user who sent the message.
-     * @type {string}
-     * @see {@link User}
-     */
-    username: string;
-    /**
-     * The channel that the message belongs to.
-     * @type {Schema.Types.ObjectId}
-     * @see {@link Channel}
-     */
-    channel: Schema.Types.ObjectId;
-    /**
-     * The date and time the message was sent.
-     * @type {Date}
-     */
-    createdAt: Date;
+  /**
+   * The text of the message.
+   * @type {string}
+   */
+  text: string;
+  /**
+   * The username of the user who sent the message.
+   * @type {string}
+   * @see {@link User}
+   */
+  username: string;
+  /**
+   * The channel that the message belongs to.
+   * @type {Schema.Types.ObjectId}
+   * @see {@link Channel}
+   */
+  channel: Schema.Types.ObjectId;
+  /**
+   * The date and time the message was sent.
+   * @type {Date}
+   */
+  createdAt: Date;
 }
 
 /**
@@ -35,23 +35,23 @@ interface IMessage extends Document {
  * @const {Schema<IMessage>}
  */
 const MessageSchema = new Schema<IMessage>({
-    text: {
-        type: String,
-        required: true,
-    },
-    username: {
-        type: String,
-        required: true,
-    },
-    channel: {
-        type: Schema.Types.ObjectId,
-        ref: 'Channel',
-        required: true,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
+  text: {
+    type: String,
+    required: true
+  },
+  username: {
+    type: String,
+    required: true
+  },
+  channel: {
+    type: Schema.Types.ObjectId,
+    ref: 'Channel',
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 /**

@@ -152,12 +152,12 @@ export interface HistoryResponse extends BaseMessage {
 /**
  * Union type of all possible message types
  */
-export type Message = 
-  | ChannelMessage 
+export type Message =
+  | ChannelMessage
   | DirectMessagePayload
   | JoinDirectMessagePayload
-  | StatusMessage 
-  | TypingMessage 
+  | StatusMessage
+  | TypingMessage
   | OnlineStatusSubscription
   | MessageAck
   | FetchHistoryMessage

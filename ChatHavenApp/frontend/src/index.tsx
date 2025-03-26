@@ -1,21 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from './App.tsx';
 import './Styles/index.css';
-import { ThemeProvider } from './Context/ThemeContext';
-import { OnlineStatusProvider } from './Context/OnlineStatusContext';
-import { UserProvider } from './Context/UserContext';
+import { AppProviders } from './Providers/AppProviders.tsx';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>
-    <ThemeProvider>
-      <UserProvider>
-        <OnlineStatusProvider>
-          <App />
-        </OnlineStatusProvider>
-      </UserProvider>
-    </ThemeProvider>
+    <AppProviders withRouter={true}>
+      <App />
+    </AppProviders>
   </React.StrictMode>
 );
-

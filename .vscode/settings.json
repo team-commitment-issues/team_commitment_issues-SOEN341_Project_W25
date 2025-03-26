@@ -10,5 +10,14 @@
         "partially-covered": "rgba(255,215,0,0.2)",
         "covered": "rgba(73,204,144,0.2)"
     },
-    "jest.rootPath": "ChatHavenApp/backend"
+    "jest.rootPath": "ChatHavenApp/backend",
+    
+    // Switch between backend and frontend by commenting/uncommenting these lines
+    //"jest.rootPath": "ChatHavenApp/frontend",
+    
+    "editor.formatOnSave": true,
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/coverage": false
+    }
 }
