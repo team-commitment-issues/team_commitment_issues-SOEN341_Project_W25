@@ -100,7 +100,9 @@ class DirectMessageService {
     }
 
     // Query DMessage collection with directMessage ID and any additional criteria
-    const query: { directMessage: Types.ObjectId; _id?: Types.ObjectId } = { directMessage: criteria.directMessage };
+    const query: { directMessage: Types.ObjectId; _id?: Types.ObjectId } = {
+      directMessage: criteria.directMessage
+    };
 
     // Add _id constraint if "before" parameter is provided for pagination
     if (criteria._id) {

@@ -38,6 +38,9 @@ export interface ChatMessage {
   createdAt: Date;
   status?: MessageStatus;
   clientMessageId?: string;
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
 }
 
 // Selection for channel or direct message in UI

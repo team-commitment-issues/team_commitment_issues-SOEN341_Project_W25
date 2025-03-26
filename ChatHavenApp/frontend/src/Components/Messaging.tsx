@@ -106,19 +106,19 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const typingMessage: WebSocketMessage =
       selection.type === 'channel'
         ? {
-          type: 'typing',
-          isTyping,
-          username,
-          teamName: selection.teamName,
-          channelName: selection.channelName
-        }
+            type: 'typing',
+            isTyping,
+            username,
+            teamName: selection.teamName,
+            channelName: selection.channelName
+          }
         : {
-          type: 'typing',
-          isTyping,
-          username,
-          teamName: selection.teamName,
-          receiverUsername: selection.username
-        };
+            type: 'typing',
+            isTyping,
+            username,
+            teamName: selection.teamName,
+            receiverUsername: selection.username
+          };
 
     wsService.send(typingMessage);
   };
@@ -283,19 +283,19 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const historyRequest: WebSocketMessage =
       selection.type === 'channel'
         ? {
-          type: 'fetchHistory',
-          teamName: selection.teamName,
-          channelName: selection.channelName,
-          before: oldestMessageId || undefined,
-          limit: 25
-        }
+            type: 'fetchHistory',
+            teamName: selection.teamName,
+            channelName: selection.channelName,
+            before: oldestMessageId || undefined,
+            limit: 25
+          }
         : {
-          type: 'fetchHistory',
-          teamName: selection.teamName,
-          username: selection.username,
-          before: oldestMessageId || undefined,
-          limit: 25
-        };
+            type: 'fetchHistory',
+            teamName: selection.teamName,
+            username: selection.username,
+            before: oldestMessageId || undefined,
+            limit: 25
+          };
 
     wsService.send(historyRequest);
 
@@ -351,15 +351,15 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       const joinMessage: WebSocketMessage =
         sel.type === 'channel'
           ? {
-            type: 'join',
-            teamName: sel.teamName,
-            channelName: sel.channelName
-          }
+              type: 'join',
+              teamName: sel.teamName,
+              channelName: sel.channelName
+            }
           : {
-            type: 'joinDirectMessage',
-            teamName: sel.teamName,
-            username: sel.username
-          };
+              type: 'joinDirectMessage',
+              teamName: sel.teamName,
+              username: sel.username
+            };
 
       wsService.send(joinMessage);
     },
@@ -376,18 +376,18 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const newMessage: WebSocketMessage =
       selection.type === 'directMessage'
         ? {
-          type: 'directMessage',
-          text: message,
-          teamName: selection.teamName,
-          receiverUsername: selection.username
-        }
+            type: 'directMessage',
+            text: message,
+            teamName: selection.teamName,
+            receiverUsername: selection.username
+          }
         : {
-          type: 'message',
-          text: message,
-          username,
-          teamName: selection.teamName,
-          channelName: selection.channelName
-        };
+            type: 'message',
+            text: message,
+            username,
+            teamName: selection.teamName,
+            channelName: selection.channelName
+          };
 
     sendMessage(newMessage);
     setMessage('');
@@ -423,17 +423,17 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const historyRequest: WebSocketMessage =
       selection.type === 'channel'
         ? {
-          type: 'fetchHistory',
-          teamName: selection.teamName,
-          channelName: selection.channelName,
-          limit: 50
-        }
+            type: 'fetchHistory',
+            teamName: selection.teamName,
+            channelName: selection.channelName,
+            limit: 50
+          }
         : {
-          type: 'fetchHistory',
-          teamName: selection.teamName,
-          username: selection.username,
-          limit: 50
-        };
+            type: 'fetchHistory',
+            teamName: selection.teamName,
+            username: selection.username,
+            limit: 50
+          };
 
     wsService.send(historyRequest);
   }, [selection, wsService]);
@@ -639,14 +639,14 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           // If initial load, we'll use the first message from the response
           const oldestMessageForPagination = data.before
             ? historyMessages.reduce(
-              (
-                oldest: { createdAt: string | number | Date },
-                current: { createdAt: string | number | Date }
-              ) =>
-                new Date(oldest.createdAt).getTime() < new Date(current.createdAt).getTime()
-                  ? oldest
-                  : current
-            )
+                (
+                  oldest: { createdAt: string | number | Date },
+                  current: { createdAt: string | number | Date }
+                ) =>
+                  new Date(oldest.createdAt).getTime() < new Date(current.createdAt).getTime()
+                    ? oldest
+                    : current
+              )
             : historyMessages[0];
 
           setOldestMessageId(oldestMessageForPagination._id);
@@ -828,6 +828,37 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     }
   }, [isTyping, selection, sendJoinMessage, fetchMessages, wsService]);
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !selection) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const base64Content = reader.result as string;
+
+        const mediaMessage: WebSocketMessage = {
+          type: selection.type === 'directMessage' ? 'directMessage' : 'message',
+          text: `[File] ${file.name}`,
+          fileName: file.name,
+          fileType: file.type,
+          fileData: base64Content,
+          teamName: selection.teamName,
+          ...(selection.type === 'directMessage'
+            ? { receiverUsername: selection.username }
+            : { channelName: selection.channelName })
+        };
+
+        sendMessage(mediaMessage);
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    e.target.value = '';
+  };
+
   const menuItems = [{ label: 'Delete Message', onClick: handleDeleteMessage }];
 
   return (
@@ -858,6 +889,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           </div>
         )}
 
+        {/* Load more messages button */}
         {hasMoreMessages && !isLoadingHistory && (
           <div
             style={{
@@ -883,11 +915,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           </div>
         )}
 
+        {/* No messages placeholder */}
         {messages.length === 0 && !isLoadingHistory && initialLoadDone ? (
           <p style={getStyledComponent(styles.chatPlaceholder)}>
             {selection ? 'No messages yet. Say hello!' : 'Select a channel or user to chat with.'}
           </p>
         ) : (
+          /* Message list */
           messages.map(msg => (
             <div
               key={
@@ -912,45 +946,84 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                 } as React.CSSProperties
               }
             >
-              <div>
-                <strong>{msg.username}</strong>: {msg.text}
-                <div
-                  style={{
-                    fontSize: '11px',
-                    marginTop: '3px',
-                    color: theme === 'dark' ? '#aaa' : '#777',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <span>{msg.createdAt ? msg.createdAt.toLocaleString() : 'Unknown Date'}</span>
-                  {msg.username === username && (
-                    <MessageStatusIndicator status={msg.status} dark={theme === 'dark'} />
+              <div
+                key={
+                  msg._id ||
+                  msg.clientMessageId ||
+                  (msg.createdAt ? msg.createdAt.getTime() : Date.now() + Math.random())
+                }
+                onContextMenu={e => handleContextMenu(e, msg._id)}
+                style={
+                  {
+                    ...getStyledComponent(styles.chatMessage),
+                    alignSelf: msg.username === username ? 'flex-end' : 'flex-start',
+                    backgroundColor:
+                      msg.username === username
+                        ? theme === 'dark'
+                          ? '#2b5278'
+                          : '#DCF8C6'
+                        : theme === 'dark'
+                          ? '#383838'
+                          : '#FFF',
+                    opacity: msg.status === 'failed' ? 0.7 : 1
+                  } as React.CSSProperties
+                }
+              >
+                <div>
+                  <strong>{msg.username}</strong>:{' '}
+                  {msg.fileData ? (
+                    <a
+                      href={msg.fileData}
+                      download={msg.fileName}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: theme === 'dark' ? '#9cf' : '#007bff' }}
+                    >
+                      📎 {msg.fileName}
+                    </a>
+                  ) : (
+                    msg.text
                   )}
-                </div>
-                {msg.status === 'failed' && (
-                  <button
-                    onClick={() => handleResendMessage(msg)}
+                  <div
                     style={{
-                      marginTop: '5px',
-                      padding: '2px 8px',
-                      background: theme === 'dark' ? '#444' : '#f0f0f0',
-                      border: '1px solid ' + (theme === 'dark' ? '#555' : '#ddd'),
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      color: '#F15050',
-                      fontSize: '12px'
+                      fontSize: '11px',
+                      marginTop: '3px',
+                      color: theme === 'dark' ? '#aaa' : '#777',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
                     }}
                   >
-                    Retry
-                  </button>
-                )}
-              </div>
+                    <span>{msg.createdAt ? msg.createdAt.toLocaleString() : 'Unknown Date'}</span>
+
+                    {msg.username === username && (
+                      <MessageStatusIndicator status={msg.status} dark={theme === 'dark'} />
+                    )}
+                  </div>
+                  {msg.status === 'failed' && (
+                    <button
+                      onClick={() => handleResendMessage(msg)}
+                      style={{
+                        marginTop: '5px',
+                        padding: '2px 8px',
+                        background: theme === 'dark' ? '#444' : '#f0f0f0',
+                        border: '1px solid ' + (theme === 'dark' ? '#555' : '#ddd'),
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                        color: '#F15050',
+                        fontSize: '12px'
+                      }}
+                    >
+                      Retry
+                    </button>
+                  )}
+                </div>{' '}
+              </div>{' '}
             </div>
           ))
         )}
 
+        {/* Typing indicator */}
         {typingIndicator?.isTyping && (
           <div
             style={{
@@ -967,6 +1040,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       </div>
 
       <div style={getStyledComponent(styles.inputBox)}>
+        {/* Message input */}
         <input
           type="text"
           placeholder="Type a message..."
@@ -976,12 +1050,31 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           style={getStyledComponent(styles.inputField)}
           disabled={connectionStatus !== 'connected' || !selection}
         />
+
+        {/* Upload icon with hidden input */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <input
+            type="file"
+            multiple
+            accept="image/*,video/*,application/pdf,.doc,.docx,.txt"
+            style={{ display: 'none' }}
+            id="fileUpload"
+            onChange={handleFileUpload}
+          />
+          <label htmlFor="fileUpload" style={getStyledComponent(styles.uploadButton)}>
+            📎
+          </label>
+        </div>
+
+        {/* Emoji button */}
         <button
           onClick={() => setShowEmojiPicker(prev => !prev)}
           style={getStyledComponent(styles.emojiButton)}
         >
           &#128512;
         </button>
+
+        {/* Send button */}
         <button
           onClick={handleSendMessage}
           style={{
