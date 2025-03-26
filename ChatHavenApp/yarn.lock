@@ -2934,7 +2934,7 @@
   resolved "https://registry.npmjs.org/@xtuc/long/-/long-4.2.2.tgz"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@chat-haven/backend@file:C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\backend":
+"@ChatHavenApp/backend@file:C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\backend":
   version "1.0.0"
   resolved "file:backend"
   dependencies:
@@ -2949,7 +2949,7 @@
     winston "^3.17.0"
     ws "^8.18.1"
 
-"@chat-haven/frontend@file:C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend":
+"@ChatHavenApp/frontend@file:C:\\Users\\samue\\Documents\\team_commitment_issues-SOEN341_Project_W25\\ChatHavenApp\\frontend":
   version "0.1.0"
   resolved "file:frontend"
   dependencies:
