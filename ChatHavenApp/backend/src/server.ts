@@ -4,7 +4,7 @@ dotenv.config();
 import http from 'http';
 
 import express from 'express';
-import mongoose, { Schema, set, Types } from 'mongoose';
+import mongoose from 'mongoose';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes';
 import channelRoutes from './routes/channelRoutes';
@@ -13,7 +13,7 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import directMessageRoutes from './routes/directMessageRoutes';
 import onlineStatusRoutes from './routes/onlineStatusRoutes';
 import path from 'path';
-import rateLimit from 'express-rate-limit';
+import { defaultHttpRateLimiter } from './utils/httpRateLimiter';
 import { setupWebSocketServer } from './webSocketServer';
 import scheduleStatusCleanup from './statusCleanup';
 
@@ -46,12 +46,8 @@ backend.use(express.json());
 backend.use(cors());
 backend.use(express.static(path.join(__dirname, '../', '../', './frontend', './build')));
 
-const limiter = rateLimit({
-  windowMs: 30 * 1000,
-  max: 30 * 5
-});
-
-backend.use(limiter);
+// Apply the rate limiter middleware
+backend.use(defaultHttpRateLimiter);
 
 backend.use('/user', userRoutes);
 backend.use('/channel', channelRoutes);
