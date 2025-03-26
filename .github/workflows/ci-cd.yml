@@ -34,41 +34,39 @@ jobs:
       - name: Configure git to ignore husky hooks
         run: |
           git config --global core.hooksPath /dev/null
-          # Disable husky in CI
           echo "HUSKY=0" >> $GITHUB_ENV
 
       # Create base Jest config file
       - name: Create jest.base.js
         run: |
-          cat > ChatHavenApp/jest.base.js << 'EOL'
-          module.exports = {
-            preset: 'ts-jest',
+          mkdir -p ChatHavenApp
+          echo 'module.exports = {
+            preset: "ts-jest",
             transform: {
-              '^.+\\.tsx?$': [
-                'ts-jest',
+              "^.+\\.tsx?$": [
+                "ts-jest",
                 {
-                  tsconfig: '<rootDir>/tsconfig.json'
+                  tsconfig: "<rootDir>/tsconfig.json"
                 }
               ]
             },
-            testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-            coveragePathIgnorePatterns: ['/node_modules/', '/dist/'],
+            testPathIgnorePatterns: ["/node_modules/", "/dist/"],
+            coveragePathIgnorePatterns: ["/node_modules/", "/dist/"],
             collectCoverage: true,
             clearMocks: true,
-            testMatch: ['<rootDir>/src/**/*.test.ts', '<rootDir>/src/**/*.spec.ts', '<rootDir>/src/**/*.test.tsx', '<rootDir>/src/**/*.spec.tsx']
-          };
-          EOL
+            testMatch: ["<rootDir>/src/**/*.test.ts", "<rootDir>/src/**/*.spec.ts", "<rootDir>/src/**/*.test.tsx", "<rootDir>/src/**/*.spec.tsx"]
+          };' > ChatHavenApp/jest.base.js
 
       # Setup environment files
       - name: Create environment files
         run: |
           # Backend .env.test file
-          echo MONGO_URI=mongodb://localhost:27017/testdb > ChatHavenApp/.env.test
-          echo JWT_SECRET=test-secret-key-for-development-only >> ChatHavenApp/.env.test
-          echo NODE_ENV=test >> ChatHavenApp/.env.test
+          echo "MONGO_URI=mongodb://localhost:27017/testdb" > ChatHavenApp/.env.test
+          echo "JWT_SECRET=test-secret-key-for-development-only" >> ChatHavenApp/.env.test
+          echo "NODE_ENV=test" >> ChatHavenApp/.env.test
 
           # Frontend .env file (if needed)
-          echo REACT_APP_API_URL=http://localhost:5000/api > ChatHavenApp/frontend/.env
+          echo "REACT_APP_API_URL=http://localhost:5000/api" > ChatHavenApp/frontend/.env
 
       # Install dependencies
       - name: Install dependencies
@@ -78,157 +76,128 @@ jobs:
           # Use the -W flag to explicitly add to the workspace root
           yarn add -W -D whatwg-fetch identity-obj-proxy
 
-      # Update frontend Jest config to handle ESM modules
+      # Update frontend Jest config
       - name: Update frontend Jest config
         run: |
           mkdir -p ChatHavenApp/frontend/config/jest
-          cat > ChatHavenApp/frontend/config/jest/jest.config.js << 'EOL'
-          const baseConfig = require('../../../jest.base');
+          echo 'const baseConfig = require("../../../jest.base");
 
           module.exports = {
             ...baseConfig,
-            rootDir: '../../',
-            testEnvironment: 'jsdom',
-            setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
-            setupFiles: ['<rootDir>/src/jest.polyfills.js'],
+            rootDir: "../../",
+            testEnvironment: "jsdom",
+            setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
+            setupFiles: ["<rootDir>/src/jest.polyfills.js"],
             transformIgnorePatterns: [
-              '/node_modules/(?!(node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)'
+              "/node_modules/(?!(node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)"
             ],
             moduleNameMapper: {
-              '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-              '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
-                '<rootDir>/config/jest/fileMock.js',
-              '^@/(.*)$': '<rootDir>/src/$1'
+              "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+              "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
+                "<rootDir>/config/jest/fileMock.js",
+              "^@/(.*)$": "<rootDir>/src/$1"
             }
-          };
-          EOL
+          };' > ChatHavenApp/frontend/config/jest/jest.config.js
 
-      # Create necessary directories and files
-      - name: Create necessary files
+      # Create frontend polyfills file
+      - name: Create frontend polyfills
         run: |
-          # Create frontend polyfills directory if it doesn't exist
           mkdir -p ChatHavenApp/frontend/src
+          echo '// jest.polyfills.js
+          /**
+           * This file contains polyfills for browser APIs that are not available in Jest JSDOM environment.
+           */
 
-          # Create polyfills file if it doesn't exist
-          if [ ! -f ChatHavenApp/frontend/src/jest.polyfills.js ]; then
-            cat > ChatHavenApp/frontend/src/jest.polyfills.js << 'EOL'
-            // jest.polyfills.js
-            /**
-             * This file contains polyfills for browser APIs that aren't available in Jest's JSDOM environment.
-             */
+          // TextEncoder/TextDecoder polyfills
+          if (typeof global.TextEncoder === "undefined") {
+            const { TextEncoder, TextDecoder } = require("util");
+            global.TextEncoder = TextEncoder;
+            global.TextDecoder = TextDecoder;
+          }
 
-            // TextEncoder/TextDecoder polyfills
-            if (typeof global.TextEncoder === 'undefined') {
-              const { TextEncoder, TextDecoder } = require('util');
-              global.TextEncoder = TextEncoder;
-              global.TextDecoder = TextDecoder;
-            }
+          // Fetch API polyfill
+          if (typeof global.fetch === "undefined") {
+            require("whatwg-fetch");
+            global.fetch = window.fetch;
+            global.Headers = window.Headers;
+            global.Request = window.Request;
+            global.Response = window.Response;
+          }
 
-            // Fetch API polyfill
-            if (typeof global.fetch === 'undefined') {
-              require('whatwg-fetch');
-              global.fetch = window.fetch;
-              global.Headers = window.Headers;
-              global.Request = window.Request;
-              global.Response = window.Response;
-            }
+          // Mock other browser APIs as needed
+          global.IntersectionObserver = class IntersectionObserver {
+            constructor() {}
+            observe() {}
+            unobserve() {}
+            disconnect() {}
+          };' > ChatHavenApp/frontend/src/jest.polyfills.js
 
-            // Mock other browser APIs as needed
-            global.IntersectionObserver = class IntersectionObserver {
-              constructor() {}
-              observe() {}
-              unobserve() {}
-              disconnect() {}
-            };
-            EOL
-          else
-            # Update existing polyfills file to use whatwg-fetch
-            sed -i 's/const fetch = require(\"node-fetch\");/require(\"whatwg-fetch\");/g' ChatHavenApp/frontend/src/jest.polyfills.js || true
-            sed -i 's/global.fetch = fetch;/global.fetch = window.fetch;/g' ChatHavenApp/frontend/src/jest.polyfills.js || true
-            sed -i 's/global.Headers = fetch.Headers;/global.Headers = window.Headers;/g' ChatHavenApp/frontend/src/jest.polyfills.js || true
-            sed -i 's/global.Request = fetch.Request;/global.Request = window.Request;/g' ChatHavenApp/frontend/src/jest.polyfills.js || true
-            sed -i 's/global.Response = fetch.Response;/global.Response = window.Response;/g' ChatHavenApp/frontend/src/jest.polyfills.js || true
-          fi
-
-          # Create fileMock.js
+      # Create fileMock.js
+      - name: Create fileMock.js
+        run: |
           mkdir -p ChatHavenApp/frontend/config/jest
-          cat > ChatHavenApp/frontend/config/jest/fileMock.js << 'EOL'
-          module.exports = 'test-file-stub';
-          EOL
+          echo 'module.exports = "test-file-stub";' > ChatHavenApp/frontend/config/jest/fileMock.js
 
-          # Create setupTests.ts
+      # Create setupTests.ts
+      - name: Create setupTests.ts
+        run: |
           mkdir -p ChatHavenApp/frontend/src
-          if [ ! -f ChatHavenApp/frontend/src/setupTests.ts ]; then
-            cat > ChatHavenApp/frontend/src/setupTests.ts << 'EOL'
-            import './jest.polyfills';
-            import '@testing-library/jest-dom';
-            EOL
-          fi
+          echo 'import "./jest.polyfills";
+          import "@testing-library/jest-dom";' > ChatHavenApp/frontend/src/setupTests.ts
 
       # Update backend Jest config
       - name: Update backend Jest config
         run: |
           mkdir -p ChatHavenApp/backend/config/jest
-          cat > ChatHavenApp/backend/config/jest/jest.config.js << 'EOL'
-          const baseConfig = require('../../../jest.base');
+          echo 'const baseConfig = require("../../../jest.base");
 
           module.exports = {
             ...baseConfig,
-            rootDir: '../../',
-            testEnvironment: 'node',
-            setupFilesAfterEnv: ['<rootDir>/config/jest/jest.setup.ts'],
+            rootDir: "../../",
+            testEnvironment: "node",
+            setupFilesAfterEnv: ["<rootDir>/config/jest/jest.setup.ts"],
             detectOpenHandles: true,
             forceExit: true
-          };
-          EOL
+          };' > ChatHavenApp/backend/config/jest/jest.config.js
 
       # Create backend Jest setup file
       - name: Create backend Jest setup
         run: |
           mkdir -p ChatHavenApp/backend/config/jest
-          cat > ChatHavenApp/backend/config/jest/jest.setup.ts << 'EOL'
-          import dotenv from 'dotenv';
-          dotenv.config({ path: '../../.env.test' });
+          echo 'import dotenv from "dotenv";
+          dotenv.config({ path: "../../.env.test" });
 
           // Set JWT secret for testing
           if (!process.env.JWT_SECRET) {
-            process.env.JWT_SECRET = 'test-secret-key-for-development-only';
+            process.env.JWT_SECRET = "test-secret-key-for-development-only";
           }
 
-          // Mock mongoose connection for tests that don't need a real database
-          jest.mock('mongoose', () => {
-            const originalModule = jest.requireActual('mongoose');
+          // Mock mongoose connection for tests that do not need a real database
+          jest.mock("mongoose", () => {
+            const originalModule = jest.requireActual("mongoose");
             return {
               __esModule: true,
               ...originalModule,
               connect: jest.fn().mockResolvedValue(originalModule)
             };
-          });
-          EOL
+          });' > ChatHavenApp/backend/config/jest/jest.setup.ts
 
-      # Create a simple test file for backend
-      - name: Create basic backend test
+      # Create sample test files
+      - name: Create sample test files
         run: |
           mkdir -p ChatHavenApp/backend/src/__tests__
-          cat > ChatHavenApp/backend/src/__tests__/sample.test.ts << 'EOL'
-          describe('Sample Test', () => {
-            it('should pass', () => {
+          echo 'describe("Sample Test", () => {
+            it("should pass", () => {
               expect(true).toBe(true);
             });
-          });
-          EOL
+          });' > ChatHavenApp/backend/src/__tests__/sample.test.ts
 
-      # Create a simple test file for frontend
-      - name: Create basic frontend test
-        run: |
           mkdir -p ChatHavenApp/frontend/src/__tests__/Services
-          cat > ChatHavenApp/frontend/src/__tests__/Services/sample.test.ts << 'EOL'
-          describe('Sample Test', () => {
-            it('should pass', () => {
+          echo 'describe("Sample Test", () => {
+            it("should pass", () => {
               expect(true).toBe(true);
             });
-          });
-          EOL
+          });' > ChatHavenApp/frontend/src/__tests__/Services/sample.test.ts
 
       # Run tests
       - name: Run tests
