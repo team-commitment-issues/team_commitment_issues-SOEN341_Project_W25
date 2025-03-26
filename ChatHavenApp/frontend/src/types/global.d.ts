@@ -38,4 +38,4 @@ declare global {
 }
 
 // This keeps TypeScript happy when using import syntax
-export {};
+export { };

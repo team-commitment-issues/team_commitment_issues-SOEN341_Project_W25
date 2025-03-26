@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import styles from '../Styles/dashboardStyles';
-import { deleteMessage } from '../Services/channelService';
-import ContextMenu from './UI/ContextMenu';
-import { useTheme } from '../Context/ThemeContext';
-import UserStatusIndicator from './UI/UserStatusIndicator';
-import MessageStatusIndicator from './UI/MessageStatusIndicator';
-import WebSocketClient from '../Services/webSocketClient';
-import { useUser } from '../Context/UserContext';
+import styles from '../Styles/dashboardStyles.ts';
+import { deleteMessage } from '../Services/channelService.ts';
+import ContextMenu from './UI/ContextMenu.tsx';
+import { useTheme } from '../Context/ThemeContext.tsx';
+import UserStatusIndicator from './UI/UserStatusIndicator.tsx';
+import MessageStatusIndicator from './UI/MessageStatusIndicator.tsx';
+import WebSocketClient from '../Services/webSocketClient.ts';
+import { useUser } from '../Context/UserContext.tsx';
 import {
   Selection,
   ContextMenuState,
@@ -15,7 +15,7 @@ import {
   WebSocketMessage,
   RetryInfo,
   MessageStatus
-} from '../types/shared';
+} from '../types/shared.ts';
 
 // Constants for message retry
 const MAX_RETRY_ATTEMPTS = 3;
@@ -106,19 +106,19 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const typingMessage: WebSocketMessage =
       selection.type === 'channel'
         ? {
-            type: 'typing',
-            isTyping,
-            username,
-            teamName: selection.teamName,
-            channelName: selection.channelName
-          }
+          type: 'typing',
+          isTyping,
+          username,
+          teamName: selection.teamName,
+          channelName: selection.channelName
+        }
         : {
-            type: 'typing',
-            isTyping,
-            username,
-            teamName: selection.teamName,
-            receiverUsername: selection.username
-          };
+          type: 'typing',
+          isTyping,
+          username,
+          teamName: selection.teamName,
+          receiverUsername: selection.username
+        };
 
     wsService.send(typingMessage);
   };
@@ -283,19 +283,19 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const historyRequest: WebSocketMessage =
       selection.type === 'channel'
         ? {
-            type: 'fetchHistory',
-            teamName: selection.teamName,
-            channelName: selection.channelName,
-            before: oldestMessageId || undefined,
-            limit: 25
-          }
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          channelName: selection.channelName,
+          before: oldestMessageId || undefined,
+          limit: 25
+        }
         : {
-            type: 'fetchHistory',
-            teamName: selection.teamName,
-            username: selection.username,
-            before: oldestMessageId || undefined,
-            limit: 25
-          };
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          username: selection.username,
+          before: oldestMessageId || undefined,
+          limit: 25
+        };
 
     wsService.send(historyRequest);
 
@@ -351,15 +351,15 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       const joinMessage: WebSocketMessage =
         sel.type === 'channel'
           ? {
-              type: 'join',
-              teamName: sel.teamName,
-              channelName: sel.channelName
-            }
+            type: 'join',
+            teamName: sel.teamName,
+            channelName: sel.channelName
+          }
           : {
-              type: 'joinDirectMessage',
-              teamName: sel.teamName,
-              username: sel.username
-            };
+            type: 'joinDirectMessage',
+            teamName: sel.teamName,
+            username: sel.username
+          };
 
       wsService.send(joinMessage);
     },
@@ -376,18 +376,18 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const newMessage: WebSocketMessage =
       selection.type === 'directMessage'
         ? {
-            type: 'directMessage',
-            text: message,
-            teamName: selection.teamName,
-            receiverUsername: selection.username
-          }
+          type: 'directMessage',
+          text: message,
+          teamName: selection.teamName,
+          receiverUsername: selection.username
+        }
         : {
-            type: 'message',
-            text: message,
-            username,
-            teamName: selection.teamName,
-            channelName: selection.channelName
-          };
+          type: 'message',
+          text: message,
+          username,
+          teamName: selection.teamName,
+          channelName: selection.channelName
+        };
 
     sendMessage(newMessage);
     setMessage('');
@@ -423,17 +423,17 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const historyRequest: WebSocketMessage =
       selection.type === 'channel'
         ? {
-            type: 'fetchHistory',
-            teamName: selection.teamName,
-            channelName: selection.channelName,
-            limit: 50
-          }
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          channelName: selection.channelName,
+          limit: 50
+        }
         : {
-            type: 'fetchHistory',
-            teamName: selection.teamName,
-            username: selection.username,
-            limit: 50
-          };
+          type: 'fetchHistory',
+          teamName: selection.teamName,
+          username: selection.username,
+          limit: 50
+        };
 
     wsService.send(historyRequest);
   }, [selection, wsService]);
@@ -639,14 +639,14 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           // If initial load, we'll use the first message from the response
           const oldestMessageForPagination = data.before
             ? historyMessages.reduce(
-                (
-                  oldest: { createdAt: string | number | Date },
-                  current: { createdAt: string | number | Date }
-                ) =>
-                  new Date(oldest.createdAt).getTime() < new Date(current.createdAt).getTime()
-                    ? oldest
-                    : current
-              )
+              (
+                oldest: { createdAt: string | number | Date },
+                current: { createdAt: string | number | Date }
+              ) =>
+                new Date(oldest.createdAt).getTime() < new Date(current.createdAt).getTime()
+                  ? oldest
+                  : current
+            )
             : historyMessages[0];
 
           setOldestMessageId(oldestMessageForPagination._id);
@@ -858,7 +858,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           </div>
         )}
 
-        {/* Load more messages button */}
         {hasMoreMessages && !isLoadingHistory && (
           <div
             style={{
@@ -884,13 +883,11 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           </div>
         )}
 
-        {/* No messages placeholder */}
         {messages.length === 0 && !isLoadingHistory && initialLoadDone ? (
           <p style={getStyledComponent(styles.chatPlaceholder)}>
             {selection ? 'No messages yet. Say hello!' : 'Select a channel or user to chat with.'}
           </p>
         ) : (
-          /* Message list */
           messages.map(msg => (
             <div
               key={
@@ -928,13 +925,10 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                   }}
                 >
                   <span>{msg.createdAt ? msg.createdAt.toLocaleString() : 'Unknown Date'}</span>
-
-                  {/* Message status indicator for sent messages */}
                   {msg.username === username && (
                     <MessageStatusIndicator status={msg.status} dark={theme === 'dark'} />
                   )}
                 </div>
-                {/* Retry button for failed messages */}
                 {msg.status === 'failed' && (
                   <button
                     onClick={() => handleResendMessage(msg)}
@@ -957,7 +951,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           ))
         )}
 
-        {/* Typing indicator */}
         {typingIndicator?.isTyping && (
           <div
             style={{

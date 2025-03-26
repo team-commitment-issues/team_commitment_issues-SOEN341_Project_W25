@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageStatus } from '../../types/shared';
+import { MessageStatus } from '../../types/shared.ts';
 
 interface MessageStatusIndicatorProps {
   status?: MessageStatus;

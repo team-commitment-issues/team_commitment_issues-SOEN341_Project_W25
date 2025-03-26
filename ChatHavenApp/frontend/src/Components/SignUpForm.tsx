@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { signUp } from '../Services/authService';
+import { signUp } from '../Services/authService.ts';
 import { useNavigate } from 'react-router-dom';
-import Input from './UI/Input';
-import Button from './UI/Button';
-import FormGroup from './UI/FormGroup';
-import styles from '../Styles/signUpStyles';
-import TextLink from './UI/TextLink';
+import Input from './UI/Input.tsx';
+import Button from './UI/Button.tsx';
+import FormGroup from './UI/FormGroup.tsx';
+import styles from '../Styles/signUpStyles.ts';
+import TextLink from './UI/TextLink.tsx';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const SignUpForm: React.FC = () => {

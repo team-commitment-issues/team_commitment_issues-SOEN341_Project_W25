@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '../../Context/ThemeContext';
-import { useOnlineStatus } from '../../Context/OnlineStatusContext';
+import { useTheme } from '../../Context/ThemeContext.tsx';
+import { useOnlineStatus } from '../../Context/OnlineStatusContext.tsx';
 import styles from '../../Styles/StatusSelector.module.css';
-import { Status } from '../../types/shared';
+import { Status } from '../../types/shared.ts';
 
 const StatusSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { theme } = useTheme();
   const { setUserStatus, currentUserStatus } = useOnlineStatus();
 
-  const statuses: { type: Status; label: string; color: string }[] = [
+  const statuses: Array<{ type: Status; label: string; color: string }> = [
     { type: Status.ONLINE, label: 'Online', color: '#4CAF50' },
     { type: Status.AWAY, label: 'Away', color: '#FFC107' },
     { type: Status.BUSY, label: 'Busy', color: '#F44336' },

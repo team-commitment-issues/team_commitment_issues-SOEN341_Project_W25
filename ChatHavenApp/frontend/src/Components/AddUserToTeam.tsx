@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getChannels, getTeams } from '../Services/dashboardService';
-import { addUserToTeam } from '../Services/superAdminService';
-import { addUserToChannel } from '../Services/channelService';
+import { getChannels, getTeams } from '../Services/dashboardService.ts';
+import { addUserToTeam } from '../Services/superAdminService.ts';
+import { addUserToChannel } from '../Services/channelService.ts';
 import styles from '../Styles/dashboardStyles';
-import { useTheme } from '../Context/ThemeContext';
+import { useTheme } from '../Context/ThemeContext.tsx';
 
 interface Team {
   _id: string;

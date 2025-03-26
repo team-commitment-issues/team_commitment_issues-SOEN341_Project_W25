@@ -2,8 +2,8 @@ import React from 'react';
 // Import jest-dom matchers explicitly
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '../../testUtils';
-import LoginForm from '../../Components/LoginForm';
-import { login } from '../../Services/authService';
+import LoginForm from '../../Components/LoginForm.tsx';
+import { login } from '../../Services/authService.ts';
 import { mockNavigate } from '../../testUtils';
 
 // Mock the authService
@@ -22,7 +22,7 @@ jest.mock('react-icons/fa', () => ({
   FaEyeSlash: () => <span data-testid="eye-slash-icon">🔒</span>
 }));
 
-describe('LoginForm', () => {
+describe('LoginForm.tsx', () => {
   beforeEach(() => {
     // Clear mocks before each test
     jest.clearAllMocks();

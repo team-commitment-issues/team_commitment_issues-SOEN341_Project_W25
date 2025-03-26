@@ -6,14 +6,14 @@ import React, {
   ReactNode,
   useCallback
 } from 'react';
-import WebSocketClient from '../Services/webSocketClient';
+import WebSocketClient from '../Services/webSocketClient.ts';
 import {
   createStatusUpdatePayload,
   createOnlineStatusSubscriptionRequest,
   Status,
   UserStatus
-} from '../types/shared';
-import { useUser } from './UserContext';
+} from '../types/shared.ts';
+import { useUser } from './UserContext.tsx';
 
 interface OnlineStatusContextType {
   onlineUsers: Record<string, UserStatus>;

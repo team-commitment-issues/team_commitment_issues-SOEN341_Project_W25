@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { createTeam } from '../Services/superAdminService';
-import styles from '../Styles/dashboardStyles';
+import { createTeam } from '../Services/superAdminService.ts';
+import styles from '../Styles/dashboardStyles.ts';
 
 const CreateTeam: React.FC = () => {
   const [teamName, setTeamName] = useState('');

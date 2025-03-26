@@ -1,6 +1,6 @@
 import React from 'react';
-import { useOnlineStatus } from '../../Context/OnlineStatusContext';
-import { Status } from '../../types/shared';
+import { useOnlineStatus } from '../../Context/OnlineStatusContext.tsx';
+import { Status } from '../../types/shared.ts';
 
 interface UserStatusIndicatorProps {
   username: string;

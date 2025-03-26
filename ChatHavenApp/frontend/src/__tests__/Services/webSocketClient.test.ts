@@ -1,5 +1,5 @@
-import WebSocketClient from '../../Services/webSocketClient';
-import { WebSocketMessage } from '../../types/shared';
+import WebSocketClient from '../../Services/webSocketClient.ts';
+import { WebSocketMessage } from '../../types/shared.ts';
 
 // Mock the WebSocket class since it's defined in global scope
 // (This complements your existing setup in setupTests.ts)

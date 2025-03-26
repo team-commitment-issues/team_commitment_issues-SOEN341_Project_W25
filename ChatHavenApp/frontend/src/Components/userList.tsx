@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import styles from '../Styles/dashboardStyles';
-import { getUsers } from '../Services/dashboardService';
-import ContextMenu from './UI/ContextMenu';
-import { addUserToTeam } from '../Services/superAdminService';
-import { addUserToChannel } from '../Services/channelService';
-import { useTheme } from '../Context/ThemeContext';
-import { useOnlineStatus } from '../Context/OnlineStatusContext';
-import UserStatusIndicator from './UI/UserStatusIndicator';
-import { Selection, ContextMenuState } from '../types/shared';
-import { useChatSelection } from '../Context/ChatSelectionContext';
-import { Status } from '../types/shared';
+import styles from '../Styles/dashboardStyles.ts';
+import { getUsers } from '../Services/dashboardService.ts';
+import ContextMenu from './UI/ContextMenu.tsx';
+import { addUserToTeam } from '../Services/superAdminService.ts';
+import { addUserToChannel } from '../Services/channelService.ts';
+import { useTheme } from '../Context/ThemeContext.tsx';
+import { useOnlineStatus } from '../Context/OnlineStatusContext.tsx';
+import UserStatusIndicator from './UI/UserStatusIndicator.tsx';
+import { Selection, ContextMenuState } from '../types/shared.ts';
+import { useChatSelection } from '../Context/ChatSelectionContext.tsx';
+import { Status } from '../types/shared.ts';
 
 interface User {
   username: string;

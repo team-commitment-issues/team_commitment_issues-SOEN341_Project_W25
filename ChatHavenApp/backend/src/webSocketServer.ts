@@ -10,7 +10,7 @@ import Team, { ITeam } from './models/Team';
 import TeamMember, { ITeamMember } from './models/TeamMember';
 import Channel, { IChannel } from './models/Channel';
 import DirectMessage, { IDirectMessage } from './models/DirectMessage';
-import { Message, IMessage } from './models/Message';
+import { Message } from './models/Message';
 import { Role, Status } from './enums';
 import { setTimeout } from 'timers/promises';
 import { createLogger } from './utils/logger';
@@ -844,13 +844,13 @@ class MessageHandlers {
     // Apply limit constraints
     const actualLimit = Math.min(limit, MAX_LIMIT);
 
-    let messages = [];
+    let messages: Array<{ _id: string; text: string; username: string; createdAt: Date; status?: string }> = [];
     let hasMore = false;
 
     try {
       if (channelName) {
         // Fetch channel messages with pagination
-        const { team, channel } = await findTeamAndChannel(
+        const { team: _team, channel } = await findTeamAndChannel(
           teamName,
           channelName,
           user._id as Schema.Types.ObjectId,
@@ -904,7 +904,7 @@ class MessageHandlers {
         JSON.stringify({
           type: 'historyResponse',
           messages: messages.map(
-            (msg: { _id: any; text: any; username: any; createdAt: any; status: any }) => ({
+            (msg: { _id: string; text: string; username: string; createdAt: Date; status?: string }) => ({
               _id: msg._id,
               text: msg.text,
               username: msg.username,

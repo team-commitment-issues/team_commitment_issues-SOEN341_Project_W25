@@ -5,7 +5,7 @@ import { Document, Schema, model } from 'mongoose';
  * @interface IDMessage
  * @extends Document
  */
-interface IDMessage extends Document {
+export interface IDMessage extends Document {
   /**
    * The text of the message.
    * @type {string}

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { updateUsername as authUpdateUsername } from './authService';
+import { updateUsername as authUpdateUsername } from './authService.ts';
 
 const API_URL = 'http://localhost:5000/user';
 

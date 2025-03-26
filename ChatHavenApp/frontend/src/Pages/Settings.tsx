@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../Styles/Settings.css';
 import { FaEye, FaEyeSlash, FaMoon, FaSun } from 'react-icons/fa';
-import { useTheme } from '../Context/ThemeContext';
-import { updatePassword, updateUsername as authUpdateUsername } from '../Services/authService';
-import { useUser } from '../Context/UserContext';
+import { useTheme } from '../Context/ThemeContext.tsx';
+import { updatePassword, updateUsername as authUpdateUsername } from '../Services/authService.ts';
+import { useUser } from '../Context/UserContext.tsx';
 
 const languages = {
   en: 'English',

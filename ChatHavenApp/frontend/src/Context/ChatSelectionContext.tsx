@@ -6,8 +6,8 @@ import React, {
   ReactNode,
   useCallback
 } from 'react';
-import { Selection } from '../types/shared';
-import { getChannels } from '../Services/dashboardService';
+import { Selection } from '../types/shared.ts';
+import { getChannels } from '../Services/dashboardService.ts';
 
 interface ChatSelectionContextType {
   selection: Selection | null;

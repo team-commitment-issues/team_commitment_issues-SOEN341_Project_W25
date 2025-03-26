@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getUserProfile } from '../Services/userService';
+import { getUserProfile } from '../Services/userService.ts';
 
 interface UserData {
   username: string;

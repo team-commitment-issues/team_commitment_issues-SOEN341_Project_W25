@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { createChannel } from '../Services/channelService';
-import styles from '../Styles/createChannelStyle';
+import { createChannel } from '../Services/channelService.ts';
+import styles from '../Styles/createChannelStyle.ts';
 
 const CreateChannel: React.FC = () => {
   const navigate = useNavigate();

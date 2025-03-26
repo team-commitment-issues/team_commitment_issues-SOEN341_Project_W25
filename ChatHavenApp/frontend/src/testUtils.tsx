@@ -1,10 +1,10 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { BrowserRouter, Routes, Route, MemoryRouter } from 'react-router-dom';
-import { ThemeProvider } from './Context/ThemeContext';
-import { UserProvider } from './Context/UserContext';
-import { OnlineStatusProvider } from './Context/OnlineStatusContext';
-import { ChatSelectionProvider } from './Context/ChatSelectionContext';
+import { ThemeProvider } from './Context/ThemeContext.tsx';
+import { UserProvider } from './Context/UserContext.tsx';
+import { OnlineStatusProvider } from './Context/OnlineStatusContext.tsx';
+import { ChatSelectionProvider } from './Context/ChatSelectionContext.tsx';
 
 interface AllProvidersProps {
   children: React.ReactNode;

@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styles from '../Styles/dashboardStyles';
-import { getUsersInTeam, getUsersInChannel } from '../Services/dashboardService';
-import { demoteToUser, promoteToAdmin, removeUserFromTeam } from '../Services/superAdminService';
-import { removeUserFromChannel } from '../Services/channelService';
-import ContextMenu from './UI/ContextMenu';
-import { useTheme } from '../Context/ThemeContext';
-import { Selection, ContextMenuState } from '../types/shared';
-import { useOnlineStatus } from '../Context/OnlineStatusContext';
-import UserStatusIndicator from './UI/UserStatusIndicator';
-import { useChatSelection } from '../Context/ChatSelectionContext';
+import styles from '../Styles/dashboardStyles.ts';
+import { getUsersInTeam, getUsersInChannel } from '../Services/dashboardService.ts';
+import { demoteToUser, promoteToAdmin, removeUserFromTeam } from '../Services/superAdminService.ts';
+import { removeUserFromChannel } from '../Services/channelService.ts';
+import ContextMenu from './UI/ContextMenu.tsx';
+import { useTheme } from '../Context/ThemeContext.tsx';
+import { Selection, ContextMenuState } from '../types/shared.ts';
+import { useOnlineStatus } from '../Context/OnlineStatusContext.tsx';
+import UserStatusIndicator from './UI/UserStatusIndicator.tsx';
+import { useChatSelection } from '../Context/ChatSelectionContext.tsx';
 
 interface User {
   username: string;

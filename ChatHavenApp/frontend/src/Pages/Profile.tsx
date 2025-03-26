@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../Context/ThemeContext';
+import { useTheme } from '../Context/ThemeContext.tsx';
 import '../Styles/Profile.css';
 
 const EditProfile: React.FC = () => {

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { login } from '../Services/authService';
+import { login } from '../Services/authService.ts';
 import { useNavigate } from 'react-router-dom';
-import Input from './UI/Input';
-import Button from './UI/Button';
-import FormGroup from './UI/FormGroup';
-import styles from '../Styles/loginStyles';
+import Input from './UI/Input.tsx';
+import Button from './UI/Button.tsx';
+import FormGroup from './UI/FormGroup.tsx';
+import styles from '../Styles/loginStyles.ts';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import TextLink from './UI/TextLink';
-import { useUser } from '../Context/UserContext';
+import TextLink from './UI/TextLink.tsx';
+import { useUser } from '../Context/UserContext.tsx';
 
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState<string>('');

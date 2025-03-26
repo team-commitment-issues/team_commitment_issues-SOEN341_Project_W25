@@ -1,6 +1,6 @@
 import React from 'react';
-import styles from '../Styles/dashboardStyles';
-import { useTheme } from '../Context/ThemeContext';
+import styles from '../Styles/dashboardStyles.ts';
+import { useTheme } from '../Context/ThemeContext.tsx';
 
 const AdminActions: React.FC = () => {
   const handleAssignUser = () => {

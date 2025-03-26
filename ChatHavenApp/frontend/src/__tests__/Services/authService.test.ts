@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { login, signUp, updateUsername, updatePassword } from '../../Services/authService';
+import { login, signUp, updateUsername, updatePassword } from '../../Services/authService.ts';
 
 // Mock axios
 jest.mock('axios');

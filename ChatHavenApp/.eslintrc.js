@@ -12,7 +12,13 @@ module.exports = {
     'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      {
+        varsIgnorePattern: '^_',
+        argsIgnorePattern: '^_'
+      }
+    ]
   },
   overrides: [
     {

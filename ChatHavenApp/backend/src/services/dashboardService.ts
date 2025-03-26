@@ -11,11 +11,11 @@ class DashboardService {
       const teams = await Team.find().select('name');
       return teams;
     }
-    const teams = [];
+    const teams: Array<{ name: string }> = [];
     for (const teamMemberId of teamMemberships) {
       const teamMember = await TeamMember.findOne({ _id: teamMemberId }).select('team');
       const team = await Team.findOne({ _id: teamMember!.team }).select('name');
-      teams.push(team!);
+      if (team) teams.push(team);
     }
 
     return teams;

@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
 import { IconType } from 'react-icons';
-import styles from '../Styles/dashboardStyles';
-import { getChannels } from '../Services/dashboardService';
-import { deleteChannel, leaveChannel } from '../Services/channelService';
-import { useTheme } from '../Context/ThemeContext';
-import { Selection, ContextMenuState } from '../types/shared';
-import { useChatSelection } from '../Context/ChatSelectionContext';
-import ContextMenu from './UI/ContextMenu';
+import styles from '../Styles/dashboardStyles.ts';
+import { getChannels } from '../Services/dashboardService.ts';
+import { deleteChannel, leaveChannel } from '../Services/channelService.ts';
+import { useTheme } from '../Context/ThemeContext.tsx';
+import { Selection, ContextMenuState } from '../types/shared.tsx';
+import { useChatSelection } from '../Context/ChatSelectionContext.tsx';
+import ContextMenu from './UI/ContextMenu.tsx';
 
 const TrashIcon: IconType = FaTrash;
 

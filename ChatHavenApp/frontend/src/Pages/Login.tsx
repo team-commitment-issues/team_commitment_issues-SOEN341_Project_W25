@@ -1,7 +1,7 @@
 import React from 'react';
-import LoginForm from '../Components/LoginForm';
-import styles from '../Styles/loginStyles';
-import { useTheme } from '../Context/ThemeContext';
+import LoginForm from '../Components/LoginForm.tsx';
+import styles from '../Styles/loginStyles.ts';
+import { useTheme } from '../Context/ThemeContext.tsx';
 
 const Login: React.FC = () => {
   const { theme } = useTheme();

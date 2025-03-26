@@ -1,4 +1,4 @@
-import { WebSocketMessage } from '../types/shared';
+import { WebSocketMessage } from '../types/shared.ts';
 
 // Define event types for WebSocket events
 type MessageCallback = (data: any) => void;

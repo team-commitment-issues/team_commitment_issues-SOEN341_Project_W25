@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import UserList from '../Components/userList';
-import TeamList from '../Components/TeamList';
-import ChannelList from '../Components/ChannelList';
-import Messaging from '../Components/Messaging';
-import styles from '../Styles/dashboardStyles';
-import TeamMemberList from '../Components/teamMemberList';
-import { useTheme } from '../Context/ThemeContext';
-import { ContextMenuState } from '../types/shared';
-import StatusSelector from '../Components/UI/StatusSelector';
-import { useUser } from '../Context/UserContext';
-import { useChatSelection } from '../Context/ChatSelectionContext';
+import UserList from '../Components/userList.tsx';
+import TeamList from '../Components/TeamList.tsx';
+import ChannelList from '../Components/ChannelList.tsx';
+import Messaging from '../Components/Messaging.tsx';
+import styles from '../Styles/dashboardStyles.ts';
+import TeamMemberList from '../Components/teamMemberList.tsx';
+import { useTheme } from '../Context/ThemeContext.tsx';
+import { ContextMenuState } from '../types/shared.ts';
+import StatusSelector from '../Components/UI/StatusSelector.tsx';
+import { useUser } from '../Context/UserContext.tsx';
+import { useChatSelection } from '../Context/ChatSelectionContext.tsx';
 
 const AdminDashboard: React.FC = () => {
   const { userData } = useUser();

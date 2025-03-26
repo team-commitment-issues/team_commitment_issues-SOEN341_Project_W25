@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
 import { IconType } from 'react-icons';
-import styles from '../Styles/dashboardStyles';
-import { getTeams } from '../Services/dashboardService';
-import { deleteTeam } from '../Services/superAdminService';
-import { useTheme } from '../Context/ThemeContext';
-import { useChatSelection } from '../Context/ChatSelectionContext';
+import styles from '../Styles/dashboardStyles.ts';
+import { getTeams } from '../Services/dashboardService.ts';
+import { deleteTeam } from '../Services/superAdminService.ts';
+import { useTheme } from '../Context/ThemeContext.tsx';
+import { useChatSelection } from '../Context/ChatSelectionContext.tsx';
 
 const TrashIcon: IconType = FaTrash;
 
