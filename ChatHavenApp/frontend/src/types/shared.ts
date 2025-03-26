@@ -1,20 +1,25 @@
 // Enum for user online status
 export enum Status {
-  ONLINE = 'online',
-  AWAY = 'away',
-  BUSY = 'busy',
-  OFFLINE = 'offline'
+  ONLINE = "online",
+  AWAY = "away",
+  BUSY = "busy",
+  OFFLINE = "offline",
 }
 
 // Enum for user roles
 export enum Role {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN'
+  USER = "USER",
+  ADMIN = "ADMIN",
+  SUPER_ADMIN = "SUPER_ADMIN",
 }
 
 // Message delivery status types
-export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+export type MessageStatus =
+  | "pending"
+  | "sent"
+  | "delivered"
+  | "read"
+  | "failed";
 
 // User status object for tracking online status
 export interface UserStatus {
@@ -31,7 +36,6 @@ export interface WebSocketMessage {
   fileName?: string;
   fileType?: string;
   fileData?: string; // base64-encoded content
-
 }
 
 // Chat message for display in UI
@@ -42,11 +46,14 @@ export interface ChatMessage {
   createdAt: Date;
   status?: MessageStatus;
   clientMessageId?: string;
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
 }
 
 // Selection for channel or direct message in UI
 export interface Selection {
-  type: 'channel' | 'directMessage';
+  type: "channel" | "directMessage";
   teamName: string;
   channelName?: string;
   username?: string; // For direct messages - the receiver's username
@@ -74,7 +81,7 @@ export interface RetryInfo {
 
 // Channel message payload
 export interface ChannelMessagePayload extends WebSocketMessage {
-  type: 'message';
+  type: "message";
   text: string;
   teamName: string;
   channelName: string;
@@ -83,7 +90,7 @@ export interface ChannelMessagePayload extends WebSocketMessage {
 
 // Direct message payload
 export interface DirectMessagePayload extends WebSocketMessage {
-  type: 'directMessage';
+  type: "directMessage";
   text: string;
   teamName: string;
   receiverUsername: string; // The receiver's username
@@ -92,21 +99,21 @@ export interface DirectMessagePayload extends WebSocketMessage {
 
 // Join channel payload
 export interface JoinChannelPayload extends WebSocketMessage {
-  type: 'join';
+  type: "join";
   teamName: string;
   channelName: string;
 }
 
 // Join direct message payload
 export interface JoinDirectMessagePayload extends WebSocketMessage {
-  type: 'joinDirectMessage';
+  type: "joinDirectMessage";
   teamName: string;
   username: string; // The receiver's username (server API expects this field)
 }
 
 // Typing indicator payload
 export interface TypingPayload extends WebSocketMessage {
-  type: 'typing';
+  type: "typing";
   isTyping: boolean;
   teamName: string;
   username?: string; // Who is typing
@@ -116,27 +123,27 @@ export interface TypingPayload extends WebSocketMessage {
 
 // Status update payload
 export interface StatusUpdatePayload extends WebSocketMessage {
-  type: 'setStatus';
+  type: "setStatus";
   status: Status; // Using the Status enum, not MessageStatus
 }
 
 // Online status subscription payload
 export interface OnlineStatusSubscriptionPayload extends WebSocketMessage {
-  type: 'subscribeOnlineStatus';
+  type: "subscribeOnlineStatus";
   teamName: string;
   channelName?: string; // Optional, for channel-specific subscriptions
 }
 
 // Message acknowledgment payload
 export interface MessageAckPayload extends WebSocketMessage {
-  type: 'messageAck';
+  type: "messageAck";
   messageId: string;
   status: MessageStatus;
 }
 
 // Fetch history request payload
 export interface FetchHistoryPayload extends WebSocketMessage {
-  type: 'fetchHistory';
+  type: "fetchHistory";
   teamName: string;
   channelName?: string;
   username?: string; // For direct messages - other user's username
@@ -156,11 +163,11 @@ export const createChannelMessagePayload = (
   channelName: string
 ): ChannelMessagePayload => {
   return {
-    type: 'message',
+    type: "message",
     text,
     username,
     teamName,
-    channelName
+    channelName,
   };
 };
 
@@ -172,11 +179,11 @@ export const createDirectMessagePayload = (
   receiverUsername: string
 ): DirectMessagePayload => {
   return {
-    type: 'directMessage',
+    type: "directMessage",
     text,
     username: senderUsername, // Optional but helps with clarity
     teamName,
-    receiverUsername
+    receiverUsername,
   };
 };
 
@@ -186,9 +193,9 @@ export const createJoinChannelRequest = (
   channelName: string
 ): JoinChannelPayload => {
   return {
-    type: 'join',
+    type: "join",
     teamName,
-    channelName
+    channelName,
   };
 };
 
@@ -198,9 +205,9 @@ export const createJoinDirectMessageRequest = (
   receiverUsername: string
 ): JoinDirectMessagePayload => {
   return {
-    type: 'joinDirectMessage',
+    type: "joinDirectMessage",
     teamName,
-    username: receiverUsername // Server expects username field for the receiver
+    username: receiverUsername, // Server expects username field for the receiver
   };
 };
 
@@ -212,11 +219,11 @@ export const createChannelTypingIndicator = (
   channelName: string
 ): TypingPayload => {
   return {
-    type: 'typing',
+    type: "typing",
     isTyping,
     username,
     teamName,
-    channelName
+    channelName,
   };
 };
 
@@ -228,11 +235,11 @@ export const createDirectMessageTypingIndicator = (
   receiverUsername: string
 ): TypingPayload => {
   return {
-    type: 'typing',
+    type: "typing",
     isTyping,
     username,
     teamName,
-    receiverUsername
+    receiverUsername,
   };
 };
 
@@ -241,8 +248,8 @@ export const createStatusUpdatePayload = (
   status: Status
 ): StatusUpdatePayload => {
   return {
-    type: 'setStatus',
-    status
+    type: "setStatus",
+    status,
   };
 };
 
@@ -252,9 +259,9 @@ export const createOnlineStatusSubscriptionRequest = (
   channelName?: string
 ): OnlineStatusSubscriptionPayload => {
   return {
-    type: 'subscribeOnlineStatus',
+    type: "subscribeOnlineStatus",
     teamName,
-    ...(channelName && { channelName })
+    ...(channelName && { channelName }),
   };
 };
 
@@ -264,9 +271,9 @@ export const createMessageAck = (
   status: MessageStatus
 ): MessageAckPayload => {
   return {
-    type: 'messageAck',
+    type: "messageAck",
     messageId,
-    status
+    status,
   };
 };
 
@@ -278,12 +285,14 @@ export const createChannelHistoryRequest = (
   limit: number = 50
 ): FetchHistoryPayload => {
   return {
-    type: 'fetchHistory',
+    type: "fetchHistory",
     teamName,
     channelName,
     before,
     limit,
-    requestId: `history_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    requestId: `history_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 9)}`,
   };
 };
 
@@ -295,11 +304,13 @@ export const createDirectMessageHistoryRequest = (
   limit: number = 50
 ): FetchHistoryPayload => {
   return {
-    type: 'fetchHistory',
+    type: "fetchHistory",
     teamName,
     username: receiverUsername, // Server API expects username field for the receiver
     before,
     limit,
-    requestId: `history_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    requestId: `history_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 9)}`,
   };
 };
