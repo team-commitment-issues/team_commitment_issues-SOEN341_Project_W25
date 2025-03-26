@@ -22,7 +22,5 @@
       "@config/*": ["config/*"]
     }
   },
-  "include": [
-    "../../src/**/*"
-  ]
+  "include": ["../../src/**/*"]
 }

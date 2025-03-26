@@ -844,7 +844,13 @@ class MessageHandlers {
     // Apply limit constraints
     const actualLimit = Math.min(limit, MAX_LIMIT);
 
-    let messages: Array<{ _id: string; text: string; username: string; createdAt: Date; status?: string }> = [];
+    let messages: Array<{
+      _id: string;
+      text: string;
+      username: string;
+      createdAt: Date;
+      status?: string;
+    }> = [];
     let hasMore = false;
 
     try {
@@ -904,7 +910,13 @@ class MessageHandlers {
         JSON.stringify({
           type: 'historyResponse',
           messages: messages.map(
-            (msg: { _id: string; text: string; username: string; createdAt: Date; status?: string }) => ({
+            (msg: {
+              _id: string;
+              text: string;
+              username: string;
+              createdAt: Date;
+              status?: string;
+            }) => ({
               _id: msg._id,
               text: msg.text,
               username: msg.username,

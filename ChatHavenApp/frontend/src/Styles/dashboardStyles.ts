@@ -407,10 +407,12 @@ const styles = {
   inputBox: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
     padding: '10px',
-    borderTop: '1px solid #E4E6EB',
+    borderTop: '1px solid #ccc',
+    backgroundColor: '#fff',
+    gap: '8px',
     '&.dark-mode': {
+      backgroundColor: '#222',
       borderTop: '1px solid #444'
     }
   },
@@ -418,13 +420,14 @@ const styles = {
   inputField: {
     flex: 1,
     padding: '10px',
-    borderRadius: '6px',
-    border: '1px solid #CCC',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    outline: 'none',
     fontSize: '14px',
     '&.dark-mode': {
-      backgroundColor: '#242424',
-      color: '#e0e0e0',
-      border: '1px solid #444'
+      backgroundColor: '#333',
+      color: '#fff',
+      border: '1px solid #555'
     }
   },
 
@@ -717,6 +720,22 @@ const styles = {
     '&.dark-mode': {
       backgroundColor: '#242424',
       boxShadow: '0px 4px 6px rgba(255, 255, 255, 0.1)'
+    }
+  },
+
+  uploadButton: {
+    cursor: 'pointer',
+    fontSize: '20px',
+    marginLeft: '8px',
+    color: '#888',
+    '&:hover': {
+      color: '#000'
+    },
+    '&.dark-mode': {
+      color: '#bbb',
+      '&:hover': {
+        color: '#fff'
+      }
     }
   }
 };

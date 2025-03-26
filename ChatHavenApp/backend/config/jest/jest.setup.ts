@@ -2,7 +2,8 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '../../.env.test' });
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = 'nQKpqUoax24EOZGF+1CMPYewP3lz0287g5O7aMmYWL9/ika/NdIc8q0TgpaCucftPu/cFgxUwGux2yasbpTUZg==';
+  process.env.JWT_SECRET =
+    'nQKpqUoax24EOZGF+1CMPYewP3lz0287g5O7aMmYWL9/ika/NdIc8q0TgpaCucftPu/cFgxUwGux2yasbpTUZg==';
 }
 
 import { MongoMemoryServer } from 'mongodb-memory-server';
