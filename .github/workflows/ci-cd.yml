@@ -30,6 +30,13 @@ jobs:
           cache: "yarn"
           cache-dependency-path: "ChatHavenApp/yarn.lock"
 
+      # Skip husky installation in CI
+      - name: Configure git to ignore husky hooks
+        run: |
+          git config --global core.hooksPath /dev/null
+          # Disable husky in CI
+          echo "HUSKY=0" >> $GITHUB_ENV
+
       # Create base Jest config file
       - name: Create jest.base.js
         run: |
@@ -68,7 +75,8 @@ jobs:
         run: |
           cd ChatHavenApp
           yarn install
-          yarn add -D whatwg-fetch identity-obj-proxy
+          # Use the -W flag to explicitly add to the workspace root
+          yarn add -W -D whatwg-fetch identity-obj-proxy
 
       # Update frontend Jest config to handle ESM modules
       - name: Update frontend Jest config
@@ -243,6 +251,12 @@ jobs:
           node-version: "20"
           cache: "yarn"
           cache-dependency-path: "ChatHavenApp/yarn.lock"
+
+      # Skip husky installation in CI
+      - name: Configure git to ignore husky hooks
+        run: |
+          git config --global core.hooksPath /dev/null
+          echo "HUSKY=0" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
