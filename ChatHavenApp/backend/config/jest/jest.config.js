@@ -1,5 +1,5 @@
 // ChatHavenApp/backend/config/jest/jest.config.js
-import baseConfig from '../../jest.base';
+const baseConfig = require('../../jest.base');
 
 module.exports = {
   ...baseConfig,

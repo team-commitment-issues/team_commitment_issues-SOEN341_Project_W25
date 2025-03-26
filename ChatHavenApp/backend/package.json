@@ -1,7 +1,8 @@
 {
-  "name": "@your-project/backend",
+  "name": "@chat-haven/backend",
   "version": "1.0.0",
   "main": "dist/server.js",
+  "license": "MIT",
   "scripts": {
     "build": "tsc -p ./config/tsconfig/tsconfig.json",
     "test": "jest --config ./config/jest/jest.config.js",

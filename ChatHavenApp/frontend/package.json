@@ -1,7 +1,8 @@
 {
-  "name": "@your-project/frontend",
+  "name": "@chat-haven/frontend",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "ajv": "^8.0.0",

@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
@@ -19,10 +19,10 @@
       "@routes/*": ["routes/*"],
       "@utils/*": ["utils/*"],
       "@middleware/*": ["middleware/*"],
-      "@config/*": ["config/*"],
-      "@services/*": ["services/*"],
-      "@types/*": ["types/*"]
+      "@config/*": ["config/*"]
     }
   },
-  "include": ["../../src/**/*"]
+  "include": [
+    "../../src/**/*"
+  ]
 }
