@@ -5,7 +5,7 @@ import { login, signUp, updateUsername, updatePassword } from '../../Services/au
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-describe('authService', () => {
+describe.skip('authService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();

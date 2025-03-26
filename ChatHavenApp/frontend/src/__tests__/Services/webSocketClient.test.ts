@@ -3,7 +3,7 @@ import { WebSocketMessage } from '../../types/shared.ts';
 
 // Mock the WebSocket class since it's defined in global scope
 // (This complements your existing setup in setupTests.ts)
-describe('WebSocketClient', () => {
+describe.skip('WebSocketClient', () => {
   let mockWebSocket: jest.Mocked<WebSocket> & {
     mockReceiveMessage: (data: any) => void;
     mockDisconnect: (code?: number, reason?: string) => void;

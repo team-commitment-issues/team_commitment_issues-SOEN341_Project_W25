@@ -11,13 +11,14 @@ if (typeof global.TextEncoder === 'undefined') {
   global.TextDecoder = TextDecoder;
 }
 
-// Fetch API polyfill
+// Fetch API polyfill - Using whatwg-fetch instead of node-fetch
 if (typeof global.fetch === 'undefined') {
-  const fetch = require('node-fetch');
-  global.fetch = fetch;
-  global.Headers = fetch.Headers;
-  global.Request = fetch.Request;
-  global.Response = fetch.Response;
+  // Use a CJS compatible fetch polyfill
+  require('whatwg-fetch');
+  global.fetch = window.fetch;
+  global.Headers = window.Headers;
+  global.Request = window.Request;
+  global.Response = window.Response;
 }
 
 // URL and URLSearchParams polyfills

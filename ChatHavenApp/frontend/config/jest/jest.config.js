@@ -1,5 +1,5 @@
 // ChatHavenApp/frontend/config/jest/jest.config.js
-const baseConfig = require('../../jest.base');
+const baseConfig = require('../../../jest.base');
 
 module.exports = {
   ...baseConfig,
@@ -7,6 +7,10 @@ module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   setupFiles: ['<rootDir>/src/jest.polyfills.js'],
+  transformIgnorePatterns: [
+    // Transform node-fetch and its dependencies that use ESM
+    '/node_modules/(?!(node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)'
+  ],
   moduleNameMapper: {
     // Handle CSS imports
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
