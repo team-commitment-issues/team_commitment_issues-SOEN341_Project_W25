@@ -100,6 +100,16 @@ class UserService {
     return await user.save();
   }
 
+  static async setPreferredLanguage(username: string, language: string): Promise<any> {
+    const user = await User.findOne({ username: { $eq: username } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.preferredLanguage = language;
+    return await user.save();
+  }
+
   static async getUserProfile(username: string): Promise<any> {
     const user = await User.findOne({ username }).select('-password');
     if (!user) {

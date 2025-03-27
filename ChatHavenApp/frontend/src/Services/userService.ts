@@ -44,3 +44,23 @@ export const updateUsername = async (
   // Use the existing auth service function
   return authUpdateUsername(oldUsername, newUsername, password);
 };
+
+export const setPreferredLanguage = async (language: string): Promise<any> => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    throw new Error('Authentication required');
+  }
+
+  try {
+    const response = await axios.post(`${API_URL}/set-preferred-language`, 
+      { language },
+      {headers: { Authorization: `Bearer ${token}` }}
+    );
+
+    return response.data;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.error || 'Failed to get user profile';
+    throw new Error(errorMessage);
+  }
+};
