@@ -2,6 +2,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import jwt from 'jsonwebtoken';
 import { createLogger } from '../utils/logger';
 import FileStorageService from '../services/fileStorageService';
 import authenticate from '../middlewares/authMiddleware';
@@ -11,19 +12,37 @@ const logger = createLogger('FileRoutes');
 
 /**
  * File download endpoint
- * GET /files/:filePath
+ * GET /api/files/:filePath
  */
 fileRoutes.get('/:filePath(*)', authenticate, (req, res): void => {
     // Get the file path from the URL
     const relativePath = req.params.filePath;
+
+    // Log the requested path for debugging
+    logger.debug('File request received', {
+        requestedPath: relativePath,
+        params: req.params,
+        query: req.query
+    });
+
     const fullPath = FileStorageService.getFilePath(relativePath);
 
     // Check if the file exists BEFORE doing anything else
     if (!fs.existsSync(fullPath)) {
-        logger.error('File not found', { path: relativePath });
+        logger.error('File not found', {
+            requestedPath: relativePath,
+            fullPath: fullPath,
+            exists: false
+        });
         res.status(404).json({ error: 'File not found' });
         return;
     }
+
+    // Log that the file was found
+    logger.debug('File found', {
+        requestedPath: relativePath,
+        fullPath: fullPath
+    });
 
     try {
         // Get filename and determine if viewing inline
@@ -77,7 +96,7 @@ fileRoutes.get('/:filePath(*)', authenticate, (req, res): void => {
 
             // Only attempt to send an error if headers haven't been sent yet
             if (!res.headersSent) {
-                res.status(500).json({ error: 'Failed to stream file' }).end();
+                res.status(500).json({ error: 'Failed to stream file' });
             } else {
                 // If headers are already sent, just end the response
                 res.end();
@@ -98,7 +117,7 @@ fileRoutes.get('/:filePath(*)', authenticate, (req, res): void => {
                 path: relativePath,
                 error: error instanceof Error ? error.message : String(error)
             });
-            res.status(500).json({ error: 'Failed to serve file' }).end();
+            res.status(500).json({ error: 'Failed to serve file' });
         } else {
             // If headers are already sent, just log the error and end the response
             logger.error('Error after headers sent', {

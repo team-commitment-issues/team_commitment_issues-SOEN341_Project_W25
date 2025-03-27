@@ -70,10 +70,11 @@ class FileStorageService {
                 savedAs: safeFileName,
                 size: buffer.length,
                 type: fileType,
-                path: fullPath
+                path: fullPath,
+                url: `/files/${safeFileName}` // Log the complete URL
             });
 
-            // Return the relative path (just the filename in this case)
+            // Return the filename that was used to save the file
             return safeFileName;
         } catch (error) {
             logger.error('Failed to save file', {

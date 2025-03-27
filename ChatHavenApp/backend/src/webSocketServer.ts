@@ -364,25 +364,27 @@ class MessageHandlers {
         logger.debug('Processing file attachment', {
           fileName: message.fileName,
           fileType: message.fileType,
-          fileSize: message.fileData.length
+          fileSize: message.fileData ? message.fileData.length : 0
         });
 
         // Save the file using the file storage service
-        fileUrl = await fileStorageService.saveFile(
+        const savedFileName = await fileStorageService.saveFile(
           message.fileData,
           message.fileName,
           message.fileType
         );
 
+        fileUrl = `/files/${savedFileName}`;
+
         // Store file information
         fileInfo = {
           fileName: message.fileName,
           fileType: message.fileType,
-          fileUrl: `/files/${fileUrl}`, // Use the relative path
+          fileUrl: fileUrl,
           fileSize: message.fileSize
         };
 
-        logger.debug('File saved successfully', { fileName: message.fileName, fileUrl });
+        logger.debug('File saved successfully', { fileName: message.fileName, savedAs: savedFileName, fileUrl: fileInfo.fileUrl });
       } catch (error: any) {
         logger.error('Failed to process file attachment', {
           fileName: message.fileName,
@@ -589,24 +591,26 @@ class MessageHandlers {
         logger.debug('Processing file attachment for DM', {
           fileName: message.fileName,
           fileType: message.fileType,
-          fileSize: message.fileData.length
+          fileSize: message.fileData ? message.fileData.length : 0
         });
 
         // Save the file using the file storage service
-        fileUrl = await fileStorageService.saveFile(
+        const savedFileName = await fileStorageService.saveFile(
           message.fileData,
           message.fileName,
           message.fileType
         );
 
+        fileUrl = `/files/${savedFileName}`;
+
         fileInfo = {
           fileName: message.fileName,
           fileType: message.fileType,
-          fileUrl: `/files/${fileUrl}`, // Use the relative path
+          fileUrl: fileUrl,
           fileSize: message.fileSize
         };
 
-        logger.debug('DM file saved successfully', { fileName: message.fileName, fileUrl });
+        logger.debug('DM file saved successfully', { fileName: message.fileName, savedAs: savedFileName, fileUrl: fileInfo.fileUrl });
       } catch (error: any) {
         logger.error('Failed to process DM file attachment', {
           fileName: message.fileName,
@@ -630,7 +634,12 @@ class MessageHandlers {
       username: sentMessage.username,
       createdAt: sentMessage.createdAt,
       status: sentMessage.status || 'sent',
-      fileInfo,
+      ...(sentMessage.fileName && sentMessage.fileUrl && {
+        fileName: sentMessage.fileName,
+        fileType: sentMessage.fileType,
+        fileUrl: sentMessage.fileUrl, // This should now have the complete path
+        fileSize: sentMessage.fileSize
+      }),
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
     };

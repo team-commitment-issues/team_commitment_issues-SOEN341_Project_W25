@@ -187,6 +187,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
   // Sending messages with client-side tracking
   const sendMessage = useCallback(
     (messageData: WebSocketMessage) => {
+      console.log('Sending message with data:', messageData);
       // Generate a client-side ID for tracking
       const clientMessageId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const messageWithId: WebSocketMessage = {
@@ -200,6 +201,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
         // Register for status updates
         wsService.registerMessageStatusCallback(clientMessageId, status => {
+          console.log(`Received status update for message ${clientMessageId}:`, status);
           setMessages(prevMsgs =>
             prevMsgs.map(msg =>
               msg.clientMessageId === clientMessageId
@@ -216,8 +218,16 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           username,
           createdAt: new Date(),
           status: 'pending',
-          clientMessageId
+          clientMessageId,
+          ...(messageData.fileName && {
+            fileName: messageData.fileName,
+            fileType: messageData.fileType,
+            // Note: fileUrl will be assigned by the server
+            fileSize: messageData.fileSize
+          })
         };
+
+        console.log('Adding pending message to state:', newMessage);
 
         setMessages(prev => [...prev, newMessage]);
       } else {
@@ -228,7 +238,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           username,
           createdAt: new Date(),
           status: 'pending',
-          clientMessageId
+          clientMessageId,
+          // Include file information if it exists
+          ...(messageData.fileName && {
+            fileName: messageData.fileName,
+            fileType: messageData.fileType,
+            fileSize: messageData.fileSize
+          })
         };
 
         setMessages(prev => [...prev, newMessage]);
@@ -499,6 +515,19 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     };
 
     const handleMessage = (data: any) => {
+      console.log('★★★ WebSocket message received:', data);
+      if ((data.type === 'message' || data.type === 'directMessage') &&
+        (data.fileName || data.fileUrl || (data.text && data.text.startsWith('[File]')))) {
+        console.log('⭐⭐⭐ FILE MESSAGE RECEIVED:', {
+          type: data.type,
+          id: data._id,
+          text: data.text,
+          fileName: data.fileName,
+          fileType: data.fileType,
+          fileUrl: data.fileUrl,
+          hasFileProps: !!(data.fileName && data.fileType && data.fileUrl)
+        });
+      }
       // check both _id and clientMessageId
       const isDuplicate = (messageData: any): boolean => {
         // Check if we've already processed this message ID
@@ -553,12 +582,33 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
               msg.status === 'pending' && msg.text === data.text && msg.username === data.username
           );
 
-          if (pendingMessage) {
+          const pendingMessageById = messages.find(
+            msg => msg.clientMessageId && msg.clientMessageId === data.clientMessageId
+          );
+
+          const matchedPendingMessage = pendingMessageById || pendingMessage;
+
+          if (matchedPendingMessage) {
+            console.log('Updating pending message with server response', {
+              clientMessageId: data.clientMessageId,
+              hasFileInfo: !!(data.fileName && data.fileType && data.fileUrl)
+            });
             // Update message status to sent
             setMessages(prev =>
               prev.map(msg =>
-                msg === pendingMessage
-                  ? { ...msg, _id: data._id ?? 'unknown-id', status: 'sent' }
+                (msg === matchedPendingMessage ||
+                  (msg.clientMessageId && msg.clientMessageId === data.clientMessageId))
+                  ? {
+                    ...msg,
+                    _id: data._id,
+                    status: 'sent',
+                    ...(data.fileName && {
+                      fileName: data.fileName,
+                      fileType: data.fileType,
+                      fileUrl: data.fileUrl,
+                      fileSize: data.fileSize
+                    })
+                  }
                   : msg
               )
             );
@@ -567,11 +617,18 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             setMessages(prev => [
               ...prev,
               {
-                _id: data._id ?? 'unknown-id',
+                _id: data._id,
                 text: data.text || '',
                 username: data.username || '',
                 createdAt: new Date(data.createdAt || new Date()),
-                status: 'sent'
+                status: 'sent',
+                // Include file information
+                ...(data.fileName && {
+                  fileName: data.fileName,
+                  fileType: data.fileType,
+                  fileUrl: data.fileUrl,
+                  fileSize: data.fileSize
+                })
               }
             ]);
           }
@@ -587,11 +644,18 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           setMessages(prev => [
             ...prev,
             {
-              _id: data._id ?? 'unknown-id',
+              _id: data._id,
               text: data.text || '',
               username: data.username || '',
               createdAt: new Date(data.createdAt || new Date()),
-              status: 'delivered'
+              status: 'delivered',
+              // Include file information
+              ...(data.fileName && {
+                fileName: data.fileName,
+                fileType: data.fileType,
+                fileUrl: data.fileUrl,
+                fileSize: data.fileSize
+              })
             }
           ]);
 
@@ -613,6 +677,8 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         setIsLoadingHistory(false);
         setInitialLoadDone(true);
 
+        console.log('📚 Raw history data received:', data.messages);
+
         // Process the messages
         const historyMessages = (data.messages || [])
           .filter((msg: any) => !isDuplicate(msg))
@@ -622,8 +688,15 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             username: msg.username,
             createdAt: new Date(msg.createdAt),
             status: msg.status || 'delivered',
-            ...(msg.clientMessageId && { clientMessageId: msg.clientMessageId })
-          }));
+            ...(msg.clientMessageId && { clientMessageId: msg.clientMessageId }),
+            ...(msg.fileName && {
+              fileName: msg.fileName,
+              fileType: msg.fileType || 'application/octet-stream',
+              fileUrl: msg.fileUrl,
+              fileSize: msg.fileSize
+            })
+          })
+          );
 
         // Even if there are no messages, set initialLoadDone to true
         if (historyMessages.length === 0) {
@@ -854,13 +927,12 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         }
 
         console.log('File read successfully, creating message');
-
-        // Print the length of base64 content
         console.log(`Base64 content length: ${base64Content.length} characters`);
 
         // Create a unique identifier for this file upload
         const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+        // Create message with file data
         const mediaMessage: WebSocketMessage = {
           type: selection.type === 'directMessage' ? 'directMessage' : 'message',
           text: `[File] ${file.name}`, // Text indicates this is a file message
@@ -869,36 +941,42 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           fileSize: file.size,
           fileData: base64Content,
           teamName: selection.teamName,
-          uploadId, // Include the unique upload ID for tracking
+          uploadId, // Track the upload
           ...(selection.type === 'directMessage'
             ? { receiverUsername: selection.username }
             : { channelName: selection.channelName })
         };
 
-        console.log(`Sending message with uploadId: ${uploadId}`);
+        console.log(`Sending file message with uploadId: ${uploadId}`, {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          messageType: mediaMessage.type,
+          teamName: selection.teamName,
+          // Don't log the full base64 content as it's too large
+          fileDataLength: base64Content.length
+        });
 
         // Track the start time of the upload
         const startTime = performance.now();
 
-        // Send the message
+        // Send the message and get the client ID
         const clientMessageId = sendMessage(mediaMessage);
 
-        console.log(`Message sent with clientMessageId: ${clientMessageId}`);
+        console.log(`File message sent with clientMessageId: ${clientMessageId}`);
 
-        // Setup a listener to track when this message is acknowledged
-        if (wsService) {
-          wsService.registerMessageStatusCallback(clientMessageId, (status: string) => {
-            const endTime = performance.now();
-            const duration = (endTime - startTime) / 1000; // seconds
+        // Register a callback to track when the server acknowledges the message
+        wsService.registerMessageStatusCallback(clientMessageId, (status) => {
+          const endTime = performance.now();
+          const duration = (endTime - startTime) / 1000; // seconds
 
-            console.log(`Upload ${uploadId} ${status} in ${duration.toFixed(2)}s`, {
-              clientMessageId,
-              fileName: file.name,
-              fileSize: file.size,
-              status
-            });
+          console.log(`Upload ${uploadId} ${status} in ${duration.toFixed(2)}s`, {
+            clientMessageId,
+            fileName: file.name,
+            fileSize: file.size,
+            status
           });
-        }
+        });
       };
 
       reader.onerror = (error) => {
@@ -906,9 +984,11 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         alert(`Failed to read file ${file.name}`);
       };
 
+      // Start reading the file as data URL (which gives us the base64 encoding)
       reader.readAsDataURL(file);
     });
 
+    // Clear the file input after processing
     e.target.value = '';
   };
 
@@ -976,38 +1056,28 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         ) : (
           /* Message list */
           messages.map(msg => {
-            // Check if this is a file message by detecting the "[File]" prefix or file properties
-            const isFileMessage =
-              (msg.text && msg.text.startsWith("[File]")) ||
-              (msg.fileName && msg.fileType);
+            // Log the message for debugging
+            console.log('RENDERING MESSAGE DETAILS:', JSON.stringify(msg, null, 2));
+
+            // Check if this is a file message by detecting file properties
+            const isFileMessage = !!(msg.fileName && msg.fileType && msg.fileUrl);
+
+            console.log(`Message ${msg._id || 'unknown'} isFileMessage:`, isFileMessage, {
+              fileName: msg.fileName,
+              fileType: msg.fileType,
+              fileUrl: msg.fileUrl
+            });
 
             // Extract file information
-            let fileInfo: { fileName: string; fileType: string; fileUrl: string; fileSize?: number } | null = null;
+            let fileInfo: { fileName?: string; fileType?: string; fileUrl?: string; fileSize?: number } | null = null;
             if (isFileMessage) {
-              // If we have explicit file properties, use those
-              if (msg.fileName && msg.fileType) {
-                fileInfo = {
-                  fileName: msg.fileName,
-                  fileType: msg.fileType,
-                  fileUrl: msg.fileUrl || `/files/${msg.fileName}`, // Fallback URL if not provided
-                  fileSize: msg.fileSize
-                };
-              }
-              // Otherwise try to extract from the text (backward compatibility)
-              else if (msg.text && msg.text.startsWith("[File]")) {
-                const fileName = msg.text.replace("[File] ", "");
-                // Guess file type from extension
-                const fileExt = fileName.split('.').pop()?.toLowerCase();
-                const fileType = fileExt === 'jpg' || fileExt === 'jpeg' || fileExt === 'png' || fileExt === 'gif'
-                  ? `image/${fileExt}`
-                  : `application/${fileExt}`;
-
-                fileInfo = {
-                  fileName: fileName,
-                  fileType: fileType,
-                  fileUrl: `/files/${fileName}`,
-                };
-              }
+              fileInfo = {
+                fileName: msg.fileName,
+                fileType: msg.fileType,
+                fileUrl: msg.fileUrl,
+                fileSize: msg.fileSize
+              };
+              console.log('File attachment will be rendered with:', fileInfo);
             }
 
             return (
@@ -1042,19 +1112,22 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                 <div>
                   <strong>{msg.username}</strong>:{' '}
 
-                  {/* If this is a file message but not showing the "[File]" prefix */}
-                  {(!isFileMessage || (isFileMessage && !msg.text?.startsWith("[File]"))) && (
+                  {/* Show message text content if it's not a file-only message
+            or if it has additional text content */}
+                  {(!isFileMessage || (isFileMessage && !msg.text?.startsWith('[File]'))) && (
                     <span>{msg.text}</span>
                   )}
 
                   {/* Render file attachment if we have file info */}
-                  {fileInfo && (
-                    <FileAttachment
-                      fileName={fileInfo.fileName}
-                      fileType={fileInfo.fileType}
-                      fileUrl={fileInfo.fileUrl}
-                      fileSize={fileInfo.fileSize}
-                    />
+                  {isFileMessage && (
+                    <>
+                      <FileAttachment
+                        fileName={fileInfo!.fileName || 'Unknown File'}
+                        fileType={fileInfo!.fileType || ''}
+                        fileUrl={fileInfo!.fileUrl || ''}
+                        fileSize={fileInfo!.fileSize}
+                      />
+                    </>
                   )}
 
                   <div

@@ -50,12 +50,30 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const [showPreview, setShowPreview] = useState(false);
     const [textContent, setTextContent] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     // Add token to fileUrl
     const getAuthenticatedUrl = (url: string, inline: boolean = false): string => {
+        // Make sure we have a valid URL
+        if (!url) {
+            console.error('Invalid file URL:', url);
+            return '#'; // Return a placeholder
+        }
+
+        console.log('Original file URL:', url);
+
         const token = localStorage.getItem('token');
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}token=${token}${inline ? '&inline=true' : ''}`;
+
+        // Make sure the URL starts with / if it's a relative path
+        const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+
+        // Add query parameters
+        const separator = normalizedUrl.includes('?') ? '&' : '?';
+        const authenticatedUrl = `${normalizedUrl}${separator}token=${token}${inline ? '&inline=true' : ''}`;
+
+        console.log('Authenticated URL:', authenticatedUrl);
+
+        return authenticatedUrl;
     };
 
     // Handle file opening/preview
@@ -64,6 +82,8 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         if (isTextFile(fileName) && !textContent) {
             try {
                 setLoading(true);
+                console.log('Fetching text file from:', fileUrl);
+
                 const response = await fetch(getAuthenticatedUrl(fileUrl, true), {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -71,15 +91,16 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch file: ${response.statusText}`);
+                    throw new Error(`Failed to fetch file: ${response.statusText} (${response.status})`);
                 }
 
                 const content = await response.text();
+                console.log('Successfully loaded text content, length:', content.length);
                 setTextContent(content);
                 setShowPreview(true);
             } catch (error) {
                 console.error('Error fetching file:', error);
-                alert('Failed to load file content');
+                alert('Failed to load file content: ' + (error instanceof Error ? error.message : 'Unknown error'));
             } finally {
                 setLoading(false);
             }
@@ -87,6 +108,12 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             // Toggle preview for text files
             setShowPreview(!showPreview);
         }
+    };
+
+    // Handle image loading error
+    const handleImageError = () => {
+        console.error('Failed to load image:', fileUrl);
+        setImageError(true);
     };
 
     // Base styles for the component
@@ -151,6 +178,13 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         wordBreak: 'break-word',
     };
 
+    const errorContainerStyle: React.CSSProperties = {
+        padding: '20px',
+        textAlign: 'center',
+        backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f8f8f8',
+        color: theme === 'dark' ? '#f87c7c' : '#d32f2f',
+    };
+
     // Different file type icons
     const getFileIcon = () => {
         if (isImageFile(fileType)) return '🖼️';
@@ -206,7 +240,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             {/* Preview section */}
             {showPreview && (
                 <div>
-                    {isImageFile(fileType) && (
+                    {isImageFile(fileType) && !imageError && (
                         <div style={{ padding: '8px', textAlign: 'center' }}>
                             <img
                                 src={getAuthenticatedUrl(fileUrl, true)}
@@ -216,12 +250,34 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                                     maxHeight: '300px',
                                     objectFit: 'contain'
                                 }}
+                                onError={handleImageError}
                             />
+                        </div>
+                    )}
+
+                    {isImageFile(fileType) && imageError && (
+                        <div style={errorContainerStyle}>
+                            <div style={{ marginBottom: '10px' }}>Failed to load image</div>
+                            <a
+                                href={getAuthenticatedUrl(fileUrl)}
+                                download={fileName}
+                                style={{ ...buttonStyle, textDecoration: 'none' }}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Download Instead
+                            </a>
                         </div>
                     )}
 
                     {isTextFile(fileName) && textContent && (
                         <div style={textPreviewStyle}>{textContent}</div>
+                    )}
+
+                    {isTextFile(fileName) && loading && (
+                        <div style={{ ...textPreviewStyle, textAlign: 'center' }}>
+                            Loading content...
+                        </div>
                     )}
                 </div>
             )}
