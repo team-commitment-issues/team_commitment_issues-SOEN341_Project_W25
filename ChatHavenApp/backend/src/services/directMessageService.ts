@@ -57,7 +57,13 @@ class DirectMessageService {
   static async sendDirectMessage(
     text: string,
     username: string,
-    directMessageId: Types.ObjectId
+    directMessageId: Types.ObjectId,
+    fileInfo?: {
+      fileName: string;
+      fileType: string;
+      fileUrl: string;
+      fileSize?: number;
+    }
   ): Promise<IDMessage> {
     const directMessage = await DirectMessage.findById(directMessageId);
     if (!directMessage) {
@@ -68,7 +74,13 @@ class DirectMessageService {
       username,
       directMessage: directMessageId,
       createdAt: new Date(),
-      status: 'sent' // Initialize with sent status
+      status: 'sent', // Initialize with sent status
+      ...fileInfo && {
+        fileName: fileInfo.fileName,
+        fileType: fileInfo.fileType,
+        fileUrl: fileInfo.fileUrl,
+        fileSize: fileInfo.fileSize
+      }
     });
     await newDMessage.save();
     directMessage.dmessages.push(newDMessage._id as Schema.Types.ObjectId);

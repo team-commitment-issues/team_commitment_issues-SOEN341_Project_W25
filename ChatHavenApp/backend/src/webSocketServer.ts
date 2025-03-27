@@ -17,6 +17,7 @@ import { createLogger } from './utils/logger';
 import { defaultRateLimiter } from './utils/rateLimiter';
 import WebSocketMetrics from './utils/metrics';
 import ClientHealthChecker from './services/clientHealthChecker';
+import fileStorageService from './services/fileStorageService';
 import {
   ExtendedWebSocket,
   DecodedToken,
@@ -355,28 +356,76 @@ class MessageHandlers {
       throw new Error('Message text is required');
     }
 
+    let fileUrl: string | undefined;
+    let fileInfo: any = undefined;
+
+    if (message.fileData && message.fileName && message.fileType) {
+      try {
+        logger.debug('Processing file attachment', {
+          fileName: message.fileName,
+          fileType: message.fileType,
+          fileSize: message.fileData ? message.fileData.length : 0
+        });
+
+        // Save the file using the file storage service
+        const savedFileName = await fileStorageService.saveFile(
+          message.fileData,
+          message.fileName,
+          message.fileType
+        );
+
+        fileUrl = `/files/${savedFileName}`;
+
+        // Store file information
+        fileInfo = {
+          fileName: message.fileName,
+          fileType: message.fileType,
+          fileUrl: fileUrl,
+          fileSize: message.fileSize
+        };
+
+        logger.debug('File saved successfully', { fileName: message.fileName, savedAs: savedFileName, fileUrl: fileInfo.fileUrl });
+      } catch (error: any) {
+        logger.error('Failed to process file attachment', {
+          fileName: message.fileName,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        throw new Error(`Failed to process file attachment: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+
     let sentMessage;
     if (ws.user?.role === 'SUPER_ADMIN') {
       sentMessage = await ChannelService.sendMessage(
         ws.channel._id as Types.ObjectId,
         ws.user.username as string,
-        message.text
+        message.text,
+        fileInfo // Pass file information
       );
     } else {
       sentMessage = await ChannelService.sendMessage(
         ws.channel._id as Types.ObjectId,
         ws.teamMember?._id as Types.ObjectId,
-        message.text
+        message.text,
+        fileInfo // Pass file information
       );
     }
 
-    // Format and broadcast message to channel
+    // Format and broadcast message to channel with file information
     const formattedMessage = {
       type: 'message',
       _id: sentMessage._id,
       text: sentMessage.text,
       username: sentMessage.username,
       createdAt: sentMessage.createdAt,
+      // Include file information if available
+      ...(sentMessage.fileName && sentMessage.fileUrl && {
+        fileName: sentMessage.fileName,
+        fileType: sentMessage.fileType,
+        fileUrl: sentMessage.fileUrl,
+        fileSize: sentMessage.fileSize
+      }),
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
     };
@@ -403,6 +452,7 @@ class MessageHandlers {
       channelName: ws.channel.name,
       messageId: sentMessage._id,
       clientMessageId: message.clientMessageId,
+      hasFile: !!fileUrl,
       sentCount
     });
   }
@@ -463,7 +513,8 @@ class MessageHandlers {
       requestedReceiverUsername: message.username,
       receiverInPayload: message.receiverUsername,
       teamName: message.teamName,
-      messageLength: message.text ? message.text.length : 0
+      messageLength: message.text ? message.text.length : 0,
+      hasFile: !!(message.fileData && message.fileName)
     });
 
     // Check if receiverUsername is used correctly in the payload
@@ -533,10 +584,47 @@ class MessageHandlers {
       throw new Error('Message text is required');
     }
 
+    let fileUrl: string | undefined;
+    let fileInfo: any = undefined;
+    if (message.fileData && message.fileName && message.fileType) {
+      try {
+        logger.debug('Processing file attachment for DM', {
+          fileName: message.fileName,
+          fileType: message.fileType,
+          fileSize: message.fileData ? message.fileData.length : 0
+        });
+
+        // Save the file using the file storage service
+        const savedFileName = await fileStorageService.saveFile(
+          message.fileData,
+          message.fileName,
+          message.fileType
+        );
+
+        fileUrl = `/files/${savedFileName}`;
+
+        fileInfo = {
+          fileName: message.fileName,
+          fileType: message.fileType,
+          fileUrl: fileUrl,
+          fileSize: message.fileSize
+        };
+
+        logger.debug('DM file saved successfully', { fileName: message.fileName, savedAs: savedFileName, fileUrl: fileInfo.fileUrl });
+      } catch (error: any) {
+        logger.error('Failed to process DM file attachment', {
+          fileName: message.fileName,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        throw new Error(`Failed to process file attachment: ${error.message}`);
+      }
+    }
+
     const sentMessage = await DirectMessageService.sendDirectMessage(
       message.text,
       user.username,
-      ws.directMessage._id as Types.ObjectId
+      ws.directMessage._id as Types.ObjectId,
+      fileInfo
     );
 
     const formattedMessage = {
@@ -546,6 +634,12 @@ class MessageHandlers {
       username: sentMessage.username,
       createdAt: sentMessage.createdAt,
       status: sentMessage.status || 'sent',
+      ...(sentMessage.fileName && sentMessage.fileUrl && {
+        fileName: sentMessage.fileName,
+        fileType: sentMessage.fileType,
+        fileUrl: sentMessage.fileUrl, // This should now have the complete path
+        fileSize: sentMessage.fileSize
+      }),
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
     };
@@ -571,6 +665,7 @@ class MessageHandlers {
       receiver: receiverUsername,
       messageId: sentMessage._id,
       clientMessageId: message.clientMessageId,
+      hasFile: !!fileUrl,
       sentCount
     });
   }
@@ -1022,8 +1117,8 @@ const handleWebSocketMessage = async (
 export const setupWebSocketServer = async (server: any): Promise<WebSocketServer> => {
   const wss = new WebSocketServer({
     server,
-    // Increase max payload size to 1MB (default is 100KB)
-    maxPayload: 1024 * 1024,
+    // Increase max payload size to 10MB (default is 100KB)
+    maxPayload: 10 * 1024 * 1024,
     // Add permessage-deflate for compression
     perMessageDeflate: {
       zlibDeflateOptions: {

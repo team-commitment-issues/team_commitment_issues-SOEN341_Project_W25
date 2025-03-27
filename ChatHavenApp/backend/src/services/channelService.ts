@@ -105,14 +105,20 @@ class ChannelService {
   static async sendMessage(
     channel: Types.ObjectId,
     teamMember: Types.ObjectId | string,
-    text: string
+    text: string,
+    fileInfo?: {
+      fileName: string;
+      fileType: string;
+      fileUrl: string;
+      fileSize?: number;
+    }
   ): Promise<any> {
     const selectedChannel = await Channel.findById(channel);
     if (!selectedChannel) {
       throw new Error('Channel not found');
     }
     if (typeof teamMember === 'string') {
-      const message = new Message({ text, username: teamMember, channel, createdAt: new Date() });
+      const message = new Message({ text, username: teamMember, channel, createdAt: new Date(), ...fileInfo && { fileName: fileInfo.fileName, fileType: fileInfo.fileType, fileUrl: fileInfo.fileUrl, fileSize: fileInfo.fileSize } });
       await message.save();
       selectedChannel.messages.push(message._id as Schema.Types.ObjectId);
       await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });

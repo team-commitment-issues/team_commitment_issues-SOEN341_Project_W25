@@ -12,6 +12,7 @@ import superAdminRoutes from './routes/superAdminRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import directMessageRoutes from './routes/directMessageRoutes';
 import onlineStatusRoutes from './routes/onlineStatusRoutes';
+import fileRoutes from './routes/fileRoutes';
 import path from 'path';
 import { defaultHttpRateLimiter } from './utils/httpRateLimiter';
 import { setupWebSocketServer } from './webSocketServer';
@@ -55,6 +56,7 @@ backend.use('/superadmin', superAdminRoutes);
 backend.use('/dashboard', dashboardRoutes);
 backend.use('/directMessage', directMessageRoutes);
 backend.use('/onlineStatus', onlineStatusRoutes);
+backend.use('/files', fileRoutes);
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(backend);
