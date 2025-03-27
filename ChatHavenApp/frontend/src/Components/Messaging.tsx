@@ -184,6 +184,12 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     [wsService]
   );
 
+  const isFileMessage = (msg: ChatMessage): boolean => {
+    // A message is a file message if it has both fileName and fileType properties
+    // Also check that fileUrl is defined when message is received from server (sent or delivered status)
+    return !!(msg.fileName && msg.fileType && (msg.status === 'pending' || msg.fileUrl));
+  };
+
   // Sending messages with client-side tracking
   const sendMessage = useCallback(
     (messageData: WebSocketMessage) => {
@@ -1056,28 +1062,26 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         ) : (
           /* Message list */
           messages.map(msg => {
-            // Log the message for debugging
-            console.log('RENDERING MESSAGE DETAILS:', JSON.stringify(msg, null, 2));
 
             // Check if this is a file message by detecting file properties
-            const isFileMessage = !!(msg.fileName && msg.fileType && msg.fileUrl);
+            const isFileAttachment = isFileMessage(msg);
 
-            console.log(`Message ${msg._id || 'unknown'} isFileMessage:`, isFileMessage, {
+            console.log(`Message ${msg._id || msg.clientMessageId || 'unknown'} isFileMessage:`, isFileAttachment, {
               fileName: msg.fileName,
               fileType: msg.fileType,
-              fileUrl: msg.fileUrl
+              fileUrl: msg.fileUrl,
+              status: msg.status
             });
 
             // Extract file information
             let fileInfo: { fileName?: string; fileType?: string; fileUrl?: string; fileSize?: number } | null = null;
-            if (isFileMessage) {
+            if (isFileAttachment) {
               fileInfo = {
                 fileName: msg.fileName,
                 fileType: msg.fileType,
-                fileUrl: msg.fileUrl,
+                fileUrl: msg.fileUrl || '',
                 fileSize: msg.fileSize
               };
-              console.log('File attachment will be rendered with:', fileInfo);
             }
 
             return (
@@ -1114,12 +1118,12 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
                   {/* Show message text content if it's not a file-only message
             or if it has additional text content */}
-                  {(!isFileMessage || (isFileMessage && !msg.text?.startsWith('[File]'))) && (
+                  {(!isFileAttachment || (isFileAttachment && !msg.text?.startsWith('[File]'))) && (
                     <span>{msg.text}</span>
                   )}
 
                   {/* Render file attachment if we have file info */}
-                  {isFileMessage && (
+                  {isFileAttachment && fileInfo && (
                     <>
                       <FileAttachment
                         fileName={fileInfo!.fileName || 'Unknown File'}

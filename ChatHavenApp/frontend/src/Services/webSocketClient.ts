@@ -185,6 +185,27 @@ class WebSocketClient {
   }
 
   private handleMessageResponse(data: any): void {
+    // Enhanced file message detection
+    const isFileMessage = !!(
+      (data.type === 'message' || data.type === 'directMessage') &&
+      data.fileName &&
+      data.fileType
+    );
+
+    // If this is a file message, ensure we log properly
+    if (isFileMessage) {
+      console.log('File message received:', {
+        type: data.type,
+        messageId: data._id,
+        clientMessageId: data.clientMessageId,
+        fileName: data.fileName,
+        fileType: data.fileType,
+        fileUrl: data.fileUrl,
+        fileSize: data.fileSize
+      });
+    }
+
+    // Process client message acknowledgment
     if ((data.type === 'message' || data.type === 'directMessage') &&
       data.clientMessageId && this.pendingMessages.has(data.clientMessageId)) {
       // This is a message with a clientMessageId, consider it acknowledged
@@ -202,24 +223,29 @@ class WebSocketClient {
         // Keep callback for potential read receipts
         setTimeout(() => {
           // If we don't receive a read receipt within 5 seconds, clean up
-          this.messageStatusCallbacks.delete(data.clientMessageId);
+          if (this.messageStatusCallbacks.has(data.clientMessageId)) {
+            this.messageStatusCallbacks.delete(data.clientMessageId);
+          }
         }, 5000);
       }
     }
 
-    // Process file data if present
-    if ((data.type === 'message' || data.type === 'directMessage') &&
-      data.fileName && data.fileUrl) {
-      // Make sure file data is properly included for display
-      console.log('File message received:', data.fileName, data.fileUrl);
-    }
-
     // Handle explicit message acknowledgments if they exist
     if (data.type === 'messageAck' && data.messageId) {
-      // Check all callbacks and apply the status update
-      this.messageStatusCallbacks.forEach((callback, id) => {
-        callback(data.status || 'delivered');
-      });
+      console.log(`Message acknowledgment received for ${data.messageId}, status: ${data.status}`);
+
+      // If clientMessageId is provided, use that to find the callback
+      if (data.clientMessageId && this.messageStatusCallbacks.has(data.clientMessageId)) {
+        const callback = this.messageStatusCallbacks.get(data.clientMessageId);
+        if (callback) {
+          callback(data.status || 'delivered');
+        }
+      } else {
+        // Otherwise try to find by messageId in all callbacks
+        this.messageStatusCallbacks.forEach((callback, id) => {
+          callback(data.status || 'delivered');
+        });
+      }
     }
   }
 
