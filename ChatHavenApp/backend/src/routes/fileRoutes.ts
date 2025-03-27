@@ -128,5 +128,5 @@ fileRoutes.get('/:filePath(*)', authenticate, (req, res): void => {
 export default fileRoutes;
 
 function getAccurateMimeType(fileName: string) {
-    return mime.lookup(fileName, 'application/octet-stream');
+    return mime.lookup(fileName) || 'application/octet-stream';
 }
