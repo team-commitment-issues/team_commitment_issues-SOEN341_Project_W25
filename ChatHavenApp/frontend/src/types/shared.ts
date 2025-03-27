@@ -40,7 +40,8 @@ export interface ChatMessage {
   clientMessageId?: string;
   fileName?: string;
   fileType?: string;
-  fileData?: string;
+  fileUrl?: string;
+  fileSize?: number;
 }
 
 // Selection for channel or direct message in UI

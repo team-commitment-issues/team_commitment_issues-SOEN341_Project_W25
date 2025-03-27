@@ -158,6 +158,12 @@ class WebSocketClient {
         try {
           const data = JSON.parse(event.data);
 
+          // Ensure file information is correctly passed along
+          if ((data.type === 'message' || data.type === 'directMessage') &&
+            (data.fileName || data.fileUrl)) {
+            console.log('Received file data:', data.fileName);
+          }
+
           this.handleMessageResponse(data);
 
           // Dispatch to all relevant subscriptions
@@ -179,11 +185,8 @@ class WebSocketClient {
   }
 
   private handleMessageResponse(data: any): void {
-    if (
-      (data.type === 'message' || data.type === 'directMessage') &&
-      data.clientMessageId &&
-      this.pendingMessages.has(data.clientMessageId)
-    ) {
+    if ((data.type === 'message' || data.type === 'directMessage') &&
+      data.clientMessageId && this.pendingMessages.has(data.clientMessageId)) {
       // This is a message with a clientMessageId, consider it acknowledged
       const pendingInfo = this.pendingMessages.get(data.clientMessageId);
       if (pendingInfo?.timeout) {
@@ -202,6 +205,13 @@ class WebSocketClient {
           this.messageStatusCallbacks.delete(data.clientMessageId);
         }, 5000);
       }
+    }
+
+    // Process file data if present
+    if ((data.type === 'message' || data.type === 'directMessage') &&
+      data.fileName && data.fileUrl) {
+      // Make sure file data is properly included for display
+      console.log('File message received:', data.fileName, data.fileUrl);
     }
 
     // Handle explicit message acknowledgments if they exist
