@@ -109,6 +109,22 @@ class UserController {
     }
   }
 
+  static async setPreferredLanguage(req: Request, res: Response): Promise<void> {
+    try {
+      const { language } = req.body;
+
+      await UserService.setPreferredLanguage(req.user.username, language);
+
+      res.status(200).json({ message: 'Preferred language set successfully' });
+    } catch (err) {
+      if ((err as any).message === 'User not found') {
+        res.status(404).json({ error: 'User not found' });
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  }
+
   static async getUserProfile(req: Request, res: Response): Promise<void> {
     try {
       // Get the username from the authenticated user object

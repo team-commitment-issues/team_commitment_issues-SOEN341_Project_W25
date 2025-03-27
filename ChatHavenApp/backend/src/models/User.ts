@@ -66,6 +66,12 @@ interface IUser extends Document {
    * @type {Date}
    */
   lastSeen: Date;
+
+  /**
+   * The preferred language of the user.
+   * @type {string}
+   */
+  preferredLanguage?: string;
 }
 
 /**
@@ -118,6 +124,10 @@ const UserSchema = new Schema<IUser>({
   lastSeen: {
     type: Date,
     default: Date.now
+  },
+  preferredLanguage: {
+    type: String,
+    default: 'en' // default to English
   }
 });
 
