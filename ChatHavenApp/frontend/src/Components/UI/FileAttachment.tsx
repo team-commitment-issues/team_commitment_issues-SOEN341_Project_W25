@@ -55,14 +55,17 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     // Add token to fileUrl
     const getAuthenticatedUrl = (url: string, inline: boolean = false): string => {
         // Make sure we have a valid URL
-        if (!url) {
-            console.error('Invalid file URL:', url);
+        if (!url || url.trim() === '') {
+            console.error('Invalid file URL - received empty or null URL');
             return '#'; // Return a placeholder
         }
 
         console.log('Original file URL:', url);
 
         const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('No authentication token found in localStorage');
+        }
 
         // Make sure the URL starts with / if it's a relative path
         const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
@@ -82,20 +85,54 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         if (isTextFile(fileName) && !textContent) {
             try {
                 setLoading(true);
-                console.log('Fetching text file from:', fileUrl);
 
-                const response = await fetch(getAuthenticatedUrl(fileUrl, true), {
+                // Get the authenticated URL
+                const authUrl = getAuthenticatedUrl(fileUrl, true);
+                console.log('Fetching text file from:', authUrl);
+
+                // Get token from localStorage
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Authentication token not found');
+                }
+
+                // Make the request with proper headers
+                const response = await fetch(authUrl, {
+                    method: 'GET',
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`
-                    }
+                        Authorization: `Bearer ${token}`,
+                        'Accept': 'text/plain,text/*;q=0.9,*/*;q=0.8' // Explicitly request text content
+                    },
+                    // Include credentials for cookies if your backend uses them
+                    credentials: 'include'
+                });
+
+                // Log response details for debugging
+                console.log('File fetch response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries([...response.headers.entries()])
                 });
 
                 if (!response.ok) {
                     throw new Error(`Failed to fetch file: ${response.statusText} (${response.status})`);
                 }
 
+                // Get the content as text
                 const content = await response.text();
-                console.log('Successfully loaded text content, length:', content.length);
+
+                // Log first 100 chars for debugging
+                console.log('Received text content:', {
+                    length: content.length,
+                    preview: content.substring(0, 100)
+                });
+
+                // If the content starts with HTML doctype, it's likely an error page or redirect
+                if (content.trim().toLowerCase().startsWith('<!doctype html>')) {
+                    throw new Error('Received HTML content instead of text file. Authentication may have failed.');
+                }
+
+                // Set the content and show the preview
                 setTextContent(content);
                 setShowPreview(true);
             } catch (error) {

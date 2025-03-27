@@ -161,7 +161,7 @@ class WebSocketClient {
           // Ensure file information is correctly passed along
           if ((data.type === 'message' || data.type === 'directMessage') &&
             (data.fileName || data.fileUrl)) {
-            console.log('Received file data:', data.fileName);
+            console.log('Received file data:', data);
           }
 
           this.handleMessageResponse(data);

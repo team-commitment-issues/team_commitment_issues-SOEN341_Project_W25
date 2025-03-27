@@ -184,12 +184,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     [wsService]
   );
 
-  const isFileMessage = (msg: ChatMessage): boolean => {
-    // A message is a file message if it has both fileName and fileType properties
-    // Also check that fileUrl is defined when message is received from server (sent or delivered status)
-    return !!(msg.fileName && msg.fileType && (msg.status === 'pending' || msg.fileUrl));
-  };
-
   // Sending messages with client-side tracking
   const sendMessage = useCallback(
     (messageData: WebSocketMessage) => {
@@ -1061,10 +1055,10 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           </p>
         ) : (
           /* Message list */
+          // Fixed message mapping with proper file URL handling
           messages.map(msg => {
-
-            // Check if this is a file message by detecting file properties
-            const isFileAttachment = isFileMessage(msg);
+            // Check if this is a file message
+            const isFileAttachment = !!(msg.fileName && msg.fileType && (msg.status === 'pending' || msg.fileUrl));
 
             console.log(`Message ${msg._id || msg.clientMessageId || 'unknown'} isFileMessage:`, isFileAttachment, {
               fileName: msg.fileName,
@@ -1073,15 +1067,22 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
               status: msg.status
             });
 
-            // Extract file information
-            let fileInfo: { fileName?: string; fileType?: string; fileUrl?: string; fileSize?: number } | null = null;
+            // Extract file information for rendering
+            let fileInfo: {
+              fileName: string | undefined;
+              fileType: string | undefined;
+              fileUrl: string;
+              fileSize: number | undefined;
+            } | null = null;
             if (isFileAttachment) {
               fileInfo = {
                 fileName: msg.fileName,
                 fileType: msg.fileType,
+                // This is the critical fix - ensure fileUrl is never undefined
                 fileUrl: msg.fileUrl || '',
                 fileSize: msg.fileSize
               };
+              console.log('File attachment will be rendered with:', fileInfo);
             }
 
             return (
