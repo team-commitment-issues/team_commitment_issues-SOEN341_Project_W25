@@ -50,71 +50,31 @@ class FileStorageService {
                 ? base64Data.split(',')[1]
                 : base64Data;
 
-            // Clean the filename (remove any potentially unsafe characters)
-            const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+            // Clean the filename (remove path traversal characters and make it safe)
+            const cleanFileName = path.basename(fileName).replace(/[^\w.-]/g, '_');
 
-            // Extract file extension and ensure it exists
-            let fileExt = path.extname(cleanFileName);
-            if (!fileExt) {
-                // Try to determine extension from MIME type if file has no extension
-                const mimeExtension = require('mime-types').extension(fileType);
-                if (mimeExtension) {
-                    fileExt = `.${mimeExtension}`;
-                } else {
-                    // Default extension based on content type
-                    if (fileType.startsWith('image/')) {
-                        fileExt = '.jpg';
-                    } else if (fileType.startsWith('text/')) {
-                        fileExt = '.txt';
-                    } else {
-                        fileExt = '.bin';
-                    }
-                }
-            }
-
-            const fileNameWithoutExt = path.basename(cleanFileName, fileExt);
-
-            // Current date for organizing files
-            const now = new Date();
-            const year = now.getFullYear().toString();
-            const month = (now.getMonth() + 1).toString().padStart(2, '0');
-            const day = now.getDate().toString().padStart(2, '0');
-
-            // Generate unique ID for the file
+            // Generate a unique filename to prevent collisions
             const timestamp = Date.now();
-            const randomString = crypto.randomBytes(4).toString('hex');
-            const safeFileName = `${fileNameWithoutExt}_${timestamp}_${randomString}${fileExt}`;
+            const randomString = crypto.randomBytes(8).toString('hex');
+            const safeFileName = `${timestamp}_${randomString}_${cleanFileName}`;
 
-            // Create path with year/month/day organization
-            const relativePath = path.join(
-                year,
-                month,
-                day,
-                safeFileName
-            );
-
-            const fullPath = path.join(this.uploadDir, relativePath);
-            const dirPath = path.dirname(fullPath);
-
-            // Create directory if it doesn't exist
-            if (!await existsAsync(dirPath)) {
-                await mkdirAsync(dirPath, { recursive: true });
-            }
+            // Create full path for the file
+            const fullPath = path.join(this.uploadDir, safeFileName);
 
             // Write the file
             const buffer = Buffer.from(base64Content, 'base64');
             await writeFileAsync(fullPath, buffer);
 
-            const fileSize = buffer.length;
             logger.info('File saved successfully', {
-                fileName: cleanFileName,
-                path: relativePath,
-                size: fileSize,
-                type: fileType
+                originalName: fileName,
+                savedAs: safeFileName,
+                size: buffer.length,
+                type: fileType,
+                path: fullPath
             });
 
-            // Return the relative path that can be used to access the file
-            return relativePath;
+            // Return the relative path (just the filename in this case)
+            return safeFileName;
         } catch (error) {
             logger.error('Failed to save file', {
                 fileName,
@@ -130,7 +90,9 @@ class FileStorageService {
      * @returns The full path to the file
      */
     public getFilePath(relativePath: string): string {
-        return path.join(this.uploadDir, relativePath);
+        // Clean the path to prevent directory traversal attacks
+        const cleanPath = path.normalize(relativePath).replace(/^(\.\.(\/|\\|$))+/, '');
+        return path.join(this.uploadDir, cleanPath);
     }
 
     /**
@@ -139,9 +101,9 @@ class FileStorageService {
      * @returns The URL to access the file
      */
     public getFileUrl(relativePath: string): string {
-        // This should match your API endpoint for retrieving files
-        // For example: /files/your-file-path
-        return `/files/${relativePath}`;
+        // Clean the path to prevent URL manipulation
+        const cleanPath = encodeURIComponent(relativePath);
+        return `/files/${cleanPath}`;
     }
 }
 

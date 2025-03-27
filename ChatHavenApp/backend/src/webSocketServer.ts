@@ -357,6 +357,8 @@ class MessageHandlers {
     }
 
     let fileUrl: string | undefined;
+    let fileInfo: any = undefined;
+
     if (message.fileData && message.fileName && message.fileType) {
       try {
         logger.debug('Processing file attachment', {
@@ -372,13 +374,21 @@ class MessageHandlers {
           message.fileType
         );
 
+        // Store file information
+        fileInfo = {
+          fileName: message.fileName,
+          fileType: message.fileType,
+          fileUrl: `/files/${fileUrl}`, // Use the relative path
+          fileSize: message.fileSize
+        };
+
         logger.debug('File saved successfully', { fileName: message.fileName, fileUrl });
       } catch (error: any) {
         logger.error('Failed to process file attachment', {
           fileName: message.fileName,
           error: error instanceof Error ? error.message : String(error)
         });
-        throw new Error(`Failed to process file attachment: ${error.message}`);
+        throw new Error(`Failed to process file attachment: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -389,35 +399,26 @@ class MessageHandlers {
         ws.channel._id as Types.ObjectId,
         ws.user.username as string,
         message.text,
-        fileUrl && message.fileName && message.fileType ? {
-          fileName: message.fileName,
-          fileType: message.fileType,
-          fileUrl,
-          fileSize: message.fileSize
-        } : undefined
+        fileInfo // Pass file information
       );
     } else {
       sentMessage = await ChannelService.sendMessage(
         ws.channel._id as Types.ObjectId,
         ws.teamMember?._id as Types.ObjectId,
         message.text,
-        fileUrl && message.fileName && message.fileType ? {
-          fileName: message.fileName as string,
-          fileType: message.fileType as string,
-          fileUrl,
-          fileSize: message.fileSize
-        } : undefined
+        fileInfo // Pass file information
       );
     }
 
-    // Format and broadcast message to channel
+    // Format and broadcast message to channel with file information
     const formattedMessage = {
       type: 'message',
       _id: sentMessage._id,
       text: sentMessage.text,
       username: sentMessage.username,
       createdAt: sentMessage.createdAt,
-      ...(sentMessage.fileUrl && {
+      // Include file information if available
+      ...(sentMessage.fileName && sentMessage.fileUrl && {
         fileName: sentMessage.fileName,
         fileType: sentMessage.fileType,
         fileUrl: sentMessage.fileUrl,
@@ -582,6 +583,7 @@ class MessageHandlers {
     }
 
     let fileUrl: string | undefined;
+    let fileInfo: any = undefined;
     if (message.fileData && message.fileName && message.fileType) {
       try {
         logger.debug('Processing file attachment for DM', {
@@ -597,6 +599,13 @@ class MessageHandlers {
           message.fileType
         );
 
+        fileInfo = {
+          fileName: message.fileName,
+          fileType: message.fileType,
+          fileUrl: `/files/${fileUrl}`, // Use the relative path
+          fileSize: message.fileSize
+        };
+
         logger.debug('DM file saved successfully', { fileName: message.fileName, fileUrl });
       } catch (error: any) {
         logger.error('Failed to process DM file attachment', {
@@ -606,16 +615,12 @@ class MessageHandlers {
         throw new Error(`Failed to process file attachment: ${error.message}`);
       }
     }
+
     const sentMessage = await DirectMessageService.sendDirectMessage(
       message.text,
       user.username,
       ws.directMessage._id as Types.ObjectId,
-      fileUrl && message.fileName && message.fileType ? {
-        fileName: message.fileName,
-        fileType: message.fileType,
-        fileUrl,
-        fileSize: message.fileSize
-      } : undefined
+      fileInfo
     );
 
     const formattedMessage = {
@@ -625,12 +630,7 @@ class MessageHandlers {
       username: sentMessage.username,
       createdAt: sentMessage.createdAt,
       status: sentMessage.status || 'sent',
-      ...(sentMessage.fileUrl && {
-        fileName: sentMessage.fileName,
-        fileType: sentMessage.fileType,
-        fileUrl: sentMessage.fileUrl,
-        fileSize: sentMessage.fileSize
-      }),
+      fileInfo,
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
     };

@@ -220,8 +220,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         };
 
         setMessages(prev => [...prev, newMessage]);
-
-        return true;
       } else {
         // Add message to state with pending status
         const newMessage: ChatMessage = {
@@ -237,9 +235,9 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
         // This will be queued by the service
         wsService.send(messageWithId);
-
-        return false;
       }
+
+      return clientMessageId;
     },
     [username, wsService]
   );
@@ -833,7 +831,17 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     const files = e.target.files;
     if (!files || !selection) return;
 
+    // Debug info
+    console.log(`File upload triggered. ${files.length} file(s) selected.`);
+
     Array.from(files).forEach(file => {
+      // Log file details
+      console.log('Processing file:', {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / 1024).toFixed(2)} KB`
+      });
+
       const reader = new FileReader();
 
       reader.onload = () => {
@@ -845,6 +853,14 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           return;
         }
 
+        console.log('File read successfully, creating message');
+
+        // Print the length of base64 content
+        console.log(`Base64 content length: ${base64Content.length} characters`);
+
+        // Create a unique identifier for this file upload
+        const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
         const mediaMessage: WebSocketMessage = {
           type: selection.type === 'directMessage' ? 'directMessage' : 'message',
           text: `[File] ${file.name}`, // Text indicates this is a file message
@@ -853,12 +869,41 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           fileSize: file.size,
           fileData: base64Content,
           teamName: selection.teamName,
+          uploadId, // Include the unique upload ID for tracking
           ...(selection.type === 'directMessage'
             ? { receiverUsername: selection.username }
             : { channelName: selection.channelName })
         };
 
-        sendMessage(mediaMessage);
+        console.log(`Sending message with uploadId: ${uploadId}`);
+
+        // Track the start time of the upload
+        const startTime = performance.now();
+
+        // Send the message
+        const clientMessageId = sendMessage(mediaMessage);
+
+        console.log(`Message sent with clientMessageId: ${clientMessageId}`);
+
+        // Setup a listener to track when this message is acknowledged
+        if (wsService) {
+          wsService.registerMessageStatusCallback(clientMessageId, (status: string) => {
+            const endTime = performance.now();
+            const duration = (endTime - startTime) / 1000; // seconds
+
+            console.log(`Upload ${uploadId} ${status} in ${duration.toFixed(2)}s`, {
+              clientMessageId,
+              fileName: file.name,
+              fileSize: file.size,
+              status
+            });
+          });
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        alert(`Failed to read file ${file.name}`);
       };
 
       reader.readAsDataURL(file);
