@@ -31,6 +31,7 @@ export enum MessageType {
   DIRECT_MESSAGE = 'directMessage',
   JOIN_DIRECT_MESSAGE = 'joinDirectMessage',
   PING = 'ping',
+  PONG = 'pong',
   SUBSCRIBE_ONLINE_STATUS = 'subscribeOnlineStatus',
   SET_STATUS = 'setStatus',
   TYPING = 'typing',
@@ -58,6 +59,10 @@ export interface ChannelMessage extends BaseMessage {
   _id?: string; // Server-assigned message ID
   createdAt?: string; // ISO string date
   status?: MessageStatus; // Message delivery status
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
+  fileSize?: number;
 }
 
 /**
@@ -71,6 +76,10 @@ export interface DirectMessagePayload extends BaseMessage {
   _id?: string; // Server-assigned message ID
   createdAt?: string; // ISO string date
   status?: MessageStatus; // Message delivery status
+  fileName?: string;
+  fileType?: string;
+  fileData?: string;
+  fileSize?: number;
 }
 
 /**

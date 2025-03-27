@@ -28,6 +28,11 @@ interface IMessage extends Document {
    * @type {Date}
    */
   createdAt: Date;
+
+  fileName?: string;
+  fileType?: string;
+  fileUrl?: string;
+  fileSize?: number;
 }
 
 /**
@@ -51,6 +56,18 @@ const MessageSchema = new Schema<IMessage>({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  fileName: {
+    type: String
+  },
+  fileType: {
+    type: String
+  },
+  fileUrl: {
+    type: String
+  },
+  fileSize: {
+    type: Number
   }
 });
 
