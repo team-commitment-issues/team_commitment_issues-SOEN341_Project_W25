@@ -63,6 +63,11 @@ export interface ChannelMessage extends BaseMessage {
   fileType?: string;
   fileData?: string;
   fileSize?: number;
+  quotedMessage?: {
+    _id: string;
+    text: string;
+    username: string;
+  };
 }
 
 /**
@@ -80,6 +85,11 @@ export interface DirectMessagePayload extends BaseMessage {
   fileType?: string;
   fileData?: string;
   fileSize?: number;
+  quotedMessage?: {
+    _id: string;
+    text: string;
+    username: string;
+  };
 }
 
 /**

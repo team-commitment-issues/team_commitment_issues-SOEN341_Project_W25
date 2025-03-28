@@ -402,14 +402,16 @@ class MessageHandlers {
         ws.channel._id as Types.ObjectId,
         ws.user.username as string,
         message.text,
-        fileInfo // Pass file information
+        fileInfo,
+        message.quotedMessage
       );
     } else {
       sentMessage = await ChannelService.sendMessage(
         ws.channel._id as Types.ObjectId,
         ws.teamMember?._id as Types.ObjectId,
         message.text,
-        fileInfo // Pass file information
+        fileInfo,
+        message.quotedMessage
       );
     }
 
@@ -426,6 +428,14 @@ class MessageHandlers {
         fileType: sentMessage.fileType,
         fileUrl: sentMessage.fileUrl,
         fileSize: sentMessage.fileSize
+      }),
+      // Include quoted message if available
+      ...(message.quotedMessage && {
+        quotedMessage: {
+          _id: message.quotedMessage._id,
+          text: message.quotedMessage.text,
+          username: message.quotedMessage.username
+        }
       }),
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
@@ -625,7 +635,8 @@ class MessageHandlers {
       message.text,
       user.username,
       ws.directMessage._id as Types.ObjectId,
-      fileInfo
+      fileInfo,
+      message.quotedMessage
     );
 
     const formattedMessage = {
@@ -640,6 +651,13 @@ class MessageHandlers {
         fileType: sentMessage.fileType,
         fileUrl: sentMessage.fileUrl, // This should now have the complete path
         fileSize: sentMessage.fileSize
+      }),
+      ...(message.quotedMessage && {
+        quotedMessage: {
+          _id: message.quotedMessage._id,
+          text: message.quotedMessage.text,
+          username: message.quotedMessage.username
+        }
       }),
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })

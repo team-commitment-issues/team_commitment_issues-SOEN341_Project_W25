@@ -5,7 +5,6 @@ import TeamMember from '../models/TeamMember';
 import { Schema, Types } from 'mongoose';
 import { Message } from '../models/Message';
 import { Role } from '../enums';
-import { get } from 'http';
 
 class ChannelService {
   static async createChannel(
@@ -111,6 +110,11 @@ class ChannelService {
       fileType: string;
       fileUrl: string;
       fileSize?: number;
+    },
+    quotedMessage?: {
+      _id: string;
+      text: string;
+      username: string;
     }
   ): Promise<any> {
     const selectedChannel = await Channel.findById(channel);
@@ -118,7 +122,25 @@ class ChannelService {
       throw new Error('Channel not found');
     }
     if (typeof teamMember === 'string') {
-      const message = new Message({ text, username: teamMember, channel, createdAt: new Date(), ...fileInfo && { fileName: fileInfo.fileName, fileType: fileInfo.fileType, fileUrl: fileInfo.fileUrl, fileSize: fileInfo.fileSize } });
+      const message = new Message({
+        text,
+        username: teamMember,
+        channel,
+        createdAt: new Date(),
+        ...fileInfo && {
+          fileName: fileInfo.fileName,
+          fileType: fileInfo.fileType,
+          fileUrl: fileInfo.fileUrl,
+          fileSize: fileInfo.fileSize
+        },
+        ...quotedMessage && {
+          quotedMessage: {
+            _id: quotedMessage._id,
+            text: quotedMessage.text,
+            username: quotedMessage.username
+          }
+        }
+      });
       await message.save();
       selectedChannel.messages.push(message._id as Schema.Types.ObjectId);
       await Channel.findByIdAndUpdate(channel, { $push: { messages: message._id } }, { new: true });

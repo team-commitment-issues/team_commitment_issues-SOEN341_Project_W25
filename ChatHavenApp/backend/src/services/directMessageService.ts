@@ -63,6 +63,11 @@ class DirectMessageService {
       fileType: string;
       fileUrl: string;
       fileSize?: number;
+    },
+    quotedMessage?: {
+      _id: string;
+      text: string;
+      username: string;
     }
   ): Promise<IDMessage> {
     const directMessage = await DirectMessage.findById(directMessageId);
@@ -80,6 +85,13 @@ class DirectMessageService {
         fileType: fileInfo.fileType,
         fileUrl: fileInfo.fileUrl,
         fileSize: fileInfo.fileSize
+      },
+      ...quotedMessage && {
+        quotedMessage: {
+          _id: quotedMessage._id,
+          text: quotedMessage.text,
+          username: quotedMessage.username
+        }
       }
     });
     await newDMessage.save();
