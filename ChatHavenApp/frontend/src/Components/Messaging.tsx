@@ -48,7 +48,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Refs
-  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatInterval = useRef<number | null>(null);
   const currentSelection = useRef<Selection | null>(null);
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
@@ -96,7 +96,9 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
   const clearHeartbeat = () => {
     if (heartbeatInterval.current) {
-      clearInterval(heartbeatInterval.current);
+      if (heartbeatInterval.current !== null) {
+        window.clearInterval(heartbeatInterval.current);
+      }
       heartbeatInterval.current = null;
     }
   };
@@ -149,7 +151,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
               timeout: setTimeout(
                 () => trackPendingMessage(messageData, clientMessageId),
                 RETRY_DELAY_MS
-              ),
+              ) as unknown as NodeJS.Timeout,
               createdAt: messageData.createdAt || Date.now()
             });
             return updated;
@@ -175,7 +177,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         updated.set(clientMessageId, {
           message: messageData,
           attempts: 0,
-          timeout,
+          timeout: timeout as unknown as NodeJS.Timeout,
           createdAt: messageData.createdAt || Date.now()
         });
         return updated;
@@ -803,7 +805,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       // Clear any message retry timeouts
       pendingMessages.forEach(info => {
         if (info.timeout) {
-          clearTimeout(info.timeout);
+          window.clearTimeout(info.timeout as unknown as number);
         }
       });
     };
@@ -823,7 +825,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     isMounted.current = true;
 
     // Setup heartbeat
-    heartbeatInterval.current = wsService.setupHeartbeat(30000);
+    heartbeatInterval.current = wsService.setupHeartbeat(30000) as unknown as number;
 
     return () => {
       isMounted.current = false;

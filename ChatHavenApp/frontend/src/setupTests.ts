@@ -122,10 +122,10 @@ class MockWebSocket {
 }
 
 // Apply the WebSocket mock
-global.WebSocket = MockWebSocket as any;
+globalThis.WebSocket = MockWebSocket as any;
 
 // Mock fetch API if needed
-global.fetch = jest.fn().mockImplementation(() =>
+globalThis.fetch = jest.fn().mockImplementation(() =>
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve({}),

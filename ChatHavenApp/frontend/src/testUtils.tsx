@@ -141,7 +141,7 @@ export const clearAuth = () => {
 // WebSocket test helpers
 export const mockWebSocketMessage = (message: any) => {
   // Access the MockWebSocket global and trigger a message
-  const mockWsInstances = (global.WebSocket as any).mock?.instances;
+  const mockWsInstances = (globalThis.WebSocket as any).mock?.instances;
   if (mockWsInstances && mockWsInstances.length > 0) {
     const mockWs = mockWsInstances[mockWsInstances.length - 1];
     if (mockWs && typeof mockWs.mockReceiveMessage === 'function') {
