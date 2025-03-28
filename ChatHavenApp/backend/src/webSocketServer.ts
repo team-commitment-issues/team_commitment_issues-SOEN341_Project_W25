@@ -464,7 +464,14 @@ class MessageHandlers {
       messageId: sentMessage._id,
       clientMessageId: message.clientMessageId,
       hasFile: !!fileUrl,
-      sentCount
+      sentCount,
+      quotedMessage: message.quotedMessage
+        ? {
+          _id: message.quotedMessage._id,
+          text: message.quotedMessage.text,
+          username: message.quotedMessage.username
+        }
+        : undefined
     });
   }
 

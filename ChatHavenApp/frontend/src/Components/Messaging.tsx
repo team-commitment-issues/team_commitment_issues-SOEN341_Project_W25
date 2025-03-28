@@ -513,7 +513,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
     const handleMessage = (data: any) => {
       console.log('★★★ WebSocket message received:', data);
-      /*if ((data.type === 'message' || data.type === 'directMessage') &&
+      if ((data.type === 'message' || data.type === 'directMessage') &&
         (data.fileName || data.fileUrl || (data.text && data.text.startsWith('[File]')))) {
         console.log('⭐⭐⭐ FILE MESSAGE RECEIVED:', {
           type: data.type,
@@ -522,9 +522,10 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           fileName: data.fileName,
           fileType: data.fileType,
           fileUrl: data.fileUrl,
-          hasFileProps: !!(data.fileName && data.fileType && data.fileUrl)
+          hasFileProps: !!(data.fileName && data.fileType && data.fileUrl),
+          quotedMessage: data.quotedMessage
         });
-      }*/
+      }
       // check both _id and clientMessageId
       const isDuplicate = (messageData: any): boolean => {
         // Check if we've already processed this message ID
@@ -604,6 +605,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                       fileType: data.fileType,
                       fileUrl: data.fileUrl,
                       fileSize: data.fileSize
+                    }),
+                    ...(data.quotedMessage && {
+                      quotedMessage: {
+                        _id: data.quotedMessage._id,
+                        text: data.quotedMessage.text,
+                        username: data.quotedMessage.username
+                      }
                     })
                   }
                   : msg
@@ -625,6 +633,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                   fileType: data.fileType,
                   fileUrl: data.fileUrl,
                   fileSize: data.fileSize
+                }),
+                ...(data.quotedMessage && {
+                  quotedMessage: {
+                    _id: data.quotedMessage._id,
+                    text: data.quotedMessage.text,
+                    username: data.quotedMessage.username
+                  }
                 })
               }
             ]);
@@ -652,6 +667,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                 fileType: data.fileType,
                 fileUrl: data.fileUrl,
                 fileSize: data.fileSize
+              }),
+              ...(data.quotedMessage && {
+                quotedMessage: {
+                  _id: data.quotedMessage._id,
+                  text: data.quotedMessage.text,
+                  username: data.quotedMessage.username
+                }
               })
             }
           ]);
@@ -691,6 +713,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
               fileType: msg.fileType || 'application/octet-stream',
               fileUrl: msg.fileUrl,
               fileSize: msg.fileSize
+            }),
+            ...(msg.quotedMessage && {
+              quotedMessage: {
+                _id: msg.quotedMessage._id,
+                text: msg.quotedMessage.text,
+                username: msg.quotedMessage.username
+              }
             })
           })
           );
@@ -1147,7 +1176,12 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
               fileName: msg.fileName,
               fileType: msg.fileType,
               fileUrl: msg.fileUrl,
-              status: msg.status
+              status: msg.status,
+              text: msg.text,
+              createdAt: msg.createdAt,
+              username: msg.username,
+              clientMessageId: msg.clientMessageId,
+              quotedMessage: msg.quotedMessage
             });
 
             // Extract file information for rendering
