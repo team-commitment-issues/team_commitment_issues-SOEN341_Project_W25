@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../Context/ThemeContext.tsx';
 import { useOnlineStatus } from '../../Context/OnlineStatusContext.tsx';
+// @ts-ignore
 import styles from '../../Styles/StatusSelector.module.css';
 import { Status } from '../../types/shared.ts';
 
