@@ -6,7 +6,7 @@ ChatHaven is a versatile communication platform designed for real-time interacti
 
 ## Project Overview
 
-Key Features (Sprint 1, 2 and 3)
+Key Features (Sprint 1, 2, 3 and 4)
 ✔️ User Authentication & Management (Completed in Sprint 1)
 ✔️ Text Channels for Group Communication
 ✔️ Direct Messaging (DM) Between Users
@@ -55,7 +55,7 @@ The project scope includes:
 
 - **Fares Alromhin - 40246354** - _FrontEnd_
 - **Kassem Chahrour - 40073432** - _FrontEnd_
-- **Brian Hariri - 40190861** - _BackEnd_
+- **Brian Hariri - 40190861** - _FullStack_
 - **Omar Khlaiwi - 40227312** - _FrontEnd_
 - **Mohamad Ali Taha - 40200580** - _FullStack_
 - **Samuel Blanchette - 40280883** - _FullStack_
