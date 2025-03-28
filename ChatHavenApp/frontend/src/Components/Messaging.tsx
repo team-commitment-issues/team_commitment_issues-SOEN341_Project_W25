@@ -129,21 +129,17 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
   // Function to track pending messages and handle retries
   const trackPendingMessage = useCallback(
     (messageData: WebSocketMessage, clientMessageId: string) => {
-      // Create a timeout for retry
       const timeout = setTimeout(() => {
         setPendingMessages(prev => {
           const pending = prev.get(clientMessageId);
 
           if (pending && pending.attempts < MAX_RETRY_ATTEMPTS) {
-            // Retry sending
             console.log(`Retrying message ${clientMessageId}, attempt ${pending.attempts + 1}`);
 
-            // Attempt to resend
             if (wsService.isConnected()) {
               wsService.send(messageData);
             }
 
-            // Update retry info
             const updated = new Map(prev);
             updated.set(clientMessageId, {
               message: messageData,
@@ -156,14 +152,12 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             });
             return updated;
           } else {
-            // Max retries reached, mark as failed
             setMessages(prevMsgs =>
               prevMsgs.map(msg =>
                 msg.clientMessageId === clientMessageId ? { ...msg, status: 'failed' } : msg
               )
             );
 
-            // Remove from pending
             const updated = new Map(prev);
             updated.delete(clientMessageId);
             return updated;
@@ -171,7 +165,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
         });
       }, RETRY_DELAY_MS);
 
-      // Store retry info
       setPendingMessages(prev => {
         const updated = new Map(prev);
         updated.set(clientMessageId, {
@@ -190,7 +183,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
   const sendMessage = useCallback(
     (messageData: WebSocketMessage) => {
       console.log('Sending message with data:', messageData);
-      // Generate a client-side ID for tracking
       const clientMessageId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const messageWithId: WebSocketMessage = {
         ...messageData,
@@ -201,7 +193,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       if (wsService.isConnected()) {
         wsService.send(messageWithId);
 
-        // Register for status updates
         wsService.registerMessageStatusCallback(clientMessageId, status => {
           console.log(`Received status update for message ${clientMessageId}:`, status);
           setMessages(prevMsgs =>
@@ -213,7 +204,6 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           );
         });
 
-        // Add message to state immediately with pending status
         const newMessage: ChatMessage = {
           _id: '', // Server will assign a real ID
           text: messageWithId.text || '',
@@ -518,7 +508,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
     const handleMessage = (data: any) => {
       console.log('★★★ WebSocket message received:', data);
-      if ((data.type === 'message' || data.type === 'directMessage') &&
+      /*if ((data.type === 'message' || data.type === 'directMessage') &&
         (data.fileName || data.fileUrl || (data.text && data.text.startsWith('[File]')))) {
         console.log('⭐⭐⭐ FILE MESSAGE RECEIVED:', {
           type: data.type,
@@ -529,7 +519,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           fileUrl: data.fileUrl,
           hasFileProps: !!(data.fileName && data.fileType && data.fileUrl)
         });
-      }
+      }*/
       // check both _id and clientMessageId
       const isDuplicate = (messageData: any): boolean => {
         // Check if we've already processed this message ID

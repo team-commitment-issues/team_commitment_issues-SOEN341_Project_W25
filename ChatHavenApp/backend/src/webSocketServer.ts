@@ -945,6 +945,10 @@ class MessageHandlers {
       username: string;
       createdAt: Date;
       status?: string;
+      fileName?: string;
+      fileType?: string;
+      fileUrl?: string;
+      fileSize?: number;
     }> = [];
     let hasMore = false;
 
@@ -1011,12 +1015,22 @@ class MessageHandlers {
               username: string;
               createdAt: Date;
               status?: string;
+              fileName?: string;
+              fileType?: string;
+              fileUrl?: string;
+              fileSize?: number;
             }) => ({
               _id: msg._id,
               text: msg.text,
               username: msg.username,
               createdAt: msg.createdAt,
-              status: msg.status || 'delivered'
+              status: msg.status || 'delivered',
+              ...(msg.fileName && msg.fileUrl && {
+                fileName: msg.fileName,
+                fileType: msg.fileType,
+                fileUrl: msg.fileUrl,
+                fileSize: msg.fileSize
+              })
             })
           ),
           hasMore,
