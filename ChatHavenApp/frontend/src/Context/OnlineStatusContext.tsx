@@ -80,7 +80,7 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
       }
 
       try {
-        // For each username, add a default offline status if they don't exist yet
+        // For each username, add a default offline status if they don't exist yet 
         const updatedUsers = { ...onlineUsers };
 
         usernames.forEach(username => {
