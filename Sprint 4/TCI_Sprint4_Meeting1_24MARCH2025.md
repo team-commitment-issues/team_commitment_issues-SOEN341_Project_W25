@@ -63,6 +63,9 @@ Working on the implementation of the auto-translation feature
 Collaborated with Sam to connect frontend requests to backend routes.
 
 _Kassem_
+Working on the file sharing feature.
+Getting the github properly organized.
+Frontend of teh quoting feature.
 
 _Sam_
 Backend developer supporting quoting and emoji message formats.
