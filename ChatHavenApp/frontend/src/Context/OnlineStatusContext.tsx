@@ -80,7 +80,7 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
       }
 
       try {
-        // For each username, add a default offline status if they don't exist yet
+        // For each username, add a default offline status if they don't exist yet 
         const updatedUsers = { ...onlineUsers };
 
         usernames.forEach(username => {
@@ -191,8 +191,9 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
 
   // Initialize current user's status when connection is established
   useEffect(() => {
-    if (isConnected && currentUsername) {
-      if (!onlineUsers[currentUsername]) {
+    if (isConnected && currentUsername && onlineUsers) {
+      const currentUserStatus = onlineUsers[currentUsername];
+      if (!currentUserStatus) {
         // Using a direct WebSocket send instead of setUserStatus to avoid the loop
         const statusPayload = createStatusUpdatePayload(Status.ONLINE);
         wsService.send(statusPayload);
@@ -200,7 +201,7 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({ chil
         // Update local state directly
         updateUserStatus(currentUsername, Status.ONLINE);
       } else {
-        setCurrentUserStatus(onlineUsers[currentUsername].status);
+        setCurrentUserStatus(currentUserStatus.status);
       }
     }
   }, [isConnected, currentUsername, onlineUsers, wsService, updateUserStatus]);
