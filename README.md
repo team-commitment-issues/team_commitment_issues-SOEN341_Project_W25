@@ -6,7 +6,7 @@ ChatHaven is a versatile communication platform designed for real-time interacti
 
 ## Project Overview
 
-Key Features (Sprint 1, 2 and 3)
+Key Features (Sprint 1, 2, 3 and 4)
 ✔️ User Authentication & Management (Completed in Sprint 1)
 ✔️ Text Channels for Group Communication
 ✔️ Direct Messaging (DM) Between Users
