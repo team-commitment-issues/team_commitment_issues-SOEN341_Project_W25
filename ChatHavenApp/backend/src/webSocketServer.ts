@@ -59,10 +59,11 @@ const handleDisconnection = async (
     // Wait for reconnection timeout
     await setTimeout(CONFIG.RECONNECT_TIMEOUT_MS);
 
-    // Re-check the user's status
-    const user = await User.findById(userId);
-    if (user && user.status === Status.OFFLINE) {
-      // Broadcast the offline status
+    const connections = OnlineStatusService.getUserConnectionCount(username);
+
+    if (connections === 0) {
+      // Set status to offline and broadcast it
+      await OnlineStatusService.setUserStatus(userId, username, Status.OFFLINE);
       await broadcastStatusUpdate(wss, username, Status.OFFLINE, new Date());
     }
   } catch (error) {

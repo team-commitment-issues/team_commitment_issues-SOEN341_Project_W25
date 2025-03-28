@@ -99,13 +99,15 @@ class OnlineStatusService {
   ): Promise<void> {
     const connections = this.userConnections.get(username) || 0;
 
-    if (connections <= 1) {
+    const newConnectionCount = Math.max(0, connections - 1);
+
+    if (newConnectionCount === 0) {
       // This was the last connection, set to offline
       this.userConnections.delete(username);
       await this.setUserStatus(userId, username, Status.OFFLINE);
     } else {
       // User still has other connections
-      this.userConnections.set(username, connections - 1);
+      this.userConnections.set(username, newConnectionCount);
     }
   }
 
@@ -155,6 +157,32 @@ class OnlineStatusService {
    */
   static async getUserByUsername(username: string): Promise<any> {
     return await User.findOne({ username: { $eq: username } });
+  }
+
+  /**
+   * Get number of connections for a user
+   * 
+   */
+  static getUserConnectionCount(username: string): number {
+    return this.userConnections.get(username) || 0;
+  }
+
+  /**
+   * Verify active statuses
+   * This is a periodic check to ensure that users with no connections are marked as offline
+   */
+  static async verifyActiveStatuses(): Promise<void> {
+    for (const [username, status] of this.onlineUsers.entries()) {
+      const connections = this.userConnections.get(username) || 0;
+
+      // If no connections but status is ONLINE, fix it
+      if (connections === 0 && status.status === Status.ONLINE) {
+        const user = await User.findOne({ username });
+        if (user) {
+          await this.setUserStatus(user._id as Schema.Types.ObjectId, username, Status.OFFLINE);
+        }
+      }
+    }
   }
 }
 
