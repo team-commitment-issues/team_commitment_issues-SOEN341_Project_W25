@@ -39,6 +39,12 @@ export enum MessageType {
   FETCH_HISTORY = 'fetchHistory',
   HISTORY_RESPONSE = 'historyResponse',
   FILE_UPLOAD_COMPLETE = 'fileUploadComplete',
+  REQUEST_EDIT_LOCK = 'requestEditLock',
+  RELEASE_EDIT_LOCK = 'releaseEditLock',
+  EDIT_LOCK_RESPONSE = 'editLockResponse',
+  EDIT_LOCK_UPDATE = 'editLockUpdate',
+  UPDATE_FILE_CONTENT = 'updateFileContent',
+  FILE_UPDATED = 'fileUpdated',
 }
 
 /**
@@ -177,6 +183,73 @@ export interface FileUploadCompletionResponse extends BaseMessage {
 }
 
 /**
+ * Request to acquire an edit lock on a file
+ */
+export interface FileEditLockRequest extends BaseMessage {
+  type: MessageType.REQUEST_EDIT_LOCK;
+  messageId: string;
+  fileName: string;
+  teamName?: string;
+  channelName?: string;
+}
+
+/**
+ * Request to release an edit lock
+ */
+export interface FileEditLockRelease extends BaseMessage {
+  type: MessageType.RELEASE_EDIT_LOCK;
+  messageId: string;
+  fileName: string;
+  teamName?: string;
+  channelName?: string;
+}
+
+/**
+ * Response to an edit lock request
+ */
+export interface FileEditLockResponse extends BaseMessage {
+  type: MessageType.EDIT_LOCK_RESPONSE;
+  messageId: string;
+  granted: boolean;
+  lockedBy?: string;
+  lockedAt?: string;
+}
+
+/**
+ * Notification about lock status changes
+ */
+export interface FileEditLockUpdate extends BaseMessage {
+  type: MessageType.EDIT_LOCK_UPDATE;
+  messageId: string;
+  locked: boolean;
+  username?: string;
+  acquiredAt?: string;
+}
+
+/**
+ * Request to update file content
+ */
+export interface FileUpdateRequest extends BaseMessage {
+  type: MessageType.UPDATE_FILE_CONTENT;
+  messageId: string;
+  fileName: string;
+  content: string;
+  teamName?: string;
+  channelName?: string;
+}
+
+/**
+ * Notification that a file has been updated
+ */
+export interface FileUpdatedNotification extends BaseMessage {
+  type: MessageType.FILE_UPDATED;
+  messageId: string;
+  fileName: string;
+  editedBy: string;
+  editedAt: string;
+}
+
+/**
  * Union type of all possible message types
  */
 export type Message =
@@ -190,6 +263,12 @@ export type Message =
   | FetchHistoryMessage
   | HistoryResponse
   | FileUploadCompletionResponse
+  | FileEditLockRequest
+  | FileEditLockRelease
+  | FileEditLockResponse
+  | FileEditLockUpdate
+  | FileUpdateRequest
+  | FileUpdatedNotification
   | BaseMessage;
 
 /**

@@ -1,6 +1,9 @@
 // Components/UI/FileAttachment.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../Context/ThemeContext.tsx';
+import FileEditor from './FileEditor.tsx';
+import { useUser } from '../../Context/UserContext.tsx';
+import WebSocketClient from '../../Services/webSocketClient.ts';
 
 interface FileAttachmentProps {
     fileName: string;
@@ -8,6 +11,14 @@ interface FileAttachmentProps {
     fileUrl: string;
     fileSize?: number;
     uploadStatus?: 'pending' | 'completed' | 'error';
+    messageId?: string;
+    editedBy?: string;
+    editedAt?: Date;
+}
+
+interface EditLockInfo {
+    username: string;
+    acquiredAt: Date;
 }
 
 const TEXT_FILE_EXTENSIONS = [
@@ -42,19 +53,36 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     fileType,
     fileUrl,
     fileSize,
-    uploadStatus = fileUrl ? 'completed' : 'pending'
+    uploadStatus = fileUrl ? 'completed' : 'pending',
+    messageId,
+    editedBy,
+    editedAt
 }) => {
     const { theme } = useTheme();
+    const { userData } = useUser();
+    const username = userData?.username || '';
     const [showPreview, setShowPreview] = useState(false);
     const [textContent, setTextContent] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [imageBlob, setImageBlob] = useState<string | null>(null);
     const [debugInfo, setDebugInfo] = useState<string | null>(null);
+    const [isReleasingLock, setIsReleasingLock] = useState(false);
+
+    // New state for editing functionality
+    const [isEditing, setIsEditing] = useState(false);
+    const [editLoading, setEditLoading] = useState(false);
+    const [editLock, setEditLock] = useState<EditLockInfo | null>(null);
 
     const isFetchingRef = useRef(false);
     const hasAttemptedFetchRef = useRef(false);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const lockReleasedRef = useRef(false);
+    const isMountedRef = useRef(true);
+    const currentLockUsernameRef = useRef<string | undefined>(undefined);
+
+    // WebSocket client for edit lock communication
+    const wsService = WebSocketClient.getInstance();
 
     const getAuthenticatedUrl = (url: string, inline: boolean = false): string => {
         if (!url || url.trim() === '') {
@@ -119,6 +147,218 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         }
         return null; // No indicator needed for complete status
     };
+
+    const fetchFileContent = useCallback(async () => {
+        if (!isTextFile(fileName) || !fileUrl) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+
+            abortControllerRef.current = new AbortController();
+
+            const authUrl = getAuthenticatedUrl(fileUrl, true);
+            console.log('Fetching text file from:', authUrl);
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('Authentication token not found');
+            }
+
+            const response = await fetch(authUrl, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Accept': 'text/plain,text/*;q=0.9,*/*;q=0.8',
+                    'Cache-Control': 'no-cache'
+                },
+                credentials: 'include',
+                signal: abortControllerRef.current.signal
+            });
+
+            if (response.status === 429) {
+                throw new Error('Too many requests - rate limit exceeded. Please try again later.');
+            }
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch file: ${response.statusText} (${response.status})`);
+            }
+
+            const content = await response.text();
+
+            if (content.trim().toLowerCase().startsWith('<!doctype html>')) {
+                throw new Error('Received HTML content instead of text file. Authentication may have failed.');
+            }
+
+            setTextContent(content);
+            return content;
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                console.log('Text fetch aborted');
+                return;
+            }
+
+            console.error('Error fetching file:', error);
+            alert('Failed to load file content: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        } finally {
+            setLoading(false);
+        }
+    }, [fileName, fileUrl]);
+
+    // New function to request edit lock
+    const requestEditLock = async () => {
+        if (!messageId || !isTextFile(fileName)) return;
+
+        try {
+            setEditLoading(true);
+
+            // Send WebSocket message to request edit lock
+            wsService.send({
+                type: 'requestEditLock',
+                messageId,
+                fileName
+            });
+
+            // Wait for response (handled in useEffect)
+        } catch (error) {
+            console.error('Error requesting edit lock:', error);
+            setEditLoading(false);
+        }
+    };
+
+    // Function to release edit lock
+    const releaseEditLock = useCallback(() => {
+        if (isReleasingLock || !messageId) return;
+
+        setIsReleasingLock(true);
+
+        wsService.send({
+            type: 'releaseEditLock',
+            messageId,
+            fileName
+        });
+
+        // Reset after a short delay to prevent multiple calls
+        setTimeout(() => {
+            setIsReleasingLock(false);
+        }, 500);
+
+        // Optimistically update UI
+        setEditLock(null);
+        setIsEditing(false);
+    }, [messageId, fileName, wsService, isReleasingLock]);
+
+    // Function to save edited content
+    const saveEditedContent = async (content: string) => {
+        if (!messageId) return;
+
+        // Send WebSocket message with edited content
+        wsService.send({
+            type: 'updateFileContent',
+            messageId,
+            fileName,
+            content
+        });
+
+        // Release lock after save
+        releaseEditLock();
+    };
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (editLock) {
+            currentLockUsernameRef.current = editLock.username;
+        } else {
+            currentLockUsernameRef.current = undefined;
+        }
+    }, [editLock]);
+
+    // Subscribe to WebSocket messages related to file editing
+    useEffect(() => {
+        if (!messageId) return;
+
+        lockReleasedRef.current = false;
+
+        const handleEditLockResponse = (data: any) => {
+            setEditLoading(false);
+
+            if (data.type === 'editLockResponse' && data.messageId === messageId) {
+                if (data.granted) {
+                    setEditLock({
+                        username: username,
+                        acquiredAt: new Date()
+                    });
+                    setIsEditing(true);
+
+                    // Fetch the file content for editing if not already loaded
+                    if (!textContent) {
+                        fetchFileContent();
+                    }
+                } else {
+                    // Lock denied, update UI to show who has the lock
+                    setEditLock({
+                        username: data.lockedBy,
+                        acquiredAt: new Date(data.lockedAt || Date.now())
+                    });
+                    alert(`File is currently being edited by ${data.lockedBy}`);
+                }
+            }
+        };
+
+        const handleEditLockUpdate = (data: any) => {
+            if (data.type === 'editLockUpdate' && data.messageId === messageId) {
+                if (data.locked) {
+                    setEditLock({
+                        username: data.username,
+                        acquiredAt: new Date(data.acquiredAt || Date.now())
+                    });
+                } else {
+                    setEditLock(null);
+                }
+            }
+        };
+
+        const handleFileUpdated = (data: any) => {
+            if (data.type === 'fileUpdated' && data.messageId === messageId) {
+                // Clear cached content to force reload on next view
+                setTextContent(null);
+                hasAttemptedFetchRef.current = false;
+            }
+        };
+
+        // Subscribe to relevant message types
+        const editLockSubId = wsService.subscribe('editLockResponse', handleEditLockResponse);
+        const editLockUpdateSubId = wsService.subscribe('editLockUpdate', handleEditLockUpdate);
+        const fileUpdatedSubId = wsService.subscribe('fileUpdated', handleFileUpdated);
+
+        return () => {
+            // Unsubscribe when component unmounts
+            wsService.unsubscribe(editLockSubId);
+            wsService.unsubscribe(editLockUpdateSubId);
+            wsService.unsubscribe(fileUpdatedSubId);
+
+            // Release lock if we have it and component unmounts
+            if (!lockReleasedRef.current &&
+                currentLockUsernameRef.current === username &&
+                !isMountedRef.current) {
+                lockReleasedRef.current = true;
+                releaseEditLock();
+            }
+        };
+    }, [messageId, username, textContent, wsService, releaseEditLock, fetchFileContent]);
+
+    // Function to fetch file content for editing
 
 
     useEffect(() => {
@@ -305,6 +545,10 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         }
     };
 
+    // Handle canceling edit
+    const handleCancelEdit = () => {
+        releaseEditLock();
+    };
 
     const containerStyle: React.CSSProperties = {
         marginTop: '8px',
@@ -335,6 +579,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         textOverflow: 'ellipsis',
         overflow: 'hidden',
         whiteSpace: 'nowrap',
+        position: 'relative',
     };
 
     const fileSizeStyle: React.CSSProperties = {
@@ -353,6 +598,17 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         fontSize: '13px',
         marginLeft: '8px',
         borderRadius: '4px',
+    };
+
+    const editButtonStyle: React.CSSProperties = {
+        ...buttonStyle,
+        color: theme === 'dark' ? '#ffab40' : '#ff9800',
+    };
+
+    const disabledButtonStyle: React.CSSProperties = {
+        ...buttonStyle,
+        opacity: 0.5,
+        cursor: 'not-allowed',
     };
 
     const textPreviewStyle: React.CSSProperties = {
@@ -382,6 +638,20 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         borderTop: `1px solid ${theme === 'dark' ? '#444' : '#ddd'}`,
     };
 
+    const editedByStyle: React.CSSProperties = {
+        fontSize: '11px',
+        color: theme === 'dark' ? '#aaa' : '#666',
+        marginTop: '2px',
+        fontStyle: 'italic',
+    };
+
+    const editingIndicatorStyle: React.CSSProperties = {
+        fontSize: '11px',
+        color: theme === 'dark' ? '#ffab40' : '#ff9800',
+        marginTop: '2px',
+        fontStyle: 'italic',
+    };
+
     const getFileIcon = () => {
         if (isImageFile(fileType)) return '🖼️';
         if (isTextFile(fileName)) return '📄';
@@ -394,12 +664,36 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         return '📎';
     };
 
+    // Is text file and eligible for editing
+    const canEdit = isTextFile(fileName) &&
+        uploadStatus === 'completed' &&
+        fileUrl &&
+        fileUrl !== '#pending-upload' &&
+        fileUrl !== '' &&
+        (!editLock || editLock.username === username);
+
+    // Determine if we should show edit button
+    const showEditButton = isTextFile(fileName) && messageId && uploadStatus === 'completed';
+
     return (
         <div style={containerStyle}>
             <div style={fileInfoStyle}>
                 <div style={fileIconStyle}>{getFileIcon()}</div>
-                <div style={fileNameStyle}>{fileName}</div>
+                <div>
+                    <div style={fileNameStyle}>{fileName}</div>
+                    {editedBy && !editLock && (
+                        <div style={editedByStyle} title={editedAt ? `Last edited on ${editedAt.toLocaleString()}` : ''}>
+                            Edited by {editedBy}
+                        </div>
+                    )}
+                    {editLock && editLock.username !== username && (
+                        <div style={editingIndicatorStyle}>
+                            Currently being edited by {editLock.username}
+                        </div>
+                    )}
+                </div>
                 {fileSize && <div style={fileSizeStyle}>{formatFileSize(fileSize)}</div>}
+
                 {isImageFile(fileType) ? (
                     <button
                         style={buttonStyle}
@@ -420,15 +714,33 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                             : 'Uploading...'}
                     </button>
                 ) : isTextFile(fileName) ? (
-                    <button
-                        style={buttonStyle}
-                        onClick={handleOpenFile}
-                        disabled={loading || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
-                    >
-                        {loading ? 'Loading...' :
-                            (!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? 'Uploading...' :
-                                (showPreview ? 'Close' : 'Open')}
-                    </button>
+                    <>
+                        <button
+                            style={buttonStyle}
+                            onClick={handleOpenFile}
+                            disabled={loading || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
+                        >
+                            {loading ? 'Loading...' :
+                                (!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? 'Uploading...' :
+                                    (showPreview ? 'Close' : 'Open')}
+                        </button>
+
+                        {/* Edit button for text files */}
+                        {showEditButton && (
+                            <button
+                                style={canEdit ? editButtonStyle : disabledButtonStyle}
+                                onClick={requestEditLock}
+                                disabled={!canEdit || editLoading || isEditing}
+                                title={
+                                    editLock && editLock.username !== username
+                                        ? `File is being edited by ${editLock.username}`
+                                        : 'Edit file content'
+                                }
+                            >
+                                {editLoading ? 'Loading...' : isEditing ? 'Editing...' : 'Edit'}
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <a
                         href={(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? '#' : getAuthenticatedUrl(fileUrl)}
@@ -451,7 +763,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             {uploadStatus !== 'completed' && <UploadStatusIndicator />}
 
             {/* Preview section */}
-            {showPreview && (
+            {showPreview && !isEditing && (
                 <div>
                     {isImageFile(fileType) && !imageError && !loading && imageBlob && (
                         <div style={{ padding: '8px', textAlign: 'center' }}>
@@ -511,6 +823,17 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* File editor component */}
+            {isEditing && textContent !== null && (
+                <FileEditor
+                    fileName={fileName}
+                    fileContent={textContent}
+                    onSave={saveEditedContent}
+                    onCancel={handleCancelEdit}
+                    loading={editLoading}
+                />
             )}
         </div>
     );

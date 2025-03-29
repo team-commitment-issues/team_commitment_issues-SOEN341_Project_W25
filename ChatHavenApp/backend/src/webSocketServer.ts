@@ -30,9 +30,13 @@ import {
   MessageAck,
   FetchHistoryMessage,
   FileUploadCompletionResponse,
-  BaseMessage
+  BaseMessage,
+  FileEditLockRequest,
+  FileEditLockRelease,
+  FileUpdateRequest
 } from './types/websocket';
 import DMessage from './models/DMessage';
+import fileEditingService from './services/fileEditingService';
 
 // Setup structured logging
 const logger = createLogger('WebSocketServer');
@@ -1172,6 +1176,473 @@ class MessageHandlers {
       );
     }
   }
+
+  // Add these new message handlers to the MessageHandlers class in webSocketServer.ts
+
+  /**
+   * Handles requests for file edit locks
+   */
+  static async handleRequestEditLock(
+    ws: ExtendedWebSocket,
+    message: FileEditLockRequest,
+    wss: WebSocketServer,
+    token: string
+  ): Promise<void> {
+    const user = await verifyToken(token);
+    ws.user = user;
+
+    const { messageId, fileName, teamName, channelName } = message;
+
+    logger.debug('Edit lock request received', {
+      username: user.username,
+      messageId,
+      fileName
+    });
+
+    try {
+      // Request the lock from the file editing service
+      const result = await fileEditingService.requestLock(
+        messageId,
+        fileName,
+        user.username,
+        teamName,
+        channelName
+      );
+
+      // Send the response to the requester
+      ws.send(
+        JSON.stringify({
+          type: MessageType.EDIT_LOCK_RESPONSE,
+          messageId,
+          granted: result.granted,
+          lockedBy: result.lockedBy,
+          lockedAt: result.lockedAt ? result.lockedAt.toISOString() : undefined
+        })
+      );
+
+      // If lock was granted, broadcast the update to all relevant clients
+      if (result.granted) {
+        // Determine which clients should receive the update
+        let relevantClients: ExtendedWebSocket[] = [];
+
+        if (teamName && channelName) {
+          // For channel messages
+          wss.clients.forEach(client => {
+            const extClient = client as ExtendedWebSocket;
+            if (
+              extClient.readyState === WebSocket.OPEN &&
+              extClient.channel &&
+              extClient.channel.name === channelName &&
+              extClient.team &&
+              extClient.team.name === teamName
+            ) {
+              relevantClients.push(extClient);
+            }
+          });
+        } else {
+          // For direct messages - find the direct message to get participants
+          const dMessage = await DMessage.findById(messageId);
+          if (dMessage) {
+            const directMessage = await DirectMessage.findOne({
+              dmessages: messageId
+            })
+              .populate('users')
+              .exec();
+
+            if (directMessage) {
+              const participantIds = directMessage.users.map(u => String(u));
+              wss.clients.forEach(client => {
+                const extClient = client as ExtendedWebSocket;
+                if (
+                  extClient.readyState === WebSocket.OPEN &&
+                  extClient.user &&
+                  participantIds.includes(String(extClient.user._id))
+                ) {
+                  relevantClients.push(extClient);
+                }
+              });
+            }
+          } else {
+            // If not a direct message, check if it's a channel message
+            const channelMessage = await Message.findById(messageId);
+            if (channelMessage) {
+              const channel = await Channel.findById(channelMessage.channel);
+              if (channel) {
+                wss.clients.forEach(client => {
+                  const extClient = client as ExtendedWebSocket;
+                  if (
+                    extClient.readyState === WebSocket.OPEN &&
+                    extClient.channel &&
+                    String(extClient.channel._id) === String(channel._id)
+                  ) {
+                    relevantClients.push(extClient);
+                  }
+                });
+              }
+            }
+          }
+        }
+
+        // Broadcast the lock update
+        relevantClients.forEach(client => {
+          client.send(
+            JSON.stringify({
+              type: MessageType.EDIT_LOCK_UPDATE,
+              messageId,
+              locked: true,
+              username: user.username,
+              acquiredAt: new Date().toISOString()
+            })
+          );
+        });
+
+        logger.debug('Edit lock granted and broadcasted', {
+          username: user.username,
+          messageId,
+          fileName,
+          recipients: relevantClients.length
+        });
+      } else {
+        logger.debug('Edit lock denied', {
+          username: user.username,
+          messageId,
+          fileName,
+          lockedBy: result.lockedBy
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error processing edit lock request', {
+        username: user.username,
+        messageId,
+        fileName,
+        error: errorMessage
+      });
+
+      ws.send(
+        JSON.stringify({
+          type: 'error',
+          message: `Failed to acquire edit lock: ${errorMessage}`
+        })
+      );
+    }
+  }
+
+  // Map to track recent releases to prevent duplicate broadcasts
+  static recentReleases = new Map<string, number>();
+
+  /**
+   * Handles requests to release file edit locks
+   */
+  static async handleReleaseEditLock(
+    ws: ExtendedWebSocket,
+    message: FileEditLockRelease,
+    wss: WebSocketServer,
+    token: string
+  ): Promise<void> {
+    const user = await verifyToken(token);
+    ws.user = user;
+
+    const { messageId, fileName, teamName, channelName } = message;
+
+    logger.debug('Edit lock release request received', {
+      username: user.username,
+      messageId,
+      fileName
+    });
+
+    const lockKey = `${messageId}-release`;
+    const lastReleaseTime = MessageHandlers.recentReleases.get(lockKey);
+    const now = Date.now();
+
+    if (lastReleaseTime && now - lastReleaseTime < 500) {
+      // We've already processed a release for this lock recently
+      logger.debug('Skipping duplicate lock release broadcast', {
+        messageId,
+        username: user.username,
+        timeSinceLastRelease: now - lastReleaseTime
+      });
+      return;
+    }
+
+    MessageHandlers.recentReleases.set(lockKey, now);
+    // Clear old entries occasionally
+    global.setTimeout(() => MessageHandlers.recentReleases.delete(lockKey), 1000);
+
+    try {
+      // Release the lock
+      const released = fileEditingService.releaseLock(messageId, user.username);
+
+      if (released) {
+        // Determine which clients should receive the update
+        let relevantClients: ExtendedWebSocket[] = [];
+
+        if (teamName && channelName) {
+          // For channel messages
+          wss.clients.forEach(client => {
+            const extClient = client as ExtendedWebSocket;
+            if (
+              extClient.readyState === WebSocket.OPEN &&
+              extClient.channel &&
+              extClient.channel.name === channelName &&
+              extClient.team &&
+              extClient.team.name === teamName
+            ) {
+              relevantClients.push(extClient);
+            }
+          });
+        } else {
+          // For direct messages - find the direct message to get participants
+          const dMessage = await DMessage.findById(messageId);
+          if (dMessage) {
+            const directMessage = await DirectMessage.findOne({
+              dmessages: messageId
+            })
+              .populate('users')
+              .exec();
+
+            if (directMessage) {
+              const participantIds = directMessage.users.map(u => String(u));
+              wss.clients.forEach(client => {
+                const extClient = client as ExtendedWebSocket;
+                if (
+                  extClient.readyState === WebSocket.OPEN &&
+                  extClient.user &&
+                  participantIds.includes(String(extClient.user._id))
+                ) {
+                  relevantClients.push(extClient);
+                }
+              });
+            }
+          } else {
+            // If not a direct message, check if it's a channel message
+            const channelMessage = await Message.findById(messageId);
+            if (channelMessage) {
+              const channel = await Channel.findById(channelMessage.channel);
+              if (channel) {
+                wss.clients.forEach(client => {
+                  const extClient = client as ExtendedWebSocket;
+                  if (
+                    extClient.readyState === WebSocket.OPEN &&
+                    extClient.channel &&
+                    String(extClient.channel._id) === String(channel._id)
+                  ) {
+                    relevantClients.push(extClient);
+                  }
+                });
+              }
+            }
+          }
+        }
+
+        // Broadcast the lock release
+        relevantClients.forEach(client => {
+          client.send(
+            JSON.stringify({
+              type: MessageType.EDIT_LOCK_UPDATE,
+              messageId,
+              locked: false
+            })
+          );
+        });
+
+        logger.debug('Edit lock released and broadcasted', {
+          username: user.username,
+          messageId,
+          fileName,
+          recipients: relevantClients.length
+        });
+      } else {
+        logger.warn('Failed to release edit lock', {
+          username: user.username,
+          messageId,
+          fileName
+        });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error processing edit lock release', {
+        username: user.username,
+        messageId,
+        fileName,
+        error: errorMessage
+      });
+
+      ws.send(
+        JSON.stringify({
+          type: 'error',
+          message: `Failed to release edit lock: ${errorMessage}`
+        })
+      );
+    }
+  }
+
+  /**
+   * Handles requests to update file content
+   */
+  static async handleUpdateFileContent(
+    ws: ExtendedWebSocket,
+    message: FileUpdateRequest,
+    wss: WebSocketServer,
+    token: string
+  ): Promise<void> {
+    const user = await verifyToken(token);
+    ws.user = user;
+
+    const { messageId, fileName, content, teamName, channelName } = message;
+
+    logger.debug('File content update request received', {
+      username: user.username,
+      messageId,
+      fileName,
+      contentLength: content.length
+    });
+
+    try {
+      // Verify that the user has the lock
+      const lockStatus = fileEditingService.isLocked(messageId);
+
+      if (lockStatus.locked && lockStatus.username === user.username) {
+        // Update the file content
+        const result = await fileEditingService.updateFileContent(messageId, user.username, content);
+
+        if (result.success) {
+          // Determine which clients should receive the update
+          let relevantClients: ExtendedWebSocket[] = [];
+
+          if (teamName && channelName) {
+            // For channel messages
+            wss.clients.forEach(client => {
+              const extClient = client as ExtendedWebSocket;
+              if (
+                extClient.readyState === WebSocket.OPEN &&
+                extClient.channel &&
+                extClient.channel.name === channelName &&
+                extClient.team &&
+                extClient.team.name === teamName
+              ) {
+                relevantClients.push(extClient);
+              }
+            });
+          } else {
+            // For direct messages - find the direct message to get participants
+            const dMessage = await DMessage.findById(messageId);
+            if (dMessage) {
+              const directMessage = await DirectMessage.findOne({
+                dmessages: messageId
+              })
+                .populate('users')
+                .exec();
+
+              if (directMessage) {
+                const participantIds = directMessage.users.map(u => String(u));
+                wss.clients.forEach(client => {
+                  const extClient = client as ExtendedWebSocket;
+                  if (
+                    extClient.readyState === WebSocket.OPEN &&
+                    extClient.user &&
+                    participantIds.includes(String(extClient.user._id))
+                  ) {
+                    relevantClients.push(extClient);
+                  }
+                });
+              }
+            } else {
+              // If not a direct message, check if it's a channel message
+              const channelMessage = await Message.findById(messageId);
+              if (channelMessage) {
+                const channel = await Channel.findById(channelMessage.channel);
+                if (channel) {
+                  wss.clients.forEach(client => {
+                    const extClient = client as ExtendedWebSocket;
+                    if (
+                      extClient.readyState === WebSocket.OPEN &&
+                      extClient.channel &&
+                      String(extClient.channel._id) === String(channel._id)
+                    ) {
+                      relevantClients.push(extClient);
+                    }
+                  });
+                }
+              }
+            }
+          }
+
+          // Broadcast the file update notification
+          const now = new Date();
+          const fileUpdatedMsg = {
+            type: MessageType.FILE_UPDATED,
+            messageId,
+            fileName: result.fileName,
+            editedBy: user.username,
+            editedAt: now.toISOString()
+          };
+
+          relevantClients.forEach(client => {
+            client.send(JSON.stringify(fileUpdatedMsg));
+          });
+
+          // Also notify that the lock has been released
+          relevantClients.forEach(client => {
+            client.send(
+              JSON.stringify({
+                type: MessageType.EDIT_LOCK_UPDATE,
+                messageId,
+                locked: false
+              })
+            );
+          });
+
+          logger.debug('File content updated and notifications sent', {
+            username: user.username,
+            messageId,
+            fileName: result.fileName,
+            recipients: relevantClients.length
+          });
+        } else {
+          ws.send(
+            JSON.stringify({
+              type: 'error',
+              message: 'Failed to update file content'
+            })
+          );
+        }
+      } else {
+        const errorMsg = lockStatus.locked
+          ? `You do not have the edit lock. The file is being edited by ${lockStatus.username}.`
+          : 'No active edit lock found for this file.';
+
+        logger.warn('Unauthorized file update attempt', {
+          username: user.username,
+          messageId,
+          fileName,
+          lockStatus
+        });
+
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            message: errorMsg
+          })
+        );
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Error updating file content', {
+        username: user.username,
+        messageId,
+        fileName,
+        error: errorMessage
+      });
+
+      ws.send(
+        JSON.stringify({
+          type: 'error',
+          message: `Failed to update file content: ${errorMessage}`
+        })
+      );
+    }
+  }
 }
 
 /**
@@ -1218,6 +1689,15 @@ const handleWebSocketMessage = async (
         break;
       case 'fetchHistory':
         await MessageHandlers.handleFetchHistory(ws, message as FetchHistoryMessage, token);
+        break;
+      case 'requestEditLock':
+        await MessageHandlers.handleRequestEditLock(ws, message as FileEditLockRequest, wss, token);
+        break;
+      case 'releaseEditLock':
+        await MessageHandlers.handleReleaseEditLock(ws, message as FileEditLockRelease, wss, token);
+        break;
+      case 'updateFileContent':
+        await MessageHandlers.handleUpdateFileContent(ws, message as FileUpdateRequest, wss, token);
         break;
       default:
         throw new Error(`Unknown message type: ${(message as any).type}`);

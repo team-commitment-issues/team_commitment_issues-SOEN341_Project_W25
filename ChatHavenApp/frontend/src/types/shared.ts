@@ -50,6 +50,8 @@ export interface ChatMessage {
   fileUrl?: string;
   fileSize?: number;
   quotedMessage?: QuotedMessage;
+  editedBy?: string;
+  editedAt?: Date;
 }
 
 // Selection for channel or direct message in UI
@@ -151,6 +153,54 @@ export interface FetchHistoryPayload extends WebSocketMessage {
   before?: string; // Message ID to fetch before (for pagination)
   limit?: number;
   requestId?: string;
+}
+
+export interface FileEditLockRequest extends WebSocketMessage {
+  type: 'requestEditLock';
+  messageId: string;
+  fileName: string;
+}
+
+// Request to release an edit lock
+export interface FileEditLockRelease extends WebSocketMessage {
+  type: 'releaseEditLock';
+  messageId: string;
+  fileName: string;
+}
+
+// Response to an edit lock request
+export interface FileEditLockResponse extends WebSocketMessage {
+  type: 'editLockResponse';
+  messageId: string;
+  granted: boolean;
+  lockedBy?: string;
+  lockedAt?: string;
+}
+
+// Update about the lock status of a file
+export interface FileEditLockUpdate extends WebSocketMessage {
+  type: 'editLockUpdate';
+  messageId: string;
+  locked: boolean;
+  username?: string;
+  acquiredAt?: string;
+}
+
+// Request to update file content
+export interface FileUpdateRequest extends WebSocketMessage {
+  type: 'updateFileContent';
+  messageId: string;
+  fileName: string;
+  content: string;
+}
+
+// Notification that a file has been updated
+export interface FileUpdatedNotification extends WebSocketMessage {
+  type: 'fileUpdated';
+  messageId: string;
+  fileName: string;
+  editedBy: string;
+  editedAt: string;
 }
 
 // Helper functions for creating message payloads
@@ -304,5 +354,40 @@ export const createDirectMessageHistoryRequest = (
     before,
     limit,
     requestId: `history_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+  };
+};
+
+export const createFileEditLockRequest = (
+  messageId: string,
+  fileName: string
+): FileEditLockRequest => {
+  return {
+    type: 'requestEditLock',
+    messageId,
+    fileName
+  };
+};
+
+export const createFileEditLockRelease = (
+  messageId: string,
+  fileName: string
+): FileEditLockRelease => {
+  return {
+    type: 'releaseEditLock',
+    messageId,
+    fileName
+  };
+};
+
+export const createFileUpdateRequest = (
+  messageId: string,
+  fileName: string,
+  content: string
+): FileUpdateRequest => {
+  return {
+    type: 'updateFileContent',
+    messageId,
+    fileName,
+    content
   };
 };
