@@ -1,5 +1,11 @@
 import { Document, Schema, model } from 'mongoose';
 
+const QuotedMessageSchema = new Schema({
+  _id: { type: String, required: true },
+  text: { type: String, required: true },
+  username: { type: String, required: true }
+});
+
 /**
  * Interface representing a Message document in MongoDB.
  * @interface IMessage
@@ -33,6 +39,11 @@ interface IMessage extends Document {
   fileType?: string;
   fileUrl?: string;
   fileSize?: number;
+  quotedMessage?: {
+    _id: string;
+    text: string;
+    username: string;
+  };
 }
 
 /**
@@ -68,6 +79,9 @@ const MessageSchema = new Schema<IMessage>({
   },
   fileSize: {
     type: Number
+  },
+  quotedMessage: {
+    type: QuotedMessageSchema
   }
 });
 

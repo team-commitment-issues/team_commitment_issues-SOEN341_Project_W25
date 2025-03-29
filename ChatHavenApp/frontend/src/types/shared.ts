@@ -23,11 +23,18 @@ export interface UserStatus {
   lastSeen?: Date;
 }
 
+export interface QuotedMessage {
+  _id: string;
+  text: string;
+  username: string;
+}
+
 // Base WebSocket message interface
 export interface WebSocketMessage {
   type: string;
   clientMessageId?: string;
   [key: string]: any; // Allow additional properties
+  quotedMessage?: QuotedMessage;
 }
 
 // Chat message for display in UI
@@ -42,6 +49,7 @@ export interface ChatMessage {
   fileType?: string;
   fileUrl?: string;
   fileSize?: number;
+  quotedMessage?: QuotedMessage;
 }
 
 // Selection for channel or direct message in UI

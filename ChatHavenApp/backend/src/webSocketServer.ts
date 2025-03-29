@@ -29,6 +29,7 @@ import {
   OnlineStatusSubscription,
   MessageAck,
   FetchHistoryMessage,
+  FileUploadCompletionResponse,
   BaseMessage
 } from './types/websocket';
 import DMessage from './models/DMessage';
@@ -402,15 +403,47 @@ class MessageHandlers {
         ws.channel._id as Types.ObjectId,
         ws.user.username as string,
         message.text,
-        fileInfo // Pass file information
+        fileInfo,
+        message.quotedMessage
       );
     } else {
       sentMessage = await ChannelService.sendMessage(
         ws.channel._id as Types.ObjectId,
         ws.teamMember?._id as Types.ObjectId,
         message.text,
-        fileInfo // Pass file information
+        fileInfo,
+        message.quotedMessage
       );
+    }
+
+    if (message.fileData && message.fileName && fileUrl) {
+      // This sends a direct notification to the sender
+      wss.clients.forEach(client => {
+        const extendedClient = client as ExtendedWebSocket;
+        if (
+          extendedClient.readyState === WebSocket.OPEN &&
+          extendedClient.user &&
+          extendedClient.user.username === ws.user?.username &&
+          message.clientMessageId // Only send if we have a client message ID
+        ) {
+          const fileCompletionMsg: FileUploadCompletionResponse = {
+            type: MessageType.FILE_UPLOAD_COMPLETE,
+            messageId: (sentMessage._id as Types.ObjectId).toString(),
+            fileUrl: fileUrl,
+            status: 'sent',
+            clientMessageId: message.clientMessageId
+          };
+
+          extendedClient.send(JSON.stringify(fileCompletionMsg));
+
+          logger.debug('Sent file upload completion notification', {
+            username: ws.user?.username,
+            messageId: sentMessage._id,
+            clientMessageId: message.clientMessageId,
+            fileUrl: fileUrl
+          });
+        }
+      });
     }
 
     // Format and broadcast message to channel with file information
@@ -426,6 +459,14 @@ class MessageHandlers {
         fileType: sentMessage.fileType,
         fileUrl: sentMessage.fileUrl,
         fileSize: sentMessage.fileSize
+      }),
+      // Include quoted message if available
+      ...(message.quotedMessage && {
+        quotedMessage: {
+          _id: message.quotedMessage._id,
+          text: message.quotedMessage.text,
+          username: message.quotedMessage.username
+        }
       }),
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
@@ -454,7 +495,14 @@ class MessageHandlers {
       messageId: sentMessage._id,
       clientMessageId: message.clientMessageId,
       hasFile: !!fileUrl,
-      sentCount
+      sentCount,
+      quotedMessage: message.quotedMessage
+        ? {
+          _id: message.quotedMessage._id,
+          text: message.quotedMessage.text,
+          username: message.quotedMessage.username
+        }
+        : undefined
     });
   }
 
@@ -625,8 +673,39 @@ class MessageHandlers {
       message.text,
       user.username,
       ws.directMessage._id as Types.ObjectId,
-      fileInfo
+      fileInfo,
+      message.quotedMessage
     );
+
+    if (message.fileData && message.fileName && fileUrl) {
+      // This sends a direct notification to the sender
+      wss.clients.forEach(client => {
+        const extendedClient = client as ExtendedWebSocket;
+        if (
+          extendedClient.readyState === WebSocket.OPEN &&
+          extendedClient.user &&
+          extendedClient.user.username === user.username &&
+          message.clientMessageId // Only send if we have a client message ID
+        ) {
+          const fileCompletionMsg: FileUploadCompletionResponse = {
+            type: MessageType.FILE_UPLOAD_COMPLETE,
+            messageId: (sentMessage._id as Types.ObjectId).toString(),
+            fileUrl: fileUrl,
+            status: 'sent',
+            clientMessageId: message.clientMessageId
+          };
+
+          extendedClient.send(JSON.stringify(fileCompletionMsg));
+
+          logger.debug('Sent DM file upload completion notification', {
+            username: user.username,
+            messageId: sentMessage._id,
+            clientMessageId: message.clientMessageId,
+            fileUrl: fileUrl
+          });
+        }
+      });
+    }
 
     const formattedMessage = {
       type: 'directMessage',
@@ -640,6 +719,13 @@ class MessageHandlers {
         fileType: sentMessage.fileType,
         fileUrl: sentMessage.fileUrl, // This should now have the complete path
         fileSize: sentMessage.fileSize
+      }),
+      ...(message.quotedMessage && {
+        quotedMessage: {
+          _id: message.quotedMessage._id,
+          text: message.quotedMessage.text,
+          username: message.quotedMessage.username
+        }
       }),
       // Echo back the client message ID if provided
       ...(message.clientMessageId && { clientMessageId: message.clientMessageId })
@@ -950,6 +1036,11 @@ class MessageHandlers {
       fileType?: string;
       fileUrl?: string;
       fileSize?: number;
+      quotedMessage?: {
+        _id: string;
+        text: string;
+        username: string;
+      };
     }> = [];
     let hasMore = false;
 
@@ -1020,6 +1111,11 @@ class MessageHandlers {
               fileType?: string;
               fileUrl?: string;
               fileSize?: number;
+              quotedMessage?: {
+                _id: string;
+                text: string;
+                username: string;
+              };
             }) => ({
               _id: msg._id,
               text: msg.text,
@@ -1031,6 +1127,13 @@ class MessageHandlers {
                 fileType: msg.fileType,
                 fileUrl: msg.fileUrl,
                 fileSize: msg.fileSize
+              }),
+              ...(msg.quotedMessage && {
+                quotedMessage: {
+                  _id: msg.quotedMessage._id,
+                  text: msg.quotedMessage.text,
+                  username: msg.quotedMessage.username
+                }
               })
             })
           ),

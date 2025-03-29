@@ -15,7 +15,8 @@ import {
   ChatMessage,
   WebSocketMessage,
   RetryInfo,
-  MessageStatus
+  MessageStatus,
+  QuotedMessage
 } from '../types/shared.ts';
 
 // Constants for message retry
@@ -46,6 +47,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [oldestMessageId, setOldestMessageId] = useState<string | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [quotedMessage, setQuotedMessage] = useState<QuotedMessage | null>(null);
 
   // Refs
   const heartbeatInterval = useRef<number | null>(null);
@@ -216,6 +218,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             fileType: messageData.fileType,
             // Note: fileUrl will be assigned by the server
             fileSize: messageData.fileSize
+          }),
+          ...(messageData.quotedMessage && {
+            quotedMessage: {
+              _id: messageData.quotedMessage._id,
+              text: messageData.quotedMessage.text,
+              username: messageData.quotedMessage.username
+            }
           })
         };
 
@@ -236,6 +245,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             fileName: messageData.fileName,
             fileType: messageData.fileType,
             fileSize: messageData.fileSize
+          }),
+          ...(messageData.quotedMessage && {
+            quotedMessage: {
+              _id: messageData.quotedMessage._id,
+              text: messageData.quotedMessage.text,
+              username: messageData.quotedMessage.username
+            }
           })
         };
 
@@ -380,24 +396,29 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       return;
     }
 
+    const currentQuotedMessage = quotedMessage;
+
     const newMessage: WebSocketMessage =
       selection.type === 'directMessage'
         ? {
           type: 'directMessage',
           text: message,
           teamName: selection.teamName,
-          receiverUsername: selection.username
+          receiverUsername: selection.username,
+          ...(currentQuotedMessage && { quotedMessage: currentQuotedMessage })
         }
         : {
           type: 'message',
           text: message,
           username,
           teamName: selection.teamName,
-          channelName: selection.channelName
+          channelName: selection.channelName,
+          ...(currentQuotedMessage && { quotedMessage: currentQuotedMessage })
         };
 
     sendMessage(newMessage);
     setMessage('');
+    setQuotedMessage(null);
 
     // Clear typing indicator when sending a message
     if (isTyping) {
@@ -508,7 +529,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
     const handleMessage = (data: any) => {
       console.log('★★★ WebSocket message received:', data);
-      /*if ((data.type === 'message' || data.type === 'directMessage') &&
+      if ((data.type === 'message' || data.type === 'directMessage') &&
         (data.fileName || data.fileUrl || (data.text && data.text.startsWith('[File]')))) {
         console.log('⭐⭐⭐ FILE MESSAGE RECEIVED:', {
           type: data.type,
@@ -517,9 +538,16 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           fileName: data.fileName,
           fileType: data.fileType,
           fileUrl: data.fileUrl,
-          hasFileProps: !!(data.fileName && data.fileType && data.fileUrl)
+          hasFileProps: !!(data.fileName && data.fileType && data.fileUrl),
+          ...(data.quotedMessage && {
+            quotedMessage: {
+              _id: data.quotedMessage._id,
+              text: data.quotedMessage.text,
+              username: data.quotedMessage.username
+            }
+          })
         });
-      }*/
+      }
       // check both _id and clientMessageId
       const isDuplicate = (messageData: any): boolean => {
         // Check if we've already processed this message ID
@@ -583,7 +611,8 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           if (matchedPendingMessage) {
             console.log('Updating pending message with server response', {
               clientMessageId: data.clientMessageId,
-              hasFileInfo: !!(data.fileName && data.fileType && data.fileUrl)
+              hasFileInfo: !!(data.fileName && data.fileType && data.fileUrl),
+              hasQuotedMessage: !!data.quotedMessage
             });
             // Update message status to sent
             setMessages(prev =>
@@ -599,7 +628,18 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                       fileType: data.fileType,
                       fileUrl: data.fileUrl,
                       fileSize: data.fileSize
-                    })
+                    }),
+                    ...(msg.fileName && {
+                      fileName: msg.fileName,
+                      fileType: msg.fileType,
+                      fileUrl: data.fileUrl || msg.fileUrl || '',
+                      fileSize: msg.fileSize
+                    }),
+                    quotedMessage: data.quotedMessage ? {
+                      _id: data.quotedMessage._id,
+                      text: data.quotedMessage.text,
+                      username: data.quotedMessage.username
+                    } : msg.quotedMessage
                   }
                   : msg
               )
@@ -620,6 +660,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                   fileType: data.fileType,
                   fileUrl: data.fileUrl,
                   fileSize: data.fileSize
+                }),
+                ...(data.quotedMessage && {
+                  quotedMessage: {
+                    _id: data.quotedMessage._id,
+                    text: data.quotedMessage.text,
+                    username: data.quotedMessage.username
+                  }
                 })
               }
             ]);
@@ -647,6 +694,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                 fileType: data.fileType,
                 fileUrl: data.fileUrl,
                 fileSize: data.fileSize
+              }),
+              ...(data.quotedMessage && {
+                quotedMessage: {
+                  _id: data.quotedMessage._id,
+                  text: data.quotedMessage.text,
+                  username: data.quotedMessage.username
+                }
               })
             }
           ]);
@@ -684,8 +738,15 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             ...(msg.fileName && {
               fileName: msg.fileName,
               fileType: msg.fileType || 'application/octet-stream',
-              fileUrl: msg.fileUrl,
+              fileUrl: msg.fileUrl || '',
               fileSize: msg.fileSize
+            }),
+            ...(msg.quotedMessage && {
+              quotedMessage: {
+                _id: msg.quotedMessage._id,
+                text: msg.quotedMessage.text,
+                username: msg.quotedMessage.username
+              }
             })
           })
           );
@@ -761,6 +822,39 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             setTypingIndicator(null);
           }
         }
+      } else if (data.type === 'fileUploadComplete') {
+        console.log('🔔 File upload complete notification received:', {
+          messageId: data.messageId,
+          clientMessageId: data.clientMessageId,
+          fileUrl: data.fileUrl,
+          status: data.status
+        });
+
+        // Update the message with the file URL
+        setMessages(prev =>
+          prev.map(msg => {
+            // Match by clientMessageId if available, otherwise try messageId
+            const isMatch =
+              (data.clientMessageId && msg.clientMessageId === data.clientMessageId) ||
+              (data.messageId && msg._id === data.messageId);
+
+            if (isMatch) {
+              console.log('⭐ Updating file message with URL:', {
+                messageId: msg._id,
+                clientMessageId: msg.clientMessageId,
+                oldFileUrl: msg.fileUrl,
+                newFileUrl: data.fileUrl
+              });
+
+              return {
+                ...msg,
+                fileUrl: data.fileUrl,
+                status: 'sent'
+              };
+            }
+            return msg;
+          })
+        );
       }
     };
 
@@ -936,7 +1030,8 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           uploadId, // Track the upload
           ...(selection.type === 'directMessage'
             ? { receiverUsername: selection.username }
-            : { channelName: selection.channelName })
+            : { channelName: selection.channelName }),
+          fileUrl: '' // Placeholder for server to fill in
         };
 
         console.log(`Sending file message with uploadId: ${uploadId}`, {
@@ -984,7 +1079,111 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     e.target.value = '';
   };
 
-  const menuItems = [{ label: 'Delete Message', onClick: handleDeleteMessage }];
+  const handleQuoteMessage = () => {
+    if (!contextMenu.selected) {
+      console.warn('No message selected for quoting.');
+      return;
+    }
+
+    const messageToQuote = messages.find(msg => msg._id === contextMenu.selected);
+    if (!messageToQuote) {
+      console.warn('Selected message not found in the current message list.');
+      return;
+    }
+
+    if (!messageToQuote.text || messageToQuote.text.trim() === '') {
+      console.warn('Cannot quote an empty or non-text message.');
+      return;
+    }
+
+    setQuotedMessage({
+      _id: messageToQuote._id,
+      text: messageToQuote.text,
+      username: messageToQuote.username
+    });
+
+    // Focus on input field after quoting
+    const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement | null;
+    if (inputElement) {
+      inputElement.focus();
+    } else {
+      console.warn('Input field not found for focusing.');
+    }
+
+    // Close context menu
+    setContextMenu({ visible: false, x: 0, y: 0, selected: '' });
+  };
+
+  const cancelQuote = () => {
+    if (!quotedMessage) {
+      console.warn('No quoted message to cancel.');
+      return;
+    }
+
+    setQuotedMessage(null);
+  };
+
+  const menuItems = [{ label: 'Quote Message', onClick: () => handleQuoteMessage() }, { label: 'Delete Message', onClick: handleDeleteMessage }];
+
+  const QuotedMessagePreview = ({ quotedMessage, onCancel }: { quotedMessage: QuotedMessage, onCancel: () => void }) => (
+    <div style={{
+      padding: '8px 12px',
+      marginBottom: '8px',
+      borderLeft: '3px solid #4682B4',
+      backgroundColor: theme === 'dark' ? '#383838' : '#f0f0f0',
+      borderRadius: '4px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }}>
+      <div>
+        <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+          Replying to {quotedMessage.username}
+        </div>
+        <div style={{
+          fontSize: '13px',
+          color: theme === 'dark' ? '#ccc' : '#555',
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          maxWidth: '300px'
+        }}>
+          {quotedMessage.text}
+        </div>
+      </div>
+      <button
+        onClick={onCancel}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '16px',
+          color: theme === 'dark' ? '#ccc' : '#666'
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
+
+  // Add a component to render quoted content in messages
+  const QuotedContent = ({ quotedMessage }: { quotedMessage: QuotedMessage }) => (
+    <div style={{
+      padding: '6px 10px',
+      marginBottom: '6px',
+      borderLeft: '2px solid #4682B4',
+      backgroundColor: theme === 'dark' ? 'rgba(56, 56, 56, 0.5)' : 'rgba(240, 240, 240, 0.5)',
+      borderRadius: '4px',
+      fontSize: '13px'
+    }}>
+      <div style={{ fontWeight: 'bold', marginBottom: '2px' }}>
+        {quotedMessage.username}
+      </div>
+      <div style={{ color: theme === 'dark' ? '#ccc' : '#555' }}>
+        {quotedMessage.text}
+      </div>
+    </div>
+  );
 
   return (
     <div style={getStyledComponent(styles.teamMessages)}>
@@ -1050,31 +1249,51 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           // Fixed message mapping with proper file URL handling
           messages.map(msg => {
             // Check if this is a file message
-            const isFileAttachment = !!(msg.fileName && msg.fileType && (msg.status === 'pending' || msg.fileUrl));
+            const isFileAttachment = !!(msg.fileName && msg.fileType && (msg.status === 'pending' || msg.fileUrl || msg.fileUrl === ''));
 
             console.log(`Message ${msg._id || msg.clientMessageId || 'unknown'} isFileMessage:`, isFileAttachment, {
               fileName: msg.fileName,
               fileType: msg.fileType,
               fileUrl: msg.fileUrl,
-              status: msg.status
+              status: msg.status,
+              text: msg.text,
+              createdAt: msg.createdAt,
+              username: msg.username,
+              clientMessageId: msg.clientMessageId,
+              ...(msg.quotedMessage && {
+                quotedMessage: {
+                  _id: msg.quotedMessage._id,
+                  text: msg.quotedMessage.text,
+                  username: msg.quotedMessage.username
+                }
+              })
             });
 
-            // Extract file information for rendering
             let fileInfo: {
               fileName: string | undefined;
               fileType: string | undefined;
               fileUrl: string;
               fileSize: number | undefined;
+              uploadStatus: 'pending' | 'completed' | 'error';
             } | null = null;
+
             if (isFileAttachment) {
+              const uploadStatus =
+                msg.status === 'failed' ? 'error' :
+                  (!msg.fileUrl || msg.fileUrl === '') ? 'pending' : 'completed';
+
               fileInfo = {
                 fileName: msg.fileName,
                 fileType: msg.fileType,
-                // This is the critical fix - ensure fileUrl is never undefined
                 fileUrl: msg.fileUrl || '',
-                fileSize: msg.fileSize
+                fileSize: msg.fileSize,
+                uploadStatus
               };
-              console.log('File attachment will be rendered with:', fileInfo);
+
+              console.log('File attachment will be rendered with:', {
+                ...fileInfo,
+                uploadStatus
+              });
             }
 
             return (
@@ -1109,6 +1328,11 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                 <div>
                   <strong>{msg.username}</strong>:{' '}
 
+                  {/* Render quoted message if it exists */}
+                  {msg.quotedMessage && (
+                    <QuotedContent quotedMessage={msg.quotedMessage} />
+                  )}
+
                   {/* Show message text content if it's not a file-only message
             or if it has additional text content */}
                   {(!isFileAttachment || (isFileAttachment && !msg.text?.startsWith('[File]'))) && (
@@ -1117,14 +1341,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
                   {/* Render file attachment if we have file info */}
                   {isFileAttachment && fileInfo && (
-                    <>
-                      <FileAttachment
-                        fileName={fileInfo!.fileName || 'Unknown File'}
-                        fileType={fileInfo!.fileType || ''}
-                        fileUrl={fileInfo!.fileUrl || ''}
-                        fileSize={fileInfo!.fileSize}
-                      />
-                    </>
+                    <FileAttachment
+                      fileName={fileInfo.fileName || 'Unknown File'}
+                      fileType={fileInfo.fileType || ''}
+                      fileUrl={fileInfo.fileUrl}
+                      fileSize={fileInfo.fileSize}
+                      uploadStatus={fileInfo.uploadStatus}
+                    />
                   )}
 
                   <div
@@ -1183,6 +1406,12 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       </div>
 
       <div style={getStyledComponent(styles.inputBox)}>
+        {/* Quoted message preview */}
+        {quotedMessage && (
+          <div style={{ width: '100%', paddingBottom: '5px' }}>
+            <QuotedMessagePreview quotedMessage={quotedMessage} onCancel={cancelQuote} />
+          </div>
+        )}
         {/* Message input */}
         <input
           type="text"
