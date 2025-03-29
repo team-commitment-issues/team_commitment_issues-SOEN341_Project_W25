@@ -7,13 +7,16 @@ import { createLogger } from '../utils/logger';
 import mime from 'mime';
 import FileStorageService from '../services/fileStorageService';
 import authenticate from '../middlewares/authMiddleware';
+import { checkUserPermission, checkTeamPermission } from '../middlewares/permissionMiddleware';
+import fileEditingService from '../services/fileEditingService';
+import { Role, TeamRole } from '../enums';
 
 const fileRoutes = express.Router();
 const logger = createLogger('FileRoutes');
 
 /**
  * File download endpoint
- * GET /api/files/:filePath
+ * GET /files/:filePath
  */
 fileRoutes.get('/:filePath(*)', authenticate, (req, res): void => {
     // Get the file path from the URL
@@ -122,6 +125,133 @@ fileRoutes.get('/:filePath(*)', authenticate, (req, res): void => {
             });
             res.end();
         }
+    }
+});
+
+/**
+ * Get lock status for a file
+ * GET /api/file-edit/lock-status/:messageId
+ */
+fileRoutes.get('/lock-status/:messageId', authenticate, async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const status = fileEditingService.isLocked(messageId);
+
+        res.json({
+            success: true,
+            ...status
+        });
+        return;
+    } catch (error) {
+        logger.error('Error checking lock status', {
+            messageId: req.params.messageId,
+            error: error instanceof Error ? error.message : String(error)
+        });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get lock status'
+        });
+        return;
+    }
+});
+
+/**
+ * Get file content
+ * GET /api/file-edit/content/:messageId
+ */
+fileRoutes.get('/content/:messageId', authenticate, async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const result = await fileEditingService.getFileContent(messageId);
+
+        res.json({
+            success: true,
+            content: result.content,
+            fileName: result.fileName
+        });
+        return;
+    } catch (error) {
+        logger.error('Error getting file content', {
+            messageId: req.params.messageId,
+            error: error instanceof Error ? error.message : String(error)
+        });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get file content'
+        });
+        return;
+    }
+});
+
+/**
+ * Force release a lock (admin only)
+ * POST /api/file-edit/force-release/:messageId
+ */
+fileRoutes.post('/force-release/:messageId', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const released = fileEditingService.forceReleaseLock(messageId);
+
+        if (released) {
+            logger.info('Lock forcefully released by admin', {
+                messageId,
+                admin: req.user.username
+            });
+            res.json({
+                success: true,
+                message: 'Lock released successfully'
+            });
+            return;
+        } else {
+            res.status(404).json({
+                success: false,
+                error: 'No active lock found for this message'
+            });
+            return;
+        }
+    } catch (error) {
+        logger.error('Error force releasing lock', {
+            messageId: req.params.messageId,
+            admin: req.user?.username,
+            error: error instanceof Error ? error.message : String(error)
+        });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to force release lock'
+        });
+        return;
+    }
+});
+
+/**
+ * Get all active locks (admin only)
+ * GET /api/file-edit/active-locks
+ */
+fileRoutes.get('/active-locks', authenticate, checkUserPermission(Role.SUPER_ADMIN), checkTeamPermission(TeamRole.ADMIN), async (req, res) => {
+    try {
+        const locks = fileEditingService.getActiveLocks();
+        res.json({
+            success: true,
+            locks: locks.map(lock => ({
+                messageId: lock.messageId,
+                fileName: lock.fileName,
+                username: lock.username,
+                acquiredAt: lock.acquiredAt,
+                teamName: lock.teamName,
+                channelName: lock.channelName
+            }))
+        });
+        return;
+    } catch (error) {
+        logger.error('Error getting active locks', {
+            admin: req.user?.username,
+            error: error instanceof Error ? error.message : String(error)
+        });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get active locks'
+        });
+        return;
     }
 });
 

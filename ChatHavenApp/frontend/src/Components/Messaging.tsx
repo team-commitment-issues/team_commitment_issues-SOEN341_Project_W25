@@ -855,6 +855,23 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             return msg;
           })
         );
+      } else if (data.type === 'fileUpdated') {
+        // Find and update the message with edited file information
+        setMessages(prev =>
+          prev.map(msg =>
+            msg._id === data.messageId
+              ? {
+                ...msg,
+                editedBy: data.editedBy,
+                editedAt: new Date(data.editedAt)
+              }
+              : msg
+          )
+        );
+
+        // Show a notification that a file was updated
+        // This could be implemented with a toast notification system
+        console.log(`File updated by ${data.editedBy}`);
       }
     };
 
@@ -1347,6 +1364,9 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                       fileUrl={fileInfo.fileUrl}
                       fileSize={fileInfo.fileSize}
                       uploadStatus={fileInfo.uploadStatus}
+                      messageId={msg._id}
+                      editedBy={msg.editedBy}
+                      editedAt={msg.editedAt}
                     />
                   )}
 

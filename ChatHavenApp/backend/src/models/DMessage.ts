@@ -35,6 +35,8 @@ export interface IDMessage extends Document {
    */
   createdAt: Date;
   status: string;
+  editedBy?: string;
+  editedAt?: Date;
   fileName?: string;
   fileType?: string;
   fileUrl?: string;
@@ -72,6 +74,12 @@ const DMessageSchema = new Schema<IDMessage>({
     type: String,
     enum: ['pending', 'sent', 'delivered', 'read', 'failed'],
     default: 'sent'
+  },
+  editedBy: {
+    type: String
+  },
+  editedAt: {
+    type: Date
   },
   fileName: {
     type: String
