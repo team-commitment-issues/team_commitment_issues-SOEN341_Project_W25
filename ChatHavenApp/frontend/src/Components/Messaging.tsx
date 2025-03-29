@@ -218,6 +218,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             fileType: messageData.fileType,
             // Note: fileUrl will be assigned by the server
             fileSize: messageData.fileSize
+          }),
+          ...(messageData.quotedMessage && {
+            quotedMessage: {
+              _id: messageData.quotedMessage._id,
+              text: messageData.quotedMessage.text,
+              username: messageData.quotedMessage.username
+            }
           })
         };
 
@@ -238,6 +245,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             fileName: messageData.fileName,
             fileType: messageData.fileType,
             fileSize: messageData.fileSize
+          }),
+          ...(messageData.quotedMessage && {
+            quotedMessage: {
+              _id: messageData.quotedMessage._id,
+              text: messageData.quotedMessage.text,
+              username: messageData.quotedMessage.username
+            }
           })
         };
 
@@ -382,6 +396,8 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
       return;
     }
 
+    const currentQuotedMessage = quotedMessage;
+
     const newMessage: WebSocketMessage =
       selection.type === 'directMessage'
         ? {
@@ -389,7 +405,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           text: message,
           teamName: selection.teamName,
           receiverUsername: selection.username,
-          ...(quotedMessage && { quotedMessage })
+          ...(currentQuotedMessage && { quotedMessage: currentQuotedMessage })
         }
         : {
           type: 'message',
@@ -397,7 +413,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           username,
           teamName: selection.teamName,
           channelName: selection.channelName,
-          ...(quotedMessage && { quotedMessage })
+          ...(currentQuotedMessage && { quotedMessage: currentQuotedMessage })
         };
 
     sendMessage(newMessage);
@@ -523,7 +539,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           fileType: data.fileType,
           fileUrl: data.fileUrl,
           hasFileProps: !!(data.fileName && data.fileType && data.fileUrl),
-          quotedMessage: data.quotedMessage
+          ...(data.quotedMessage && {
+            quotedMessage: {
+              _id: data.quotedMessage._id,
+              text: data.quotedMessage.text,
+              username: data.quotedMessage.username
+            }
+          })
         });
       }
       // check both _id and clientMessageId
@@ -589,7 +611,8 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           if (matchedPendingMessage) {
             console.log('Updating pending message with server response', {
               clientMessageId: data.clientMessageId,
-              hasFileInfo: !!(data.fileName && data.fileType && data.fileUrl)
+              hasFileInfo: !!(data.fileName && data.fileType && data.fileUrl),
+              hasQuotedMessage: !!data.quotedMessage
             });
             // Update message status to sent
             setMessages(prev =>
@@ -606,13 +629,11 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                       fileUrl: data.fileUrl,
                       fileSize: data.fileSize
                     }),
-                    ...(data.quotedMessage && {
-                      quotedMessage: {
-                        _id: data.quotedMessage._id,
-                        text: data.quotedMessage.text,
-                        username: data.quotedMessage.username
-                      }
-                    })
+                    quotedMessage: data.quotedMessage ? {
+                      _id: data.quotedMessage._id,
+                      text: data.quotedMessage.text,
+                      username: data.quotedMessage.username
+                    } : msg.quotedMessage
                   }
                   : msg
               )
@@ -1019,10 +1040,21 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
   };
 
   const handleQuoteMessage = () => {
-    if (!contextMenu.selected) return;
+    if (!contextMenu.selected) {
+      console.warn('No message selected for quoting.');
+      return;
+    }
 
     const messageToQuote = messages.find(msg => msg._id === contextMenu.selected);
-    if (!messageToQuote) return;
+    if (!messageToQuote) {
+      console.warn('Selected message not found in the current message list.');
+      return;
+    }
+
+    if (!messageToQuote.text || messageToQuote.text.trim() === '') {
+      console.warn('Cannot quote an empty or non-text message.');
+      return;
+    }
 
     setQuotedMessage({
       _id: messageToQuote._id,
@@ -1031,9 +1063,11 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
     });
 
     // Focus on input field after quoting
-    const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+    const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement | null;
     if (inputElement) {
       inputElement.focus();
+    } else {
+      console.warn('Input field not found for focusing.');
     }
 
     // Close context menu
@@ -1041,6 +1075,11 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
   };
 
   const cancelQuote = () => {
+    if (!quotedMessage) {
+      console.warn('No quoted message to cancel.');
+      return;
+    }
+
     setQuotedMessage(null);
   };
 
@@ -1181,7 +1220,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
               createdAt: msg.createdAt,
               username: msg.username,
               clientMessageId: msg.clientMessageId,
-              quotedMessage: msg.quotedMessage
+              ...(msg.quotedMessage && {
+                quotedMessage: {
+                  _id: msg.quotedMessage._id,
+                  text: msg.quotedMessage.text,
+                  username: msg.quotedMessage.username
+                }
+              })
             });
 
             // Extract file information for rendering

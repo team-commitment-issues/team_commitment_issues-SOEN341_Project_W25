@@ -975,6 +975,11 @@ class MessageHandlers {
       fileType?: string;
       fileUrl?: string;
       fileSize?: number;
+      quotedMessage?: {
+        _id: string;
+        text: string;
+        username: string;
+      };
     }> = [];
     let hasMore = false;
 
@@ -1045,6 +1050,11 @@ class MessageHandlers {
               fileType?: string;
               fileUrl?: string;
               fileSize?: number;
+              quotedMessage?: {
+                _id: string;
+                text: string;
+                username: string;
+              };
             }) => ({
               _id: msg._id,
               text: msg.text,
@@ -1056,6 +1066,13 @@ class MessageHandlers {
                 fileType: msg.fileType,
                 fileUrl: msg.fileUrl,
                 fileSize: msg.fileSize
+              }),
+              ...(msg.quotedMessage && {
+                quotedMessage: {
+                  _id: msg.quotedMessage._id,
+                  text: msg.quotedMessage.text,
+                  username: msg.quotedMessage.username
+                }
               })
             })
           ),
