@@ -1328,6 +1328,9 @@ class MessageHandlers {
     }
   }
 
+  // Map to track recent releases to prevent duplicate broadcasts
+  static recentReleases = new Map<string, number>();
+
   /**
    * Handles requests to release file edit locks
    */
@@ -1347,6 +1350,24 @@ class MessageHandlers {
       messageId,
       fileName
     });
+
+    const lockKey = `${messageId}-release`;
+    const lastReleaseTime = MessageHandlers.recentReleases.get(lockKey);
+    const now = Date.now();
+
+    if (lastReleaseTime && now - lastReleaseTime < 500) {
+      // We've already processed a release for this lock recently
+      logger.debug('Skipping duplicate lock release broadcast', {
+        messageId,
+        username: user.username,
+        timeSinceLastRelease: now - lastReleaseTime
+      });
+      return;
+    }
+
+    MessageHandlers.recentReleases.set(lockKey, now);
+    // Clear old entries occasionally
+    global.setTimeout(() => MessageHandlers.recentReleases.delete(lockKey), 1000);
 
     try {
       // Release the lock

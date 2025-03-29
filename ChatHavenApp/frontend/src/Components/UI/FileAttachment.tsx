@@ -67,6 +67,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const [imageError, setImageError] = useState(false);
     const [imageBlob, setImageBlob] = useState<string | null>(null);
     const [debugInfo, setDebugInfo] = useState<string | null>(null);
+    const [isReleasingLock, setIsReleasingLock] = useState(false);
 
     // New state for editing functionality
     const [isEditing, setIsEditing] = useState(false);
@@ -76,6 +77,9 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const isFetchingRef = useRef(false);
     const hasAttemptedFetchRef = useRef(false);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const lockReleasedRef = useRef(false);
+    const isMountedRef = useRef(true);
+    const currentLockUsernameRef = useRef<string | undefined>(undefined);
 
     // WebSocket client for edit lock communication
     const wsService = WebSocketClient.getInstance();
@@ -229,7 +233,9 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
     // Function to release edit lock
     const releaseEditLock = useCallback(() => {
-        if (!messageId) return;
+        if (isReleasingLock || !messageId) return;
+
+        setIsReleasingLock(true);
 
         wsService.send({
             type: 'releaseEditLock',
@@ -237,10 +243,15 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             fileName
         });
 
+        // Reset after a short delay to prevent multiple calls
+        setTimeout(() => {
+            setIsReleasingLock(false);
+        }, 500);
+
         // Optimistically update UI
         setEditLock(null);
         setIsEditing(false);
-    }, [fileName, messageId, wsService]);
+    }, [messageId, fileName, wsService, isReleasingLock]);
 
     // Function to save edited content
     const saveEditedContent = async (content: string) => {
@@ -258,9 +269,26 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         releaseEditLock();
     };
 
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (editLock) {
+            currentLockUsernameRef.current = editLock.username;
+        } else {
+            currentLockUsernameRef.current = undefined;
+        }
+    }, [editLock]);
+
     // Subscribe to WebSocket messages related to file editing
     useEffect(() => {
         if (!messageId) return;
+
+        lockReleasedRef.current = false;
 
         const handleEditLockResponse = (data: any) => {
             setEditLoading(false);
@@ -314,8 +342,6 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         const editLockUpdateSubId = wsService.subscribe('editLockUpdate', handleEditLockUpdate);
         const fileUpdatedSubId = wsService.subscribe('fileUpdated', handleFileUpdated);
 
-        let isMounted = true;
-
         return () => {
             // Unsubscribe when component unmounts
             wsService.unsubscribe(editLockSubId);
@@ -323,12 +349,14 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             wsService.unsubscribe(fileUpdatedSubId);
 
             // Release lock if we have it and component unmounts
-            if (isMounted && editLock?.username === username) {
-                isMounted = false;
+            if (!lockReleasedRef.current &&
+                currentLockUsernameRef.current === username &&
+                !isMountedRef.current) {
+                lockReleasedRef.current = true;
                 releaseEditLock();
             }
         };
-    }, [messageId, username, textContent, wsService, editLock, releaseEditLock, fetchFileContent]);
+    }, [messageId, username, textContent, wsService, releaseEditLock, fetchFileContent]);
 
     // Function to fetch file content for editing
 
