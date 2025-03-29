@@ -29,6 +29,7 @@ import {
   OnlineStatusSubscription,
   MessageAck,
   FetchHistoryMessage,
+  FileUploadCompletionResponse,
   BaseMessage
 } from './types/websocket';
 import DMessage from './models/DMessage';
@@ -415,6 +416,36 @@ class MessageHandlers {
       );
     }
 
+    if (message.fileData && message.fileName && fileUrl) {
+      // This sends a direct notification to the sender
+      wss.clients.forEach(client => {
+        const extendedClient = client as ExtendedWebSocket;
+        if (
+          extendedClient.readyState === WebSocket.OPEN &&
+          extendedClient.user &&
+          extendedClient.user.username === ws.user?.username &&
+          message.clientMessageId // Only send if we have a client message ID
+        ) {
+          const fileCompletionMsg: FileUploadCompletionResponse = {
+            type: MessageType.FILE_UPLOAD_COMPLETE,
+            messageId: (sentMessage._id as Types.ObjectId).toString(),
+            fileUrl: fileUrl,
+            status: 'sent',
+            clientMessageId: message.clientMessageId
+          };
+
+          extendedClient.send(JSON.stringify(fileCompletionMsg));
+
+          logger.debug('Sent file upload completion notification', {
+            username: ws.user?.username,
+            messageId: sentMessage._id,
+            clientMessageId: message.clientMessageId,
+            fileUrl: fileUrl
+          });
+        }
+      });
+    }
+
     // Format and broadcast message to channel with file information
     const formattedMessage = {
       type: 'message',
@@ -645,6 +676,36 @@ class MessageHandlers {
       fileInfo,
       message.quotedMessage
     );
+
+    if (message.fileData && message.fileName && fileUrl) {
+      // This sends a direct notification to the sender
+      wss.clients.forEach(client => {
+        const extendedClient = client as ExtendedWebSocket;
+        if (
+          extendedClient.readyState === WebSocket.OPEN &&
+          extendedClient.user &&
+          extendedClient.user.username === user.username &&
+          message.clientMessageId // Only send if we have a client message ID
+        ) {
+          const fileCompletionMsg: FileUploadCompletionResponse = {
+            type: MessageType.FILE_UPLOAD_COMPLETE,
+            messageId: (sentMessage._id as Types.ObjectId).toString(),
+            fileUrl: fileUrl,
+            status: 'sent',
+            clientMessageId: message.clientMessageId
+          };
+
+          extendedClient.send(JSON.stringify(fileCompletionMsg));
+
+          logger.debug('Sent DM file upload completion notification', {
+            username: user.username,
+            messageId: sentMessage._id,
+            clientMessageId: message.clientMessageId,
+            fileUrl: fileUrl
+          });
+        }
+      });
+    }
 
     const formattedMessage = {
       type: 'directMessage',

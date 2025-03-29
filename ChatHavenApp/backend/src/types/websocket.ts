@@ -37,7 +37,8 @@ export enum MessageType {
   TYPING = 'typing',
   MESSAGE_ACK = 'messageAck',
   FETCH_HISTORY = 'fetchHistory',
-  HISTORY_RESPONSE = 'historyResponse'
+  HISTORY_RESPONSE = 'historyResponse',
+  FILE_UPLOAD_COMPLETE = 'fileUploadComplete',
 }
 
 /**
@@ -168,6 +169,13 @@ export interface HistoryResponse extends BaseMessage {
   requestId?: string; // Echo back the request ID
 }
 
+export interface FileUploadCompletionResponse extends BaseMessage {
+  messageId: string;
+  fileUrl: string; // URL of the uploaded file
+  status: MessageStatus; // Status of the file upload
+  error?: string; // Error message if any
+}
+
 /**
  * Union type of all possible message types
  */
@@ -181,6 +189,7 @@ export type Message =
   | MessageAck
   | FetchHistoryMessage
   | HistoryResponse
+  | FileUploadCompletionResponse
   | BaseMessage;
 
 /**

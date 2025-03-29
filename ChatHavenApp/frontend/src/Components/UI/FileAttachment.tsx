@@ -7,6 +7,7 @@ interface FileAttachmentProps {
     fileType: string;
     fileUrl: string;
     fileSize?: number;
+    uploadStatus?: 'pending' | 'completed' | 'error';
 }
 
 const TEXT_FILE_EXTENSIONS = [
@@ -40,7 +41,8 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     fileName,
     fileType,
     fileUrl,
-    fileSize
+    fileSize,
+    uploadStatus = fileUrl ? 'completed' : 'pending'
 }) => {
     const { theme } = useTheme();
     const [showPreview, setShowPreview] = useState(false);
@@ -57,7 +59,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const getAuthenticatedUrl = (url: string, inline: boolean = false): string => {
         if (!url || url.trim() === '') {
             console.error('Invalid file URL - received empty or null URL');
-            return '#'; // Return a placeholder
+            return '#pending-upload'; // Return a placeholder
         }
 
         // Make sure the URL starts with / if it's a relative path
@@ -83,6 +85,39 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
         setShowPreview(false);
         setTimeout(() => setShowPreview(true), 50);
+    };
+
+    const UploadStatusIndicator = () => {
+        if (uploadStatus === 'pending') {
+            return (
+                <div style={{
+                    padding: '4px 8px',
+                    backgroundColor: theme === 'dark' ? '#333' : '#f0f0f0',
+                    color: theme === 'dark' ? '#aaa' : '#666',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    marginTop: '8px',
+                    textAlign: 'center'
+                }}>
+                    <span>Uploading... Please wait</span>
+                </div>
+            );
+        } else if (uploadStatus === 'error') {
+            return (
+                <div style={{
+                    padding: '4px 8px',
+                    backgroundColor: theme === 'dark' ? '#3f1f1f' : '#fff0f0',
+                    color: theme === 'dark' ? '#ff9999' : '#990000',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    marginTop: '8px',
+                    textAlign: 'center'
+                }}>
+                    <span>Upload failed. Try again.</span>
+                </div>
+            );
+        }
+        return null; // No indicator needed for complete status
     };
 
 
@@ -365,7 +400,6 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 <div style={fileIconStyle}>{getFileIcon()}</div>
                 <div style={fileNameStyle}>{fileName}</div>
                 {fileSize && <div style={fileSizeStyle}>{formatFileSize(fileSize)}</div>}
-
                 {isImageFile(fileType) ? (
                     <button
                         style={buttonStyle}
@@ -373,32 +407,48 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                             if (showPreview) {
                                 hasAttemptedFetchRef.current = false;
                             }
+                            if (!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') {
+                                alert('File is still uploading, please wait...');
+                                return;
+                            }
                             setShowPreview(!showPreview);
                         }}
-                        disabled={loading}
+                        disabled={loading || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
                     >
-                        {showPreview ? 'Hide' : 'View'}
+                        {fileUrl && fileUrl !== '#pending-upload' && fileUrl !== ''
+                            ? (showPreview ? 'Hide' : 'View')
+                            : 'Uploading...'}
                     </button>
                 ) : isTextFile(fileName) ? (
                     <button
                         style={buttonStyle}
                         onClick={handleOpenFile}
-                        disabled={loading}
+                        disabled={loading || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
                     >
-                        {loading ? 'Loading...' : (showPreview ? 'Close' : 'Open')}
+                        {loading ? 'Loading...' :
+                            (!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? 'Uploading...' :
+                                (showPreview ? 'Close' : 'Open')}
                     </button>
                 ) : (
                     <a
-                        href={getAuthenticatedUrl(fileUrl)}
+                        href={(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? '#' : getAuthenticatedUrl(fileUrl)}
                         download={fileName}
                         style={{ ...buttonStyle, textDecoration: 'none' }}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => {
+                            if (!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') {
+                                e.preventDefault();
+                                alert('File is still uploading, please wait...');
+                            }
+                        }}
                     >
-                        Download
+                        {(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? 'Uploading...' : 'Download'}
                     </a>
                 )}
             </div>
+
+            {uploadStatus !== 'completed' && <UploadStatusIndicator />}
 
             {/* Preview section */}
             {showPreview && (

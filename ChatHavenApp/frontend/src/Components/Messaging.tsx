@@ -629,6 +629,12 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
                       fileUrl: data.fileUrl,
                       fileSize: data.fileSize
                     }),
+                    ...(msg.fileName && {
+                      fileName: msg.fileName,
+                      fileType: msg.fileType,
+                      fileUrl: data.fileUrl || msg.fileUrl || '',
+                      fileSize: msg.fileSize
+                    }),
                     quotedMessage: data.quotedMessage ? {
                       _id: data.quotedMessage._id,
                       text: data.quotedMessage.text,
@@ -732,7 +738,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             ...(msg.fileName && {
               fileName: msg.fileName,
               fileType: msg.fileType || 'application/octet-stream',
-              fileUrl: msg.fileUrl,
+              fileUrl: msg.fileUrl || '',
               fileSize: msg.fileSize
             }),
             ...(msg.quotedMessage && {
@@ -816,6 +822,39 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
             setTypingIndicator(null);
           }
         }
+      } else if (data.type === 'fileUploadComplete') {
+        console.log('🔔 File upload complete notification received:', {
+          messageId: data.messageId,
+          clientMessageId: data.clientMessageId,
+          fileUrl: data.fileUrl,
+          status: data.status
+        });
+
+        // Update the message with the file URL
+        setMessages(prev =>
+          prev.map(msg => {
+            // Match by clientMessageId if available, otherwise try messageId
+            const isMatch =
+              (data.clientMessageId && msg.clientMessageId === data.clientMessageId) ||
+              (data.messageId && msg._id === data.messageId);
+
+            if (isMatch) {
+              console.log('⭐ Updating file message with URL:', {
+                messageId: msg._id,
+                clientMessageId: msg.clientMessageId,
+                oldFileUrl: msg.fileUrl,
+                newFileUrl: data.fileUrl
+              });
+
+              return {
+                ...msg,
+                fileUrl: data.fileUrl,
+                status: 'sent'
+              };
+            }
+            return msg;
+          })
+        );
       }
     };
 
@@ -991,7 +1030,8 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           uploadId, // Track the upload
           ...(selection.type === 'directMessage'
             ? { receiverUsername: selection.username }
-            : { channelName: selection.channelName })
+            : { channelName: selection.channelName }),
+          fileUrl: '' // Placeholder for server to fill in
         };
 
         console.log(`Sending file message with uploadId: ${uploadId}`, {
@@ -1209,7 +1249,7 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
           // Fixed message mapping with proper file URL handling
           messages.map(msg => {
             // Check if this is a file message
-            const isFileAttachment = !!(msg.fileName && msg.fileType && (msg.status === 'pending' || msg.fileUrl));
+            const isFileAttachment = !!(msg.fileName && msg.fileType && (msg.status === 'pending' || msg.fileUrl || msg.fileUrl === ''));
 
             console.log(`Message ${msg._id || msg.clientMessageId || 'unknown'} isFileMessage:`, isFileAttachment, {
               fileName: msg.fileName,
@@ -1229,22 +1269,31 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
               })
             });
 
-            // Extract file information for rendering
             let fileInfo: {
               fileName: string | undefined;
               fileType: string | undefined;
               fileUrl: string;
               fileSize: number | undefined;
+              uploadStatus: 'pending' | 'completed' | 'error';
             } | null = null;
+
             if (isFileAttachment) {
+              const uploadStatus =
+                msg.status === 'failed' ? 'error' :
+                  (!msg.fileUrl || msg.fileUrl === '') ? 'pending' : 'completed';
+
               fileInfo = {
                 fileName: msg.fileName,
                 fileType: msg.fileType,
-                // This is the critical fix - ensure fileUrl is never undefined
                 fileUrl: msg.fileUrl || '',
-                fileSize: msg.fileSize
+                fileSize: msg.fileSize,
+                uploadStatus
               };
-              console.log('File attachment will be rendered with:', fileInfo);
+
+              console.log('File attachment will be rendered with:', {
+                ...fileInfo,
+                uploadStatus
+              });
             }
 
             return (
@@ -1292,14 +1341,13 @@ const Messaging: React.FC<MessagingProps> = ({ selection, contextMenu, setContex
 
                   {/* Render file attachment if we have file info */}
                   {isFileAttachment && fileInfo && (
-                    <>
-                      <FileAttachment
-                        fileName={fileInfo!.fileName || 'Unknown File'}
-                        fileType={fileInfo!.fileType || ''}
-                        fileUrl={fileInfo!.fileUrl || ''}
-                        fileSize={fileInfo!.fileSize}
-                      />
-                    </>
+                    <FileAttachment
+                      fileName={fileInfo.fileName || 'Unknown File'}
+                      fileType={fileInfo.fileType || ''}
+                      fileUrl={fileInfo.fileUrl}
+                      fileSize={fileInfo.fileSize}
+                      uploadStatus={fileInfo.uploadStatus}
+                    />
                   )}
 
                   <div
