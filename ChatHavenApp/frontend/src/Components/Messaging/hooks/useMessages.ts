@@ -666,11 +666,13 @@ export function useMessages(selection: Selection | null, username: string) {
                         messageId: msg._id,
                         clientMessageId: msg.clientMessageId,
                         oldFileUrl: msg.fileUrl,
-                        newFileUrl: data.fileUrl
+                        newFileUrl: data.fileUrl,
+                        newMessageId: data.messageId
                     });
 
                     return {
                         ...msg,
+                        _id: data.messageId || msg._id, // Ensure we have the server-assigned ID
                         fileUrl: data.fileUrl,
                         status: 'sent'
                     };
