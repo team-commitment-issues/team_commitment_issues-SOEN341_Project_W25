@@ -7,6 +7,35 @@ import WebSocketClient from '../../Services/webSocketClient.ts';
 import { Selection } from '../../types/shared.ts';
 import '../../Styles/FileAttachment.css';
 
+
+const EditHistoryTooltip = ({ history, visible }) => {
+    const { theme } = useTheme();
+
+    if (!visible || !history || history.length === 0) return null;
+
+    // Sort by most recent first
+    const sortedHistory = [...history].sort((a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    return (
+        <div className={`edit-history-tooltip ${theme}`}>
+            <div className="tooltip-arrow"></div>
+            <div className="tooltip-header">Edit History</div>
+            <div className="tooltip-content">
+                {sortedHistory.map((edit, index) => (
+                    <div key={index} className="history-item">
+                        <div className="history-user">{edit.username}</div>
+                        <div className="history-time">
+                            {new Date(edit.timestamp).toLocaleString()}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 interface FileAttachmentProps {
     fileName: string;
     fileType: string;
@@ -86,6 +115,11 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
     const [editLock, setEditLock] = useState<EditLockInfo | null>(null);
+    const [showHistoryTooltip, setShowHistoryTooltip] = useState(false);
+    const [editHistory, setEditHistory] = useState<Array<{
+        username: string;
+        timestamp: Date;
+    }>>([]);
 
     const isFetchingRef = useRef(false);
     const hasAttemptedFetchRef = useRef(false);
@@ -93,6 +127,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const lockReleasedRef = useRef(false);
     const isMountedRef = useRef(true);
     const currentLockUsernameRef = useRef<string | undefined>(undefined);
+    const editedInfoRef = useRef(null);
 
     // WebSocket client for edit lock communication
     const wsService = WebSocketClient.getInstance();
@@ -152,6 +187,16 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         }
         return null; // No indicator needed for complete status
     };
+
+    const fetchEditHistory = useCallback(() => {
+        if (!messageId) return;
+
+        console.log('Fetching edit history for message:', messageId);
+        wsService.send({
+            type: 'getFileEditHistory',
+            messageId
+        });
+    }, [messageId, wsService]);
 
     const fetchFileContent = useCallback(async () => {
         if (!isTextFile(fileName) || !fileUrl) {
@@ -461,6 +506,16 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             }
         };
 
+        const handleFileEditHistory = (data: any) => {
+            if (data.type === 'fileEditHistory' && data.messageId === messageId) {
+                console.log('Received file edit history:', data.history);
+                setEditHistory(data.history.map((entry: any) => ({
+                    ...entry,
+                    timestamp: new Date(entry.timestamp)
+                })));
+            }
+        };
+
         // Subscribe to relevant message types
         const editLockSubId = wsService.subscribe('editLockResponse', handleEditLockResponse);
         const editLockUpdateSubId = wsService.subscribe('*', (data) => {
@@ -469,6 +524,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             }
         });
         const fileUpdatedSubId = wsService.subscribe('fileUpdated', handleFileUpdated);
+        const historyResponseSubId = wsService.subscribe('fileEditHistory', handleFileEditHistory);
 
         console.log(`FileAttachment subscribed to WebSocket events for messageId: ${messageId}`);
 
@@ -477,6 +533,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             wsService.unsubscribe(editLockSubId);
             wsService.unsubscribe(editLockUpdateSubId);
             wsService.unsubscribe(fileUpdatedSubId);
+            wsService.unsubscribe(historyResponseSubId);
 
             console.log(`FileAttachment unsubscribed from WebSocket events for messageId: ${messageId}`);
 
@@ -709,8 +766,21 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 <div className="file-details">
                     <div className={`file-name ${theme}`}>{fileName}</div>
                     {editedInfo && !editLock && (
-                        <div className={`edited-info ${theme}`} title={editedInfo.editedAt ? `Last edited on ${editedInfo.editedAt.toLocaleString()}` : ''}>
+                        <div
+                            className={`edited-info ${theme}`}
+                            ref={editedInfoRef}
+                            onMouseEnter={() => {
+                                fetchEditHistory();
+                                setShowHistoryTooltip(true);
+                            }}
+                            onMouseLeave={() => setShowHistoryTooltip(false)}
+                            title="View edit history"
+                        >
                             Edited by {editedInfo.editedBy}
+                            <EditHistoryTooltip
+                                history={editHistory}
+                                visible={showHistoryTooltip}
+                            />
                         </div>
                     )}
                     {editLock && editLock.username !== username && (

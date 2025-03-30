@@ -45,6 +45,8 @@ export enum MessageType {
   EDIT_LOCK_UPDATE = 'editLockUpdate',
   UPDATE_FILE_CONTENT = 'updateFileContent',
   FILE_UPDATED = 'fileUpdated',
+  FILE_EDIT_HISTORY = 'fileEditHistory',
+  GET_FILE_EDIT_HISTORY = 'getFileEditHistory',
 }
 
 /**
@@ -255,6 +257,11 @@ export interface FileUpdatedNotification extends BaseMessage {
   editedAt: string;
 }
 
+export interface FileEditHistoryRequest extends BaseMessage {
+  type: MessageType.GET_FILE_EDIT_HISTORY;
+  messageId: string;
+}
+
 /**
  * Union type of all possible message types
  */
@@ -275,6 +282,7 @@ export type Message =
   | FileEditLockUpdate
   | FileUpdateRequest
   | FileUpdatedNotification
+  | FileEditHistoryRequest
   | BaseMessage;
 
 /**

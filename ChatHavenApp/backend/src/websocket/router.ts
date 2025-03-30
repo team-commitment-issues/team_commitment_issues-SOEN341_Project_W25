@@ -13,6 +13,7 @@ import {
     FileEditLockRequest,
     FileEditLockRelease,
     FileUpdateRequest,
+    FileEditHistoryRequest
 
 } from '../types/websocket';
 import { ERROR_MESSAGES } from './constants';
@@ -41,7 +42,8 @@ import { handleFetchHistory } from './handlers/historyHandler';
 import {
     handleRequestEditLock,
     handleReleaseEditLock,
-    handleUpdateFileContent
+    handleUpdateFileContent,
+    handleGetFileEditHistory
 } from './handlers/fileEditingHandler';
 
 // Setup structured logging
@@ -110,6 +112,9 @@ export const handleWebSocketMessage = async (
                 await handleUpdateFileContent(ws, message as FileUpdateRequest, wss, token);
                 break;
 
+            case MessageType.GET_FILE_EDIT_HISTORY:
+                await handleGetFileEditHistory(ws, message as FileEditHistoryRequest, wss, token);
+                break;
             default:
                 throw new Error(ERROR_MESSAGES.UNKNOWN_MESSAGE_TYPE(message.type));
         }

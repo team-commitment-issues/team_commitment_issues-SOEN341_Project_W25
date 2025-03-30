@@ -518,3 +518,68 @@ export const handleUpdateFileContent = async (
         );
     }
 };
+
+/**
+ * Handle requests to retrieve file edit history
+ */
+export const handleGetFileEditHistory = async (
+    ws: ExtendedWebSocket,
+    message: { type: string, messageId: string },
+    wss: WebSocketServer,
+    token: string
+): Promise<void> => {
+    const user = await verifyToken(token);
+    ws.user = user;
+
+    const { messageId } = message;
+
+    try {
+        // First try to find a channel message
+        const channelMessage = await Message.findById(messageId).select('fileName editHistory');
+        if (channelMessage) {
+            ws.send(JSON.stringify({
+                type: 'fileEditHistory',
+                messageId,
+                history: channelMessage.editHistory || [{
+                    username: channelMessage.editedBy,
+                    timestamp: channelMessage.editedAt
+                }],
+                fileName: channelMessage.fileName
+            }));
+            return;
+        }
+
+        // If not found, check for direct message
+        const directMessage = await DMessage.findById(messageId).select('fileName editHistory');
+        if (directMessage) {
+            ws.send(JSON.stringify({
+                type: 'fileEditHistory',
+                messageId,
+                history: directMessage.editHistory || [{
+                    username: directMessage.editedBy,
+                    timestamp: directMessage.editedAt
+                }],
+                fileName: directMessage.fileName
+            }));
+            return;
+        }
+
+        // Message not found
+        ws.send(JSON.stringify({
+            type: 'error',
+            message: `Message with ID ${messageId} not found`
+        }));
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error('Error retrieving file edit history', {
+            username: user.username,
+            messageId,
+            error: errorMessage
+        });
+
+        ws.send(JSON.stringify({
+            type: 'error',
+            message: `Failed to retrieve file edit history: ${errorMessage}`
+        }));
+    }
+};
