@@ -504,3 +504,94 @@
 .dark .empty-history {
   color: #aaa;
 }
+
+/* Image Preview Styles */
+.image-preview-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.image-container {
+  max-width: 100%;
+  text-align: center;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 10px auto;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #3498db;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark theme support */
+.dark .image-container {
+  background-color: #2a2a2a;
+}
+
+.dark .loading-spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: #3498db;
+}
+
+/* Debug information styles */
+.debug-container {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+  width: 100%;
+  max-width: 600px;
+}
+
+.dark .debug-container {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #f8f9fa;
+}
+
+/* Error container styles */
+.error-container {
+  padding: 16px;
+  margin: 10px 0;
+  background-color: #fff3f3;
+  border: 1px solid #ffcccc;
+  border-radius: 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dark .error-container {
+  background-color: #3a2222;
+  border-color: #5c3333;
+  color: #f8f9fa;
+}

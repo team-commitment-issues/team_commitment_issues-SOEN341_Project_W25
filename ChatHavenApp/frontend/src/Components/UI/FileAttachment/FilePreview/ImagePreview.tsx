@@ -1,5 +1,5 @@
 // Components/UI/FileAttachment/FilePreview/ImagePreview.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../../Context/ThemeContext.tsx';
 import { getAuthenticatedUrl } from '../utils.ts';
 
@@ -11,21 +11,22 @@ interface ImagePreviewProps {
 
 const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVersion }) => {
     const { theme } = useTheme();
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     const [imageBlob, setImageBlob] = useState<string | null>(null);
     const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
     const isFetchingRef = useRef(false);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const imageBlobRef = useRef<string | null>(null);
 
-    const handleRetry = () => {
-        setImageError(false);
-        setDebugInfo(null);
-        fetchImage();
-    };
+    // Track current blob URL in a ref to avoid useEffect dependency issues
+    useEffect(() => {
+        imageBlobRef.current = imageBlob;
+    }, [imageBlob]);
 
-    const fetchImage = async () => {
+    // Define fetchImage function for manual retries - not used in useEffect
+    const fetchImage = useCallback(async () => {
         if (isFetchingRef.current) {
             console.log('Skipping duplicate image fetch request');
             return;
@@ -37,22 +38,28 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
             setDebugInfo(null);
             isFetchingRef.current = true;
 
+            // Clean up previous abortController if exists
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
             }
 
+            // Create new abortController for this request
             abortControllerRef.current = new AbortController();
 
+            // Get authenticated URL
             const authUrl = getAuthenticatedUrl(fileUrl, fileVersion, true);
-            console.log('Fetching image from:', authUrl);
+            console.log('Manual retry: Fetching image from:', authUrl);
 
+            // Check for auth token
             const token = localStorage.getItem('token');
             if (!token) {
                 throw new Error('Authentication token not found');
             }
 
+            // Small delay to ensure UI reflects loading state
             await new Promise(resolve => setTimeout(resolve, 300));
 
+            // Fetch the image
             const response = await fetch(authUrl, {
                 method: 'GET',
                 headers: {
@@ -64,6 +71,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                 signal: abortControllerRef.current.signal
             });
 
+            // Log response information for debugging
             const responseInfo = {
                 status: response.status,
                 statusText: response.statusText,
@@ -75,6 +83,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
             console.log('Image fetch response:', responseInfo);
             setDebugInfo(`Status: ${response.status} ${response.statusText}, Content-Type: ${response.headers.get('content-type')}`);
 
+            // Handle non-200 responses
             if (!response.ok) {
                 if (response.status === 429) {
                     throw new Error('Too many requests - rate limit exceeded. Please try again later.');
@@ -82,6 +91,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                 throw new Error(`Failed to fetch image: ${response.statusText} (${response.status})`);
             }
 
+            // Get the blob and create object URL
             const blob = await response.blob();
             console.log('Received image blob:', {
                 size: blob.size,
@@ -92,8 +102,14 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                 throw new Error('Received empty image data');
             }
 
+            // Clean up any existing blob URL before creating a new one
+            if (imageBlobRef.current) {
+                URL.revokeObjectURL(imageBlobRef.current);
+            }
+
             const imageUrl = URL.createObjectURL(blob);
             setImageBlob(imageUrl);
+            setImageError(false);
         } catch (error) {
             if (error instanceof DOMException && error.name === 'AbortError') {
                 console.log('Image fetch aborted');
@@ -107,11 +123,22 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
             setLoading(false);
             isFetchingRef.current = false;
         }
+    }, [fileUrl, fileVersion]);
+
+    // Handle retry button click
+    const handleRetry = () => {
+        setImageError(false);
+        setDebugInfo(null);
+        fetchImage();
     };
 
-    // Define fetchImage inside useEffect to avoid dependency issues
+    // Use effect to fetch image only on component mount or when URL/version changes
     useEffect(() => {
-        const fetchImageInEffect = async () => {
+        // We need to avoid the infinite loop caused by including fetchImage in dependencies
+        // since fetchImage itself depends on imageBlob which changes when fetchImage succeeds
+
+        // Define an inline function that doesn't depend on state values that change during fetch
+        const doFetchImage = async () => {
             if (isFetchingRef.current) {
                 console.log('Skipping duplicate image fetch request');
                 return;
@@ -123,22 +150,28 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                 setDebugInfo(null);
                 isFetchingRef.current = true;
 
+                // Clean up previous abortController if exists
                 if (abortControllerRef.current) {
                     abortControllerRef.current.abort();
                 }
 
+                // Create new abortController for this request
                 abortControllerRef.current = new AbortController();
 
+                // Get authenticated URL
                 const authUrl = getAuthenticatedUrl(fileUrl, fileVersion, true);
                 console.log('Fetching image from:', authUrl);
 
+                // Check for auth token
                 const token = localStorage.getItem('token');
                 if (!token) {
                     throw new Error('Authentication token not found');
                 }
 
+                // Small delay to ensure UI reflects loading state
                 await new Promise(resolve => setTimeout(resolve, 300));
 
+                // Fetch the image
                 const response = await fetch(authUrl, {
                     method: 'GET',
                     headers: {
@@ -150,6 +183,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                     signal: abortControllerRef.current.signal
                 });
 
+                // Log response information for debugging
                 const responseInfo = {
                     status: response.status,
                     statusText: response.statusText,
@@ -161,6 +195,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                 console.log('Image fetch response:', responseInfo);
                 setDebugInfo(`Status: ${response.status} ${response.statusText}, Content-Type: ${response.headers.get('content-type')}`);
 
+                // Handle non-200 responses
                 if (!response.ok) {
                     if (response.status === 429) {
                         throw new Error('Too many requests - rate limit exceeded. Please try again later.');
@@ -168,6 +203,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                     throw new Error(`Failed to fetch image: ${response.statusText} (${response.status})`);
                 }
 
+                // Get the blob and create object URL
                 const blob = await response.blob();
                 console.log('Received image blob:', {
                     size: blob.size,
@@ -178,8 +214,16 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
                     throw new Error('Received empty image data');
                 }
 
+                // Clean up any existing blob URL before creating a new one
+                if (imageBlobRef) {
+                    if (imageBlobRef.current) {
+                        URL.revokeObjectURL(imageBlobRef.current);
+                    }
+                }
+
                 const imageUrl = URL.createObjectURL(blob);
                 setImageBlob(imageUrl);
+                setImageError(false);
             } catch (error) {
                 if (error instanceof DOMException && error.name === 'AbortError') {
                     console.log('Image fetch aborted');
@@ -195,31 +239,35 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
             }
         };
 
-        // Call the function to fetch the image
-        fetchImageInEffect();
+        // Call the inline fetch function
+        doFetchImage();
 
-        // Cleanup function
+        // Clean up function for component unmount
         return () => {
+            // Abort any in-progress fetch
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
             }
 
-            if (imageBlob) {
-                URL.revokeObjectURL(imageBlob);
-                setImageBlob(null);
+            // Clean up blob URL to prevent memory leaks
+            if (imageBlobRef.current) {
+                URL.revokeObjectURL(imageBlobRef.current);
             }
         };
-    }, [fileUrl, fileVersion, imageBlob]);
+    }, [fileUrl, fileVersion]); // Only re-run when URL or version changes
 
+    // Render loading state
     if (loading) {
         return (
             <div className={`text-preview ${theme} centered-text`}>
-                Loading image...
+                <div className="loading-spinner"></div>
+                <p>Loading image...</p>
             </div>
         );
     }
 
-    if (imageError) {
+    // Render error state
+    if (imageError || !imageBlob) {
         return (
             <div className={`error-container ${theme}`}>
                 <div style={{ marginBottom: '10px' }}>Failed to load image</div>
@@ -248,17 +296,20 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ fileName, fileUrl, fileVers
         );
     }
 
+    // Render successful image
     return (
-        <div>
-            {imageBlob && (
-                <div className="image-container">
-                    <img
-                        src={imageBlob}
-                        alt={fileName}
-                        className="preview-image"
-                    />
-                </div>
-            )}
+        <div className="image-preview-container">
+            <div className="image-container">
+                <img
+                    src={imageBlob}
+                    alt={fileName}
+                    className="preview-image"
+                    onError={() => {
+                        setImageError(true);
+                        setDebugInfo("Image failed to load after successful fetch");
+                    }}
+                />
+            </div>
             {debugInfo && (
                 <div className={`debug-container ${theme}`}>
                     <strong>Debug Info:</strong> {debugInfo}
