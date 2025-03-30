@@ -266,28 +266,55 @@ class FileEditingService {
 
             // Update the message to indicate it's been edited
             let updated = false;
+            let updatedMessage: typeof channelMessage | null = null;
 
             // Check if it's a channel message
             const channelMessage = await Message.findById(messageId);
             if (channelMessage) {
                 channelMessage.editedBy = username;
                 channelMessage.editedAt = new Date();
-                await channelMessage.save();
+                updatedMessage = await channelMessage.save();
                 updated = true;
+
+                logger.info('Updated channel message after file edit', {
+                    messageId,
+                    username,
+                    fileName,
+                    channelId: channelMessage.channel
+                });
             } else {
                 // Check if it's a direct message
                 const directMessage = await DMessage.findById(messageId);
                 if (directMessage) {
                     directMessage.editedBy = username;
                     directMessage.editedAt = new Date();
-                    await directMessage.save();
+                    updatedMessage = await directMessage.save() as unknown as typeof channelMessage | null;
                     updated = true;
+
+                    logger.info('Updated direct message after file edit', {
+                        messageId,
+                        username,
+                        fileName,
+                        directMessageCollection: 'DMessage'
+                    });
                 }
             }
 
             if (!updated) {
                 throw new Error(`Message ${messageId} not found`);
             }
+
+            // Add additional debug information
+            logger.debug('File content update details', {
+                messageId,
+                username,
+                fileName,
+                updatedMessage: updatedMessage ? {
+                    _id: updatedMessage._id,
+                    editedBy: updatedMessage.editedBy,
+                    editedAt: updatedMessage.editedAt
+                } : null
+            });
 
             // Release the lock
             this.releaseLock(messageId, username);

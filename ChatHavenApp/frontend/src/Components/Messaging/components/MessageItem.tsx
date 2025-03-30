@@ -3,7 +3,7 @@ import { useTheme } from '../../../Context/ThemeContext.tsx';
 import MessageStatusIndicator from '../../UI/MessageStatusIndicator.tsx';
 import FileAttachment from '../../UI/FileAttachment.tsx';
 import QuotedMessage from './QuotedMessage.tsx';
-import { ChatMessage } from '../../../types/shared.ts';
+import { ChatMessage, Selection } from '../../../types/shared.ts';
 import styles from '../../../Styles/dashboardStyles.ts';
 import { FileInfo } from '../types/index.ts';
 
@@ -12,13 +12,15 @@ interface MessageItemProps {
     isCurrentUser: boolean;
     onContextMenu: (e: React.MouseEvent, messageId: string) => void;
     onResend: (message: ChatMessage) => void;
+    selection: Selection | null; // Add selection prop
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({
     message,
     isCurrentUser,
     onContextMenu,
-    onResend
+    onResend,
+    selection
 }) => {
     const { theme } = useTheme();
 
@@ -105,6 +107,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                         messageId={message._id}
                         editedBy={message.editedBy}
                         editedAt={message.editedAt}
+                        selection={selection} // Pass selection to FileAttachment
                     />
                 )}
 

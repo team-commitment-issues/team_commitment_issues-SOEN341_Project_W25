@@ -191,6 +191,8 @@ export interface FileEditLockRequest extends BaseMessage {
   fileName: string;
   teamName?: string;
   channelName?: string;
+  directMessage?: boolean;
+  receiverUsername?: string;
 }
 
 /**
@@ -202,6 +204,8 @@ export interface FileEditLockRelease extends BaseMessage {
   fileName: string;
   teamName?: string;
   channelName?: string;
+  directMessage?: boolean;
+  receiverUsername?: string;
 }
 
 /**
@@ -236,6 +240,8 @@ export interface FileUpdateRequest extends BaseMessage {
   content: string;
   teamName?: string;
   channelName?: string;
+  directMessage?: boolean;
+  receiverUsername?: string;
 }
 
 /**

@@ -4,6 +4,7 @@ import { useTheme } from '../../Context/ThemeContext.tsx';
 import FileEditor from './FileEditor.tsx';
 import { useUser } from '../../Context/UserContext.tsx';
 import WebSocketClient from '../../Services/webSocketClient.ts';
+import { Selection } from '../../types/shared.ts';
 import '../../Styles/FileAttachment.css';
 
 interface FileAttachmentProps {
@@ -15,6 +16,7 @@ interface FileAttachmentProps {
     messageId?: string;
     editedBy?: string;
     editedAt?: Date;
+    selection?: Selection | null;
 }
 
 interface EditLockInfo {
@@ -57,7 +59,8 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     uploadStatus = fileUrl ? 'completed' : 'pending',
     messageId,
     editedBy,
-    editedAt
+    editedAt,
+    selection
 }) => {
     const { theme } = useTheme();
     const { userData } = useUser();
@@ -69,6 +72,15 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const [imageBlob, setImageBlob] = useState<string | null>(null);
     const [debugInfo, setDebugInfo] = useState<string | null>(null);
     const [isReleasingLock, setIsReleasingLock] = useState(false);
+
+    // Track file content version to force refreshes
+    const [fileVersion, setFileVersion] = useState(Date.now());
+
+    // New state for edited info with local tracking
+    const [editedInfo, setEditedInfo] = useState<{
+        editedBy: string;
+        editedAt: Date;
+    } | null>(editedBy && editedAt ? { editedBy, editedAt } : null);
 
     // New state for editing functionality
     const [isEditing, setIsEditing] = useState(false);
@@ -85,7 +97,14 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     // WebSocket client for edit lock communication
     const wsService = WebSocketClient.getInstance();
 
-    const getAuthenticatedUrl = (url: string, inline: boolean = false): string => {
+    // Update editedInfo whenever props change
+    useEffect(() => {
+        if (editedBy && editedAt) {
+            setEditedInfo({ editedBy, editedAt });
+        }
+    }, [editedBy, editedAt]);
+
+    const getAuthenticatedUrl = useCallback((url: string, inline: boolean = false): string => {
         if (!url || url.trim() === '') {
             console.error('Invalid file URL - received empty or null URL');
             return '#pending-upload'; // Return a placeholder
@@ -102,10 +121,11 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
         // Add query parameters
         const separator = normalizedUrl.includes('?') ? '&' : '?';
-        const authenticatedUrl = `${normalizedUrl}${separator}token=${token}${inline ? '&inline=true' : ''}`;
+        // Add version to force cache refresh after edits
+        const authenticatedUrl = `${normalizedUrl}${separator}token=${token}${inline ? '&inline=true' : ''}&v=${fileVersion}`;
 
         return authenticatedUrl;
-    };
+    }, [fileVersion]);
 
     const handleRetry = () => {
         setImageError(false);
@@ -160,7 +180,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Accept': 'text/plain,text/*;q=0.9,*/*;q=0.8',
-                    'Cache-Control': 'no-cache'
+                    'Cache-Control': 'no-cache, no-store, must-revalidate'
                 },
                 credentials: 'include',
                 signal: abortControllerRef.current.signal
@@ -180,6 +200,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 throw new Error('Received HTML content instead of text file. Authentication may have failed.');
             }
 
+            console.log('Received file content:', content.substring(0, 100) + '...');
             setTextContent(content);
             return content;
         } catch (error) {
@@ -193,21 +214,41 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         } finally {
             setLoading(false);
         }
-    }, [fileName, fileUrl]);
+    }, [fileName, fileUrl, getAuthenticatedUrl]);
 
-    // New function to request edit lock
+    // New function to request edit lock with selection info
     const requestEditLock = async () => {
         if (!messageId || !isTextFile(fileName)) return;
 
         try {
             setEditLoading(true);
 
-            // Send WebSocket message to request edit lock
-            wsService.send({
+            // Prepare the request with additional selection info
+            const lockRequest: any = {
                 type: 'requestEditLock',
                 messageId,
                 fileName
-            });
+            };
+
+            // Add selection context if available
+            if (selection) {
+                lockRequest.teamName = selection.teamName;
+
+                if (selection.type === 'channel' && selection.channelName) {
+                    lockRequest.channelName = selection.channelName;
+                }
+
+                // For direct messages, add an indicator
+                if (selection.type === 'directMessage' && selection.username) {
+                    lockRequest.directMessage = true;
+                    lockRequest.receiverUsername = selection.username;
+                }
+            }
+
+            console.log('Requesting edit lock with context:', lockRequest);
+
+            // Send WebSocket message to request edit lock
+            wsService.send(lockRequest);
 
             // Wait for response (handled in useEffect)
         } catch (error) {
@@ -216,17 +257,34 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         }
     };
 
-    // Function to release edit lock
+    // Function to release edit lock with selection info
     const releaseEditLock = useCallback(() => {
         if (isReleasingLock || !messageId) return;
 
         setIsReleasingLock(true);
 
-        wsService.send({
+        const releaseRequest: any = {
             type: 'releaseEditLock',
             messageId,
             fileName
-        });
+        };
+
+        // Add selection context if available
+        if (selection) {
+            releaseRequest.teamName = selection.teamName;
+
+            if (selection.type === 'channel' && selection.channelName) {
+                releaseRequest.channelName = selection.channelName;
+            }
+
+            // For direct messages, add an indicator
+            if (selection.type === 'directMessage' && selection.username) {
+                releaseRequest.directMessage = true;
+                releaseRequest.receiverUsername = selection.username;
+            }
+        }
+
+        wsService.send(releaseRequest);
 
         // Reset after a short delay to prevent multiple calls
         setTimeout(() => {
@@ -236,22 +294,48 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         // Optimistically update UI
         setEditLock(null);
         setIsEditing(false);
-    }, [messageId, fileName, wsService, isReleasingLock]);
+    }, [messageId, fileName, wsService, isReleasingLock, selection]);
 
-    // Function to save edited content
+    // Function to save edited content with selection info
     const saveEditedContent = async (content: string) => {
         if (!messageId) return;
 
-        // Send WebSocket message with edited content
-        wsService.send({
+        // Prepare update request with selection info
+        const updateRequest: any = {
             type: 'updateFileContent',
             messageId,
             fileName,
             content
-        });
+        };
+
+        // Add selection context if available
+        if (selection) {
+            updateRequest.teamName = selection.teamName;
+
+            if (selection.type === 'channel' && selection.channelName) {
+                updateRequest.channelName = selection.channelName;
+            }
+
+            // For direct messages, add an indicator
+            if (selection.type === 'directMessage' && selection.username) {
+                updateRequest.directMessage = true;
+                updateRequest.receiverUsername = selection.username;
+            }
+        }
+
+        console.log('Saving file content with context:', updateRequest);
+
+        // Send WebSocket message with edited content
+        wsService.send(updateRequest);
 
         // Release lock after save
         releaseEditLock();
+
+        // Immediately update edit info optimistically
+        setEditedInfo({
+            editedBy: username,
+            editedAt: new Date()
+        });
     };
 
     useEffect(() => {
@@ -316,9 +400,38 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
         const handleFileUpdated = (data: any) => {
             if (data.type === 'fileUpdated' && data.messageId === messageId) {
+                console.log('File updated notification received in FileAttachment:', data);
+
+                // Force a refresh by updating the file version
+                setFileVersion(Date.now());
+
                 // Clear cached content to force reload on next view
                 setTextContent(null);
                 hasAttemptedFetchRef.current = false;
+
+                // Update edited by information
+                if (data.editedBy) {
+                    // Force immediate UI update with edited info
+                    const editTime = data.editedAt ? new Date(data.editedAt) : new Date();
+                    setEditedInfo({
+                        editedBy: data.editedBy,
+                        editedAt: editTime
+                    });
+
+                    console.log('Updated edited info in FileAttachment:', {
+                        editedBy: data.editedBy,
+                        editedAt: editTime
+                    });
+                }
+
+                // If the preview is currently open, reload the content automatically
+                if (showPreview && isTextFile(fileName)) {
+                    console.log('Reloading file content after update');
+                    // Short delay to ensure the backend has finished writing the file
+                    setTimeout(() => {
+                        fetchFileContent();
+                    }, 200);
+                }
             }
         };
 
@@ -327,11 +440,15 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         const editLockUpdateSubId = wsService.subscribe('editLockUpdate', handleEditLockUpdate);
         const fileUpdatedSubId = wsService.subscribe('fileUpdated', handleFileUpdated);
 
+        console.log(`FileAttachment subscribed to WebSocket events for messageId: ${messageId}`);
+
         return () => {
             // Unsubscribe when component unmounts
             wsService.unsubscribe(editLockSubId);
             wsService.unsubscribe(editLockUpdateSubId);
             wsService.unsubscribe(fileUpdatedSubId);
+
+            console.log(`FileAttachment unsubscribed from WebSocket events for messageId: ${messageId}`);
 
             // Release lock if we have it and component unmounts
             if (!lockReleasedRef.current &&
@@ -341,7 +458,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 releaseEditLock();
             }
         };
-    }, [messageId, username, textContent, wsService, releaseEditLock, fetchFileContent]);
+    }, [messageId, username, textContent, wsService, releaseEditLock, fetchFileContent, fileName, showPreview]);
 
     useEffect(() => {
         const fetchImageInEffect = async () => {
@@ -383,7 +500,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                     headers: {
                         Authorization: `Bearer ${token}`,
                         'Accept': 'image/*',
-                        'Cache-Control': 'no-cache'
+                        'Cache-Control': 'no-cache, no-store, must-revalidate'
                     },
                     credentials: 'include',
                     signal: abortControllerRef.current.signal
@@ -456,7 +573,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 hasAttemptedFetchRef.current = false;
             }
         };
-    }, [fileType, fileUrl, showPreview, imageBlob]);
+    }, [fileType, fileUrl, showPreview, imageBlob, fileVersion, getAuthenticatedUrl]);
 
 
     const handleOpenFile = async () => {
@@ -485,7 +602,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                     headers: {
                         Authorization: `Bearer ${token}`,
                         'Accept': 'text/plain,text/*;q=0.9,*/*;q=0.8',
-                        'Cache-Control': 'no-cache'
+                        'Cache-Control': 'no-cache, no-store, must-revalidate'
                     },
                     credentials: 'include',
                     signal: abortControllerRef.current.signal
@@ -561,9 +678,9 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 <div className="file-icon">{getFileIcon()}</div>
                 <div className="file-details">
                     <div className={`file-name ${theme}`}>{fileName}</div>
-                    {editedBy && !editLock && (
-                        <div className={`edited-info ${theme}`} title={editedAt ? `Last edited on ${editedAt.toLocaleString()}` : ''}>
-                            Edited by {editedBy}
+                    {editedInfo && !editLock && (
+                        <div className={`edited-info ${theme}`} title={editedInfo.editedAt ? `Last edited on ${editedInfo.editedAt.toLocaleString()}` : ''}>
+                            Edited by {editedInfo.editedBy}
                         </div>
                     )}
                     {editLock && editLock.username !== username && (

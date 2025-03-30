@@ -342,13 +342,15 @@ export const handleUpdateFileContent = async (
     const user = await verifyToken(token);
     ws.user = user;
 
-    const { messageId, fileName, content, teamName, channelName } = message;
+    const { messageId, fileName, content, teamName, channelName, directMessage, receiverUsername } = message;
 
     logger.debug('File content update request received', {
         username: user.username,
         messageId,
         fileName,
-        contentLength: content.length
+        contentLength: content.length,
+        isDirectMessage: !!directMessage,
+        receiverUsername
     });
 
     try {
@@ -363,8 +365,29 @@ export const handleUpdateFileContent = async (
                 // Determine which clients should receive the update
                 let relevantClients: ExtendedWebSocket[] = [];
 
-                if (teamName && channelName) {
-                    // For channel messages
+                // Handle direct message case differently
+                if (directMessage && receiverUsername) {
+                    logger.debug('Processing file update for direct message', {
+                        messageId,
+                        senderUsername: user.username,
+                        receiverUsername
+                    });
+
+                    // For direct messages - find clients by sender and receiver usernames directly
+                    wss.clients.forEach(client => {
+                        const extClient = client as ExtendedWebSocket;
+                        if (
+                            extClient.readyState === WebSocket.OPEN &&
+                            extClient.user &&
+                            (extClient.user.username === user.username ||
+                                extClient.user.username === receiverUsername)
+                        ) {
+                            relevantClients.push(extClient);
+                        }
+                    });
+                }
+                else if (teamName && channelName) {
+                    // For channel messages - existing logic
                     wss.clients.forEach(client => {
                         const extClient = client as ExtendedWebSocket;
                         if (
@@ -377,8 +400,9 @@ export const handleUpdateFileContent = async (
                             relevantClients.push(extClient);
                         }
                     });
-                } else {
-                    // For direct messages - find the direct message to get participants
+                }
+                else {
+                    // Fallback to database lookup approach
                     const dMessage = await DMessage.findById(messageId);
                     if (dMessage) {
                         const directMessage = await DirectMessage.findOne({
@@ -430,6 +454,13 @@ export const handleUpdateFileContent = async (
                     editedBy: user.username,
                     editedAt: now.toISOString()
                 };
+
+                logger.debug('Broadcasting file update to clients', {
+                    username: user.username,
+                    messageId,
+                    relevantClientCount: relevantClients.length,
+                    sampleClients: relevantClients.slice(0, 2).map(c => c.user?.username)
+                });
 
                 relevantClients.forEach(client => {
                     client.send(JSON.stringify(fileUpdatedMsg));
