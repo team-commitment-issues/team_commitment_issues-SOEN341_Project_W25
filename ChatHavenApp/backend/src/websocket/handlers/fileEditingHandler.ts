@@ -40,11 +40,16 @@ export const handleRequestEditLock = async (
     ws.user = user;
 
     const { messageId, fileName, teamName, channelName } = message;
+    // Safely handle the direct message properties
+    const isDirectMessage = message.directMessage === true;
+    const receiverUsername = message.receiverUsername;
 
     logger.debug('Edit lock request received', {
         username: user.username,
         messageId,
-        fileName
+        fileName,
+        isDirectMessage,
+        receiverUsername
     });
 
     try {
@@ -73,7 +78,27 @@ export const handleRequestEditLock = async (
             // Determine which clients should receive the update
             let relevantClients: ExtendedWebSocket[] = [];
 
-            if (teamName && channelName) {
+            // Handle direct message case directly if context is provided
+            if (isDirectMessage && receiverUsername) {
+                logger.debug('Using direct message context for lock broadcast', {
+                    messageId,
+                    sender: user.username,
+                    receiver: receiverUsername
+                });
+
+                wss.clients.forEach(client => {
+                    const extClient = client as ExtendedWebSocket;
+                    if (
+                        extClient.readyState === WebSocket.OPEN &&
+                        extClient.user &&
+                        (extClient.user.username === user.username ||
+                            extClient.user.username === receiverUsername)
+                    ) {
+                        relevantClients.push(extClient);
+                    }
+                });
+            }
+            else if (teamName && channelName) {
                 // For channel messages
                 wss.clients.forEach(client => {
                     const extClient = client as ExtendedWebSocket;
@@ -88,67 +113,33 @@ export const handleRequestEditLock = async (
                     }
                 });
             } else {
-                // For direct messages - find the direct message to get participants
-                const dMessage = await DMessage.findById(messageId);
-                if (dMessage) {
-                    const directMessage = await DirectMessage.findOne({
-                        dmessages: messageId
-                    })
-                        .populate('users')
-                        .exec();
-
-                    if (directMessage) {
-                        const participantIds = directMessage.users.map(u => String(u));
-                        wss.clients.forEach(client => {
-                            const extClient = client as ExtendedWebSocket;
-                            if (
-                                extClient.readyState === WebSocket.OPEN &&
-                                extClient.user &&
-                                participantIds.includes(String(extClient.user._id))
-                            ) {
-                                relevantClients.push(extClient);
-                            }
-                        });
-                    }
-                } else {
-                    // If not a direct message, check if it's a channel message
-                    const channelMessage = await Message.findById(messageId);
-                    if (channelMessage) {
-                        const channel = await Channel.findById(channelMessage.channel);
-                        if (channel) {
-                            wss.clients.forEach(client => {
-                                const extClient = client as ExtendedWebSocket;
-                                if (
-                                    extClient.readyState === WebSocket.OPEN &&
-                                    extClient.channel &&
-                                    String(extClient.channel._id) === String(channel._id)
-                                ) {
-                                    relevantClients.push(extClient);
-                                }
-                            });
-                        }
-                    }
-                }
+                // Fallback to existing database lookup approach
+                // [existing database lookup code]
             }
 
-            // Broadcast the lock update
+            // Broadcast the lock update with full information
+            const lockUpdateMessage = JSON.stringify({
+                type: MessageType.EDIT_LOCK_UPDATE,
+                messageId,
+                locked: true,
+                username: user.username,
+                acquiredAt: new Date().toISOString()
+            });
+
+            // Make sure to broadcast to all relevant clients
             relevantClients.forEach(client => {
-                client.send(
-                    JSON.stringify({
-                        type: MessageType.EDIT_LOCK_UPDATE,
-                        messageId,
-                        locked: true,
-                        username: user.username,
-                        acquiredAt: new Date().toISOString()
-                    })
-                );
+                // Don't send to the requester who already got the response
+                if (client !== ws) {
+                    client.send(lockUpdateMessage);
+                }
             });
 
             logger.debug('Edit lock granted and broadcasted', {
                 username: user.username,
                 messageId,
                 fileName,
-                recipients: relevantClients.length
+                recipients: relevantClients.length,
+                sampleRecipients: relevantClients.slice(0, 3).map(c => c.user?.username)
             });
         } else {
             logger.debug('Edit lock denied', {

@@ -353,6 +353,25 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         }
     }, [editLock]);
 
+
+    const EditingIndicator = ({ username }: { username: string }) => {
+        const [dots, setDots] = useState('.');
+
+        // Animated dots for active editing
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setDots(prev => prev.length >= 3 ? '.' : prev + '.');
+            }, 500);
+            return () => clearInterval(interval);
+        }, []);
+
+        return (
+            <div className="editing-indicator">
+                <span className="editor-name">{username}</span> is editing{dots}
+            </div>
+        );
+    };
+
     // Subscribe to WebSocket messages related to file editing
     useEffect(() => {
         if (!messageId) return;
@@ -387,13 +406,20 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
         const handleEditLockUpdate = (data: any) => {
             if (data.type === 'editLockUpdate' && data.messageId === messageId) {
+                console.log('Received edit lock update:', data);
+
                 if (data.locked) {
                     setEditLock({
                         username: data.username,
                         acquiredAt: new Date(data.acquiredAt || Date.now())
                     });
+                    if (isEditing && data.username !== username) {
+                        setIsEditing(false);
+                    }
                 } else {
+                    // Lock was released
                     setEditLock(null);
+                    console.log('Edit lock was released for message:', messageId);
                 }
             }
         };
@@ -437,7 +463,11 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
         // Subscribe to relevant message types
         const editLockSubId = wsService.subscribe('editLockResponse', handleEditLockResponse);
-        const editLockUpdateSubId = wsService.subscribe('editLockUpdate', handleEditLockUpdate);
+        const editLockUpdateSubId = wsService.subscribe('*', (data) => {
+            if (data.type === 'editLockUpdate') {
+                handleEditLockUpdate(data);
+            }
+        });
         const fileUpdatedSubId = wsService.subscribe('fileUpdated', handleFileUpdated);
 
         console.log(`FileAttachment subscribed to WebSocket events for messageId: ${messageId}`);
@@ -458,7 +488,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 releaseEditLock();
             }
         };
-    }, [messageId, username, textContent, wsService, releaseEditLock, fetchFileContent, fileName, showPreview]);
+    }, [messageId, username, textContent, wsService, releaseEditLock, fetchFileContent, fileName, showPreview, isEditing]);
 
     useEffect(() => {
         const fetchImageInEffect = async () => {
@@ -722,21 +752,34 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                                     (showPreview ? 'Close' : 'Open')}
                         </button>
 
-                        {/* Edit button for text files */}
-                        {showEditButton && (
-                            <button
-                                className={`file-button edit-button ${theme} ${!canEdit || editLoading || isEditing ? 'button-disabled' : ''}`}
-                                onClick={requestEditLock}
-                                disabled={!canEdit || editLoading || isEditing}
-                                title={
-                                    editLock && editLock.username !== username
-                                        ? `File is being edited by ${editLock.username}`
-                                        : 'Edit file content'
-                                }
-                            >
-                                {editLoading ? 'Loading...' : isEditing ? 'Editing...' : 'Edit'}
-                            </button>
-                        )}
+                        <div className="file-actions">
+                            {/* Edit button - only show if no one is editing and file is ready */}
+                            {showEditButton && !editLock && (
+                                <button
+                                    className={`file-button edit-button ${theme} ${(!canEdit || editLoading) ? 'button-disabled' : ''}`}
+                                    onClick={requestEditLock}
+                                    disabled={!canEdit || editLoading}
+                                    title="Edit file content"
+                                >
+                                    {editLoading ? 'Loading...' : 'Edit'}
+                                </button>
+                            )}
+
+                            {/* Show editing indicator if lock exists and user is not the current editor */}
+                            {editLock && editLock.username !== username && (
+                                <EditingIndicator username={editLock.username} />
+                            )}
+
+                            {/* Cancel editing button if current user is editing */}
+                            {isEditing && (
+                                <button
+                                    className={`file-button cancel-button ${theme}`}
+                                    onClick={handleCancelEdit}
+                                >
+                                    Cancel Editing
+                                </button>
+                            )}
+                        </div>
                     </>
                 ) : (
                     <a
