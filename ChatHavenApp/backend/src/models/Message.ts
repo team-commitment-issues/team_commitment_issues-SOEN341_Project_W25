@@ -1,5 +1,23 @@
 import { Document, Schema, model } from 'mongoose';
 
+const EditHistoryEntrySchema = new Schema({
+  username: {
+    type: String,
+    required: true
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+    required: true
+  },
+  description: {
+    type: String,
+    default: 'Updated file content'
+  },
+  contentHash: String,
+  fileSize: Number
+});
+
 const QuotedMessageSchema = new Schema({
   _id: { type: String, required: true },
   text: { type: String, required: true },
@@ -47,6 +65,13 @@ interface IMessage extends Document {
     text: string;
     username: string;
   };
+  editHistory?: Array<{
+    username: string;
+    timestamp: Date;
+    description?: string;
+    contentHash?: string;
+    fileSize?: number;
+  }>;
 }
 
 /**
@@ -91,6 +116,9 @@ const MessageSchema = new Schema<IMessage>({
   },
   quotedMessage: {
     type: QuotedMessageSchema
+  },
+  editHistory: {
+    type: [EditHistoryEntrySchema]
   }
 });
 

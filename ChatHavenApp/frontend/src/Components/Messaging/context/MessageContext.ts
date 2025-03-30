@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import { useMessages } from '../hooks/useMessages.ts';
 import { useMessageConnection } from '../hooks/useMessageConnection.ts';
 import { useTypingIndicator } from '../hooks/useTypingIndicator.ts';
@@ -36,6 +36,12 @@ export interface MessageContextType {
 
 // Create and export the context with explicit type
 export const MessageContext = createContext<MessageContextType | undefined>(undefined);
+
+// External action reference - this allows components outside the context to trigger actions
+export const MessageContextActions = {
+    quoteMessage: (messageId: string) => { },
+    deleteMessage: (messageId: string) => { },
+};
 
 // Explicitly name and export the provider component
 export interface MessageProviderProps {
@@ -111,6 +117,18 @@ export const MessageProvider = (props: MessageProviderProps): React.ReactElement
         typingHook.clearTypingStatus();
         messagesHook.clearQuotedMessage();
     }, [messagesHook, selection, typingHook, username]);
+
+    // Set up action references
+    useEffect(() => {
+        MessageContextActions.quoteMessage = messagesHook.handleQuoteMessage;
+        MessageContextActions.deleteMessage = messagesHook.handleDeleteMessage;
+
+        return () => {
+            // Reset the actions when the provider unmounts
+            MessageContextActions.quoteMessage = () => { };
+            MessageContextActions.deleteMessage = () => { };
+        };
+    }, [messagesHook.handleQuoteMessage, messagesHook.handleDeleteMessage]);
 
     const contextValue = useMemo(() => ({
         // Message state

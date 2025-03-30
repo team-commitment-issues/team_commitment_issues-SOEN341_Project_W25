@@ -4,7 +4,7 @@ import MessageHeader from './components/MessageHeader.tsx';
 import MessageList from './components/MessageList.tsx';
 import MessageInput from './components/MessageInput.tsx';
 import ContextMenu from '../UI/ContextMenu.tsx';
-import { MessageProvider } from './context/MessageContext.ts';
+import { MessageProvider, MessageContextActions } from './context/MessageContext.ts';
 import { Selection, ContextMenuState } from '../../types/shared.ts';
 
 interface MessagingProps {
@@ -36,16 +36,20 @@ const Messaging: React.FC<MessagingProps> = ({
     }, [setContextMenu]);
 
     const handleQuoteMessage = useCallback(() => {
-        // The actual quoting is handled in the MessageContext
-        // This just closes the context menu after selecting the quote option
+        if (contextMenu.selected) {
+            // Use the static reference to quote message function
+            MessageContextActions.quoteMessage(contextMenu.selected);
+        }
         handleCloseContextMenu();
-    }, [handleCloseContextMenu]);
+    }, [contextMenu.selected, handleCloseContextMenu]);
 
     const handleDeleteMessage = useCallback(() => {
-        // The actual deletion is handled in the MessageContext
-        // This just closes the context menu after selecting the delete option
+        if (contextMenu.selected) {
+            // Use the static reference to delete message function
+            MessageContextActions.deleteMessage(contextMenu.selected);
+        }
         handleCloseContextMenu();
-    }, [handleCloseContextMenu]);
+    }, [contextMenu.selected, handleCloseContextMenu]);
 
     const menuItems = [
         { label: 'Quote Message', onClick: handleQuoteMessage },

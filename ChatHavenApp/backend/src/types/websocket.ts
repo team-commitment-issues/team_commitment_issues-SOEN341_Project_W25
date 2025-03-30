@@ -45,6 +45,8 @@ export enum MessageType {
   EDIT_LOCK_UPDATE = 'editLockUpdate',
   UPDATE_FILE_CONTENT = 'updateFileContent',
   FILE_UPDATED = 'fileUpdated',
+  FILE_EDIT_HISTORY = 'fileEditHistory',
+  GET_FILE_EDIT_HISTORY = 'getFileEditHistory',
 }
 
 /**
@@ -191,6 +193,8 @@ export interface FileEditLockRequest extends BaseMessage {
   fileName: string;
   teamName?: string;
   channelName?: string;
+  directMessage?: boolean;
+  receiverUsername?: string;
 }
 
 /**
@@ -202,6 +206,8 @@ export interface FileEditLockRelease extends BaseMessage {
   fileName: string;
   teamName?: string;
   channelName?: string;
+  directMessage?: boolean;
+  receiverUsername?: string;
 }
 
 /**
@@ -236,6 +242,8 @@ export interface FileUpdateRequest extends BaseMessage {
   content: string;
   teamName?: string;
   channelName?: string;
+  directMessage?: boolean;
+  receiverUsername?: string;
 }
 
 /**
@@ -247,6 +255,11 @@ export interface FileUpdatedNotification extends BaseMessage {
   fileName: string;
   editedBy: string;
   editedAt: string;
+}
+
+export interface FileEditHistoryRequest extends BaseMessage {
+  type: MessageType.GET_FILE_EDIT_HISTORY;
+  messageId: string;
 }
 
 /**
@@ -269,6 +282,7 @@ export type Message =
   | FileEditLockUpdate
   | FileUpdateRequest
   | FileUpdatedNotification
+  | FileEditHistoryRequest
   | BaseMessage;
 
 /**

@@ -135,6 +135,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         isCurrentUser={message.username === username}
                         onContextMenu={onContextMenu}
                         onResend={resendMessage}
+                        selection={selection} // Pass selection to MessageItem
                     />
                 ))
             )}

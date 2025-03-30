@@ -248,3 +248,350 @@
 .editing-indicator.light {
   color: #ff9800;
 }
+
+.editing-indicator {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 5px 10px;
+  background-color: rgba(255, 193, 7, 0.15);
+  border-left: 3px solid #ffc107;
+  border-radius: 3px;
+  margin-top: 5px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.dark .editing-indicator {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #e6e6e6;
+}
+
+.editor-name {
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cancel-button {
+  background-color: #f44336 !important;
+  color: white !important;
+  transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+  background-color: #d32f2f !important;
+}
+
+.dark .cancel-button {
+  background-color: #b71c1c !important;
+}
+
+.dark .cancel-button:hover {
+  background-color: #d32f2f !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Add pulse animation for active editing */
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+.active-editing {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #4caf50;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+.dark .active-editing {
+  background-color: #81c784;
+}
+
+.standalone-tooltip {
+  position: absolute;
+  width: 300px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  font-size: 14px;
+  border: 1px solid #eee;
+  animation: tooltipFadeIn 0.2s ease-in;
+  overflow: visible !important;
+}
+
+.dark .standalone-tooltip {
+  background-color: #333;
+  border-color: #444;
+  color: #ddd;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.tooltip-arrow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid white;
+  z-index: 1001;
+}
+
+.dark .tooltip-arrow {
+  border-top-color: #333;
+}
+
+.tooltip-header {
+  padding: 12px 16px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  background-color: #f9f9f9;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.dark .tooltip-header {
+  background-color: #444;
+  border-bottom-color: #555;
+}
+
+.tooltip-content {
+  padding: 12px 16px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.history-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dark .history-item {
+  border-bottom-color: #444;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-user {
+  font-weight: 600;
+  color: #2196f3;
+  margin-bottom: 4px;
+}
+
+.dark .history-user {
+  color: #64b5f6;
+}
+
+.history-time {
+  font-size: 12px;
+  color: #888;
+}
+
+.dark .history-time {
+  color: #aaa;
+}
+
+/* Edited info styles */
+.edited-info {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted #999;
+  display: inline-block;
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 2px 0;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip-portal {
+  pointer-events: none;
+}
+
+.tooltip-portal > div {
+  pointer-events: auto;
+}
+
+/* Loading indicator in tooltip */
+.loading-indicator {
+  padding: 15px 0;
+  text-align: center;
+  font-style: italic;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark .loading-indicator {
+  color: #aaa;
+}
+
+/* Loading spinner animation */
+.loading-indicator::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border-radius: 50%;
+  border: 2px solid #ddd;
+  border-top-color: #2196f3;
+  animation: spin 1s linear infinite;
+}
+
+.dark .loading-indicator::before {
+  border-color: #444;
+  border-top-color: #64b5f6;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Empty history state */
+.empty-history {
+  padding: 15px 0;
+  text-align: center;
+  font-style: italic;
+  color: #666;
+}
+
+.dark .empty-history {
+  color: #aaa;
+}
+
+/* Image Preview Styles */
+.image-preview-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.image-container {
+  max-width: 100%;
+  text-align: center;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 10px auto;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #3498db;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark theme support */
+.dark .image-container {
+  background-color: #2a2a2a;
+}
+
+.dark .loading-spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: #3498db;
+}
+
+/* Debug information styles */
+.debug-container {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+  width: 100%;
+  max-width: 600px;
+}
+
+.dark .debug-container {
+  background-color: #343a40;
+  border-color: #495057;
+  color: #f8f9fa;
+}
+
+/* Error container styles */
+.error-container {
+  padding: 16px;
+  margin: 10px 0;
+  background-color: #fff3f3;
+  border: 1px solid #ffcccc;
+  border-radius: 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dark .error-container {
+  background-color: #3a2222;
+  border-color: #5c3333;
+  color: #f8f9fa;
+}

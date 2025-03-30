@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../Styles/Settings.css';
 import { FaEye, FaEyeSlash, FaMoon, FaSun } from 'react-icons/fa';
@@ -16,7 +16,6 @@ const languages = {
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  // Use the UserContext
   const { userData, updateUsername, refreshUserData } = useUser();
 
   const [newUsername, setNewUsername] = useState('');
@@ -33,19 +32,54 @@ const Settings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
+  // Use this flag to ensure we only attempt to fetch user data once
+  const hasAttemptedFetch = useRef(false);
+  // Track navigation to prevent further API calls after redirecting
+  const hasNavigatedAway = useRef(false);
 
-    // Refresh user data from server when component mounts
-    refreshUserData().catch(error => {
-      console.error('Error refreshing user data:', error);
-      navigate('/login');
-    });
-  }, [navigate, refreshUserData]);
+  useEffect(() => {
+    // Check token and fetch data only on initial mount
+    const initializeComponent = async () => {
+      const token = localStorage.getItem('token');
+
+      // If no token, redirect immediately
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // If we've already attempted to fetch or navigated away, stop
+      if (hasAttemptedFetch.current || hasNavigatedAway.current) {
+        return;
+      }
+
+      // Mark that we've attempted to fetch
+      hasAttemptedFetch.current = true;
+
+      try {
+        // Try to fetch user data
+        await refreshUserData();
+        // Success! No need to do anything else
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+        // Clear the token if it's invalid
+        localStorage.removeItem('token');
+
+        // Check if component is still mounted before navigating
+        if (!hasNavigatedAway.current) {
+          hasNavigatedAway.current = true;
+          navigate('/login');
+        }
+      }
+    };
+
+    initializeComponent();
+
+    // Cleanup function
+    return () => {
+      hasNavigatedAway.current = true;
+    };
+  }, [navigate, refreshUserData]); // Dependencies remain the same
 
   const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
 
@@ -72,7 +106,9 @@ const Settings: React.FC = () => {
     return '';
   };
 
-  const handleUsernameUpdate = async () => {
+  const handleUsernameUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     if (!userData || !userData.username) {
       setUsernameError('User data not available');
       return;
@@ -111,7 +147,9 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handlePasswordUpdate = async () => {
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     const passwordValidation = validatePassword(newPassword, oldPassword, confirmPassword);
     if (passwordValidation) {
       setPasswordError(passwordValidation);
@@ -137,6 +175,11 @@ const Settings: React.FC = () => {
     }
   };
 
+  // Redirect if we don't have userData after trying to fetch
+  if (hasAttemptedFetch.current && !userData) {
+    return null; // Don't render anything while redirecting
+  }
+
   return (
     <div className="settings-container">
       <h2 className="settings-title">Settings</h2>
@@ -147,133 +190,137 @@ const Settings: React.FC = () => {
       <div className="settings-boxes">
         <div className="settings-card">
           <div className="settings-section-title">Change Username</div>
-          <div className="username-input-group">
-            <label>Current Username</label>
-            <input
-              type="text"
-              className="username-input"
-              value={userData?.username || ''}
-              readOnly
-              style={{ backgroundColor: '#f5f5f5' }}
-            />
-          </div>
-          <div className="username-input-group">
-            <label>New Username</label>
-            <input
-              type="text"
-              className="username-input"
-              placeholder="Enter new username"
-              value={newUsername}
-              onChange={e => {
-                setNewUsername(e.target.value);
-                setUsernameError('');
-              }}
-            />
-          </div>
-          <div className="settings-input-group">
-            <label>Current Password (for verification)</label>
-            <div className="password-container">
+          <form onSubmit={handleUsernameUpdate}>
+            <div className="username-input-group">
+              <label>Current Username</label>
               <input
-                type={showOldPassword ? 'text' : 'password'}
-                className="settings-input password-input"
-                placeholder="Enter current password"
-                value={oldPassword}
+                type="text"
+                className="username-input"
+                value={userData?.username || ''}
+                readOnly
+                style={{ backgroundColor: '#f5f5f5' }}
+              />
+            </div>
+            <div className="username-input-group">
+              <label>New Username</label>
+              <input
+                type="text"
+                className="username-input"
+                placeholder="Enter new username"
+                value={newUsername}
                 onChange={e => {
-                  setOldPassword(e.target.value);
+                  setNewUsername(e.target.value);
                   setUsernameError('');
                 }}
               />
-              <span
-                className="password-toggle"
-                onClick={() => setShowOldPassword(!showOldPassword)}
-              >
-                {showOldPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
             </div>
-            {usernameError && <p className="input-error">{usernameError}</p>}
-          </div>
-          <button
-            className="settings-button save"
-            onClick={handleUsernameUpdate}
-            disabled={isLoading || !newUsername || !oldPassword}
-          >
-            {isLoading ? 'Updating...' : 'Update Username'}
-          </button>
+            <div className="settings-input-group">
+              <label>Current Password (for verification)</label>
+              <div className="password-container">
+                <input
+                  type={showOldPassword ? 'text' : 'password'}
+                  className="settings-input password-input"
+                  placeholder="Enter current password"
+                  value={oldPassword}
+                  onChange={e => {
+                    setOldPassword(e.target.value);
+                    setUsernameError('');
+                  }}
+                />
+                <span
+                  className="password-toggle"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                >
+                  {showOldPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+              {usernameError && <p className="input-error">{usernameError}</p>}
+            </div>
+            <button
+              type="submit"
+              className="settings-button save"
+              disabled={isLoading || !newUsername || !oldPassword}
+            >
+              {isLoading ? 'Updating...' : 'Update Username'}
+            </button>
+          </form>
         </div>
 
         <div className="settings-card">
           <div className="settings-section-title">Change Password</div>
-          <div className="settings-input-group">
-            <label>Current Password</label>
-            <div className="password-container">
-              <input
-                type={showOldPassword ? 'text' : 'password'}
-                className="settings-input password-input"
-                placeholder="Enter current password"
-                value={oldPassword}
-                onChange={e => {
-                  setOldPassword(e.target.value);
-                  setPasswordError('');
-                }}
-              />
-              <span
-                className="password-toggle"
-                onClick={() => setShowOldPassword(!showOldPassword)}
-              >
-                {showOldPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
+          <form onSubmit={handlePasswordUpdate}>
+            <div className="settings-input-group">
+              <label>Current Password</label>
+              <div className="password-container">
+                <input
+                  type={showOldPassword ? 'text' : 'password'}
+                  className="settings-input password-input"
+                  placeholder="Enter current password"
+                  value={oldPassword}
+                  onChange={e => {
+                    setOldPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                />
+                <span
+                  className="password-toggle"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                >
+                  {showOldPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="settings-input-group">
-            <label>New Password</label>
-            <div className="password-container">
-              <input
-                type={showNewPassword ? 'text' : 'password'}
-                className="settings-input password-input"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={e => {
-                  setNewPassword(e.target.value);
-                  setPasswordError('');
-                }}
-              />
-              <span
-                className="password-toggle"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-              >
-                {showNewPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
+            <div className="settings-input-group">
+              <label>New Password</label>
+              <div className="password-container">
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  className="settings-input password-input"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChange={e => {
+                    setNewPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                />
+                <span
+                  className="password-toggle"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="settings-input-group">
-            <label>Confirm New Password</label>
-            <div className="password-container">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                className="settings-input password-input"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={e => {
-                  setConfirmPassword(e.target.value);
-                  setPasswordError('');
-                }}
-              />
-              <span
-                className="password-toggle"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
+            <div className="settings-input-group">
+              <label>Confirm New Password</label>
+              <div className="password-container">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="settings-input password-input"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={e => {
+                    setConfirmPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                />
+                <span
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+              {passwordError && <p className="input-error">{passwordError}</p>}
             </div>
-            {passwordError && <p className="input-error">{passwordError}</p>}
-          </div>
-          <button
-            className="settings-button save"
-            onClick={handlePasswordUpdate}
-            disabled={isLoading || !oldPassword || !newPassword || !confirmPassword}
-          >
-            {isLoading ? 'Updating...' : 'Update Password'}
-          </button>
+            <button
+              type="submit"
+              className="settings-button save"
+              disabled={isLoading || !oldPassword || !newPassword || !confirmPassword}
+            >
+              {isLoading ? 'Updating...' : 'Update Password'}
+            </button>
+          </form>
         </div>
       </div>
 

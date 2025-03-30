@@ -2,11 +2,12 @@
 import * as fs from 'fs';
 import { createLogger } from '../utils/logger';
 import fileStorageService from './fileStorageService';
-import { Message } from '../models/Message';
-import DMessage from '../models/DMessage';
+import { Message, IMessage } from '../models/Message';
+import DMessage, { IDMessage } from '../models/DMessage';
 import { Types } from 'mongoose';
 import path from 'path';
 import { promisify } from 'util';
+import * as crypto from 'crypto';
 
 const logger = createLogger('FileEditingService');
 const writeFileAsync = promisify(fs.writeFile);
@@ -244,7 +245,8 @@ class FileEditingService {
     public async updateFileContent(
         messageId: string,
         username: string,
-        content: string
+        content: string,
+        description?: string
     ): Promise<{ success: boolean; fileName: string }> {
         const lockKey = this.getLockKey(messageId);
         const existingLock = this.activeLocks.get(lockKey);
@@ -261,27 +263,76 @@ class FileEditingService {
         }
 
         try {
+            // Generate a simple content hash to detect significant changes
+            const contentHash = crypto
+                .createHash('md5')
+                .update(content)
+                .digest('hex');
+
+            // Current file size
+            const fileSize = content.length;
+
+            // Create history entry
+            const historyEntry = {
+                username,
+                timestamp: new Date(),
+                description: description || 'Updated file content',
+                contentHash,
+                fileSize
+            };
+
             // Write the updated content to the file
             await writeFileAsync(filePath, content, 'utf8');
 
             // Update the message to indicate it's been edited
             let updated = false;
+            let updatedMessage: IMessage | IDMessage | null = null;
 
             // Check if it's a channel message
             const channelMessage = await Message.findById(messageId);
             if (channelMessage) {
+                // Update the single edit reference (backward compatibility)
                 channelMessage.editedBy = username;
                 channelMessage.editedAt = new Date();
-                await channelMessage.save();
+
+                // Add to edit history
+                if (!channelMessage.editHistory) {
+                    channelMessage.editHistory = [];
+                }
+                channelMessage.editHistory.push(historyEntry);
+
+                updatedMessage = await channelMessage.save();
                 updated = true;
+
+                logger.info('Updated channel message after file edit', {
+                    messageId,
+                    username,
+                    fileName,
+                    historyLength: channelMessage.editHistory.length
+                });
             } else {
                 // Check if it's a direct message
                 const directMessage = await DMessage.findById(messageId);
                 if (directMessage) {
+                    // Update the single edit reference (backward compatibility)
                     directMessage.editedBy = username;
                     directMessage.editedAt = new Date();
-                    await directMessage.save();
+
+                    // Add to edit history
+                    if (!directMessage.editHistory) {
+                        directMessage.editHistory = [];
+                    }
+                    directMessage.editHistory.push(historyEntry);
+
+                    updatedMessage = await directMessage.save();
                     updated = true;
+
+                    logger.info('Updated direct message after file edit', {
+                        messageId,
+                        username,
+                        fileName,
+                        historyLength: directMessage.editHistory.length
+                    });
                 }
             }
 

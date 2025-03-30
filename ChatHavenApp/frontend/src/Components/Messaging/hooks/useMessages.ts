@@ -666,11 +666,13 @@ export function useMessages(selection: Selection | null, username: string) {
                         messageId: msg._id,
                         clientMessageId: msg.clientMessageId,
                         oldFileUrl: msg.fileUrl,
-                        newFileUrl: data.fileUrl
+                        newFileUrl: data.fileUrl,
+                        newMessageId: data.messageId
                     });
 
                     return {
                         ...msg,
+                        _id: data.messageId || msg._id, // Ensure we have the server-assigned ID
                         fileUrl: data.fileUrl,
                         status: 'sent'
                     };
@@ -682,18 +684,47 @@ export function useMessages(selection: Selection | null, username: string) {
 
     // Process file updates
     const processFileUpdated = useCallback((data: any) => {
+        console.log('File update notification received:', data);
+
         // Find and update the message with edited file information
-        setMessages(prev =>
-            prev.map(msg =>
-                msg._id === data.messageId
-                    ? {
+        setMessages(prev => {
+            const updatedMessages = prev.map(msg => {
+                if (msg._id === data.messageId) {
+                    console.log('Updating message with edited file info:', {
+                        messageId: data.messageId,
+                        editedBy: data.editedBy,
+                        editedAt: data.editedAt,
+                        prevMessage: msg
+                    });
+
+                    return {
                         ...msg,
                         editedBy: data.editedBy,
-                        editedAt: new Date(data.editedAt)
-                    }
-                    : msg
-            )
-        );
+                        editedAt: new Date(data.editedAt),
+                        // Force refresh of fileUrl to bust cache
+                        fileUrl: msg.fileUrl?.includes('?')
+                            ? msg.fileUrl.split('?')[0] + '?t=' + Date.now()
+                            : msg.fileUrl + '?t=' + Date.now()
+                    };
+                }
+                return msg;
+            });
+
+            // If no message was updated but we received this event,
+            // it might be that we need to force a refresh of the message list
+            const wasUpdated = updatedMessages.some(msg =>
+                msg._id === data.messageId && msg.editedBy === data.editedBy
+            );
+
+            if (!wasUpdated) {
+                console.warn('File update notification received but message not found in state:', {
+                    messageId: data.messageId,
+                    messagesInState: prev.map(m => m._id)
+                });
+            }
+
+            return updatedMessages;
+        });
     }, []);
 
     // Cleanup on unmount or when selection changes
