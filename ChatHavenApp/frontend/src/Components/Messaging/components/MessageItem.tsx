@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../../Context/ThemeContext.tsx';
 import MessageStatusIndicator from '../../UI/MessageStatusIndicator.tsx';
-import FileAttachment from '../../UI/FileAttachment.tsx';
+import FileAttachment from '../../UI/FileAttachment/index.tsx';
 import QuotedMessage from './QuotedMessage.tsx';
 import { ChatMessage, Selection } from '../../../types/shared.ts';
 import styles from '../../../Styles/dashboardStyles.ts';

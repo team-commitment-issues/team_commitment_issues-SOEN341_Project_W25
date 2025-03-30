@@ -335,36 +335,24 @@
   background-color: #81c784;
 }
 
-.edited-info {
-  position: relative;
-  cursor: help;
-  border-bottom: 1px dotted #999;
-  display: inline-block;
-}
-
-.edit-history-tooltip {
+.standalone-tooltip {
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 10px;
   width: 300px;
-  max-height: 300px;
-  overflow-y: auto;
   background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   z-index: 1000;
   font-size: 14px;
   border: 1px solid #eee;
-  animation: fadeIn 0.2s ease-in;
+  animation: tooltipFadeIn 0.2s ease-in;
+  overflow: visible !important;
 }
 
-.dark .edit-history-tooltip {
+.dark .standalone-tooltip {
   background-color: #333;
   border-color: #444;
   color: #ddd;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .tooltip-arrow {
@@ -377,6 +365,7 @@
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
   border-top: 10px solid white;
+  z-index: 1001;
 }
 
 .dark .tooltip-arrow {
@@ -384,12 +373,12 @@
 }
 
 .tooltip-header {
-  padding: 10px;
+  padding: 12px 16px;
   font-weight: bold;
   border-bottom: 1px solid #eee;
   background-color: #f9f9f9;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
 }
 
 .dark .tooltip-header {
@@ -398,7 +387,7 @@
 }
 
 .tooltip-content {
-  padding: 10px;
+  padding: 12px 16px;
   max-height: 250px;
   overflow-y: auto;
 }
@@ -419,7 +408,7 @@
 .history-user {
   font-weight: 600;
   color: #2196f3;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .dark .history-user {
@@ -435,13 +424,32 @@
   color: #aaa;
 }
 
-@keyframes fadeIn {
+/* Edited info styles */
+.edited-info {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted #999;
+  display: inline-block;
+  font-size: 12px;
+  margin-top: 4px;
+  padding: 2px 0;
+}
+
+@keyframes tooltipFadeIn {
   from {
     opacity: 0;
-    transform: translate(-50%, 5px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
+}
+
+.tooltip-portal {
+  pointer-events: none;
+}
+
+.tooltip-portal > div {
+  pointer-events: auto;
 }
