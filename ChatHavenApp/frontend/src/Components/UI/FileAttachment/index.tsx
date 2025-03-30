@@ -1,5 +1,5 @@
 // Components/UI/FileAttachment/index.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../../../Context/ThemeContext.tsx';
 import { useUser } from '../../../Context/UserContext.tsx';
 import FileEditor from '../FileEditor.tsx';
@@ -53,6 +53,17 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const [fileVersion, setFileVersion] = useState(Date.now());
     const [showHistoryTooltip, setShowHistoryTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const [historyFetched, setHistoryFetched] = useState(false);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+    const [isLoadingContent, setIsLoadingContent] = useState(false);
+
+    // Timeout refs for hover intent and debouncing
+    const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Delay constants
+    const hoverIntentDelay = 300; // milliseconds to wait before showing tooltip
+    const debounceDelay = 500;    // milliseconds between API calls
 
     // Custom hooks
     const {
@@ -83,6 +94,20 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         username,
         selection
     });
+
+    // Create a function to fetch history that respects the "already fetched" state
+    const fetchHistoryIfNeeded = useCallback(() => {
+        if (!historyFetched) {
+            console.log('Fetching edit history');
+            setIsHistoryLoading(true);
+            Promise.resolve(fetchEditHistory()).finally(() => {
+                setHistoryFetched(true);
+                setIsHistoryLoading(false);
+            });
+        } else {
+            console.log('Edit history already fetched, skipping request');
+        }
+    }, [fetchEditHistory, historyFetched]);
 
     // Update tooltip position when visibility changes
     useEffect(() => {
@@ -131,6 +156,9 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
                 // Clear cached content to force reload on next view
                 clearContent();
+
+                // Set history fetched to false to allow re-fetching
+                setHistoryFetched(false);
 
                 // Update edited by information
                 if (data.editedBy) {
@@ -183,11 +211,39 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
     const handleOpenFile = async () => {
         if (isTextFile(fileName) && !textContent && !showPreview) {
-            await fetchContent();
-            setShowPreview(true);
+            setIsLoadingContent(true);
+            try {
+                await fetchContent();
+                setShowPreview(true);
+            } catch (error) {
+                console.error('Error loading file content:', error);
+            } finally {
+                setIsLoadingContent(false);
+            }
         } else {
             setShowPreview(!showPreview);
         }
+    };
+
+    // Handler for the edit button that ensures content is loaded first
+    const handleEditRequest = async () => {
+        // If content hasn't been loaded yet, fetch it first
+        if (!textContent && isTextFile(fileName)) {
+            console.log('Loading file content before editing...');
+            setIsLoadingContent(true);
+            try {
+                await fetchContent();
+            } catch (error) {
+                console.error('Error loading file content for editing:', error);
+                alert('Could not load file content for editing. Please try again.');
+                setIsLoadingContent(false);
+                return;
+            }
+            setIsLoadingContent(false);
+        }
+
+        // Now request the edit lock
+        requestEditLock();
     };
 
     // Is text file and eligible for editing
@@ -202,11 +258,41 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const showEditButton = isTextFile(fileName) && messageId && uploadStatus === 'completed';
 
     const handleMouseEnter = () => {
-        fetchEditHistory();
-        setShowHistoryTooltip(true);
+        // Clear any existing hover timeout
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+        }
+
+        // Set a new timeout for hover intent
+        hoverTimeoutRef.current = setTimeout(() => {
+            // Show the tooltip immediately
+            setShowHistoryTooltip(true);
+
+            // Clear any existing debounce timeout
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+
+            // Set a new debounce timeout for the API call
+            debounceTimeoutRef.current = setTimeout(() => {
+                fetchHistoryIfNeeded();
+            }, debounceDelay);
+        }, hoverIntentDelay);
     };
 
     const handleMouseLeave = () => {
+        // Clear the hover timeout if mouse leaves before delay
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+
+        // Clear any pending debounce timeout
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+            debounceTimeoutRef.current = null;
+        }
+
         setShowHistoryTooltip(false);
     };
 
@@ -236,7 +322,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
 
                 {isImageFile(fileType) ? (
                     <button
-                        className={`file-button ${theme} ${(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '' || loading) ? 'button-disabled' : ''}`}
+                        className={`file-button ${theme} ${(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '' || loading || isLoadingContent) ? 'button-disabled' : ''}`}
                         onClick={() => {
                             if (!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') {
                                 alert('File is still uploading, please wait...');
@@ -244,7 +330,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                             }
                             setShowPreview(!showPreview);
                         }}
-                        disabled={loading || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
+                        disabled={loading || isLoadingContent || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
                     >
                         {fileUrl && fileUrl !== '#pending-upload' && fileUrl !== ''
                             ? (showPreview ? 'Hide' : 'View')
@@ -253,11 +339,11 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 ) : isTextFile(fileName) ? (
                     <>
                         <button
-                            className={`file-button ${theme} ${(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '' || loading) ? 'button-disabled' : ''}`}
+                            className={`file-button ${theme} ${(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '' || loading || isLoadingContent) ? 'button-disabled' : ''}`}
                             onClick={handleOpenFile}
-                            disabled={loading || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
+                            disabled={loading || isLoadingContent || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
                         >
-                            {loading ? 'Loading...' :
+                            {loading || isLoadingContent ? 'Loading...' :
                                 (!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? 'Uploading...' :
                                     (showPreview ? 'Close' : 'Open')}
                         </button>
@@ -266,12 +352,12 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                             {/* Edit button - only show if no one is editing and file is ready */}
                             {showEditButton && !editLock && (
                                 <button
-                                    className={`file-button edit-button ${theme} ${(!canEdit || editLoading) ? 'button-disabled' : ''}`}
-                                    onClick={requestEditLock}
-                                    disabled={!canEdit || editLoading}
+                                    className={`file-button edit-button ${theme} ${(!canEdit || editLoading || isLoadingContent) ? 'button-disabled' : ''}`}
+                                    onClick={handleEditRequest}
+                                    disabled={!canEdit || editLoading || isLoadingContent}
                                     title="Edit file content"
                                 >
-                                    {editLoading ? 'Loading...' : 'Edit'}
+                                    {editLoading || isLoadingContent ? 'Loading...' : 'Edit'}
                                 </button>
                             )}
 
@@ -313,7 +399,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             {uploadStatus !== 'completed' && <UploadStatusIndicator status={uploadStatus} />}
 
             {/* Tooltip rendered at the root level instead of nested */}
-            {showHistoryTooltip && editHistory && editHistory.length > 0 && (
+            {showHistoryTooltip && (
                 <div
                     className="tooltip-portal"
                     style={{
@@ -336,8 +422,9 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                         }}
                     >
                         <EditHistoryTooltip
-                            history={editHistory}
+                            history={editHistory || []}
                             visible={showHistoryTooltip}
+                            loading={isHistoryLoading || (!historyFetched && editHistory === null)}
                         />
                     </div>
                 </div>
@@ -351,7 +438,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                     fileUrl={fileUrl}
                     fileVersion={fileVersion}
                     textContent={textContent}
-                    loading={loading}
+                    loading={loading || isLoadingContent}
                 />
             )}
 
