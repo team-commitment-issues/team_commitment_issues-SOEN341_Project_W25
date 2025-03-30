@@ -15,7 +15,7 @@ import onlineStatusRoutes from './routes/onlineStatusRoutes';
 import fileRoutes from './routes/fileRoutes';
 import path from 'path';
 import { defaultHttpRateLimiter } from './utils/httpRateLimiter';
-import { setupWebSocketServer } from './webSocketServer';
+import { setupWebSocketServer } from './websocket/server';
 import scheduleStatusCleanup from './statusCleanup';
 
 // Verify critical environment variables early

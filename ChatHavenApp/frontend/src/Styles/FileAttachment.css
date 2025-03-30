@@ -1,0 +1,250 @@
+/* FileAttachment.css */
+
+.file-attachment-container {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.file-attachment-container.dark {
+  border: 1px solid #444;
+  background-color: #2a2a2a;
+}
+
+.file-attachment-container.light {
+  border: 1px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  transition: border-bottom 0.2s;
+}
+
+.file-info.preview-visible.dark {
+  border-bottom: 1px solid #444;
+}
+
+.file-info.preview-visible.light {
+  border-bottom: 1px solid #ddd;
+}
+
+.file-icon {
+  margin-right: 8px;
+  font-size: 20px;
+}
+
+.file-details {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+.file-name.dark {
+  color: #ddd;
+}
+
+.file-name.light {
+  color: #333;
+}
+
+.file-size {
+  font-size: 12px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.file-size.dark {
+  color: #aaa;
+}
+
+.file-size.light {
+  color: #777;
+}
+
+.file-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 13px;
+  margin-left: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.file-button.dark {
+  color: #7ab4fa;
+}
+
+.file-button.light {
+  color: #0066cc;
+}
+
+.file-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.file-button.dark:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.edit-button.dark {
+  color: #ffab40;
+}
+
+.edit-button.light {
+  color: #ff9800;
+}
+
+.button-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-disabled:hover {
+  background-color: transparent;
+}
+
+.file-download-link {
+  text-decoration: none;
+}
+
+/* Status indicators */
+.upload-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.status-pending.dark {
+  background-color: #333;
+  color: #aaa;
+}
+
+.status-pending.light {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.status-error.dark {
+  background-color: #3f1f1f;
+  color: #ff9999;
+}
+
+.status-error.light {
+  background-color: #fff0f0;
+  color: #990000;
+}
+
+/* Preview section */
+.text-preview {
+  padding: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 13px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.text-preview.dark {
+  background-color: #1e1e1e;
+  color: #ddd;
+}
+
+.text-preview.light {
+  background-color: #fff;
+  color: #333;
+}
+
+.image-container {
+  padding: 8px;
+  text-align: center;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+}
+
+.centered-text {
+  text-align: center;
+}
+
+.error-container {
+  padding: 20px;
+  text-align: center;
+}
+
+.error-container.dark {
+  background-color: #2a2a2a;
+  color: #f87c7c;
+}
+
+.error-container.light {
+  background-color: #f8f8f8;
+  color: #d32f2f;
+}
+
+.debug-container {
+  padding: 10px;
+  font-size: 12px;
+}
+
+.debug-container.dark {
+  background-color: #333;
+  color: #ccc;
+  border-top: 1px solid #444;
+}
+
+.debug-container.light {
+  background-color: #eee;
+  color: #555;
+  border-top: 1px solid #ddd;
+}
+
+.edited-info {
+  font-size: 11px;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.edited-info.dark {
+  color: #aaa;
+}
+
+.edited-info.light {
+  color: #666;
+}
+
+.editing-indicator {
+  font-size: 11px;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.editing-indicator.dark {
+  color: #ffab40;
+}
+
+.editing-indicator.light {
+  color: #ff9800;
+}
