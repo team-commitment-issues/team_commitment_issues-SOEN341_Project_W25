@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import UserList from '../Components/userList.tsx';
 import TeamList from '../Components/TeamList.tsx';
 import ChannelList from '../Components/ChannelList.tsx';
-import Messaging from '../Components/Messaging.tsx';
+import Messaging from '../Components/Messaging/index.tsx';
 import styles from '../Styles/dashboardStyles.ts';
 import TeamMemberList from '../Components/teamMemberList.tsx';
 import { useTheme } from '../Context/ThemeContext.tsx';

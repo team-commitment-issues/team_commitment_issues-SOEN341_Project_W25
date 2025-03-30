@@ -4,6 +4,7 @@ import { useTheme } from '../../Context/ThemeContext.tsx';
 import FileEditor from './FileEditor.tsx';
 import { useUser } from '../../Context/UserContext.tsx';
 import WebSocketClient from '../../Services/webSocketClient.ts';
+import '../../Styles/FileAttachment.css';
 
 interface FileAttachmentProps {
     fileName: string;
@@ -118,29 +119,13 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
     const UploadStatusIndicator = () => {
         if (uploadStatus === 'pending') {
             return (
-                <div style={{
-                    padding: '4px 8px',
-                    backgroundColor: theme === 'dark' ? '#333' : '#f0f0f0',
-                    color: theme === 'dark' ? '#aaa' : '#666',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    marginTop: '8px',
-                    textAlign: 'center'
-                }}>
+                <div className={`upload-status status-pending ${theme}`}>
                     <span>Uploading... Please wait</span>
                 </div>
             );
         } else if (uploadStatus === 'error') {
             return (
-                <div style={{
-                    padding: '4px 8px',
-                    backgroundColor: theme === 'dark' ? '#3f1f1f' : '#fff0f0',
-                    color: theme === 'dark' ? '#ff9999' : '#990000',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    marginTop: '8px',
-                    textAlign: 'center'
-                }}>
+                <div className={`upload-status status-error ${theme}`}>
                     <span>Upload failed. Try again.</span>
                 </div>
             );
@@ -358,9 +343,6 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         };
     }, [messageId, username, textContent, wsService, releaseEditLock, fetchFileContent]);
 
-    // Function to fetch file content for editing
-
-
     useEffect(() => {
         const fetchImageInEffect = async () => {
             if (isFetchingRef.current) {
@@ -550,107 +532,16 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         releaseEditLock();
     };
 
-    const containerStyle: React.CSSProperties = {
-        marginTop: '8px',
-        marginBottom: '8px',
-        borderRadius: '4px',
-        overflow: 'hidden',
-        border: `1px solid ${theme === 'dark' ? '#444' : '#ddd'}`,
-        backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f5f5f5',
-    };
+    // Is text file and eligible for editing
+    const canEdit = isTextFile(fileName) &&
+        uploadStatus === 'completed' &&
+        fileUrl &&
+        fileUrl !== '#pending-upload' &&
+        fileUrl !== '' &&
+        (!editLock || editLock.username === username);
 
-    const fileInfoStyle: React.CSSProperties = {
-        display: 'flex',
-        alignItems: 'center',
-        padding: '8px 12px',
-        borderBottom: showPreview ? `1px solid ${theme === 'dark' ? '#444' : '#ddd'}` : 'none',
-    };
-
-    const fileIconStyle: React.CSSProperties = {
-        marginRight: '8px',
-        fontSize: '20px',
-    };
-
-    const fileNameStyle: React.CSSProperties = {
-        flexGrow: 1,
-        fontSize: '14px',
-        fontWeight: 500,
-        color: theme === 'dark' ? '#ddd' : '#333',
-        textOverflow: 'ellipsis',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        position: 'relative',
-    };
-
-    const fileSizeStyle: React.CSSProperties = {
-        fontSize: '12px',
-        color: theme === 'dark' ? '#aaa' : '#777',
-        marginLeft: '8px',
-        whiteSpace: 'nowrap',
-    };
-
-    const buttonStyle: React.CSSProperties = {
-        backgroundColor: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        color: theme === 'dark' ? '#7ab4fa' : '#0066cc',
-        padding: '4px 8px',
-        fontSize: '13px',
-        marginLeft: '8px',
-        borderRadius: '4px',
-    };
-
-    const editButtonStyle: React.CSSProperties = {
-        ...buttonStyle,
-        color: theme === 'dark' ? '#ffab40' : '#ff9800',
-    };
-
-    const disabledButtonStyle: React.CSSProperties = {
-        ...buttonStyle,
-        opacity: 0.5,
-        cursor: 'not-allowed',
-    };
-
-    const textPreviewStyle: React.CSSProperties = {
-        padding: '10px',
-        maxHeight: '300px',
-        overflowY: 'auto',
-        backgroundColor: theme === 'dark' ? '#1e1e1e' : '#fff',
-        color: theme === 'dark' ? '#ddd' : '#333',
-        fontSize: '13px',
-        fontFamily: 'monospace',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-    };
-
-    const errorContainerStyle: React.CSSProperties = {
-        padding: '20px',
-        textAlign: 'center',
-        backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f8f8f8',
-        color: theme === 'dark' ? '#f87c7c' : '#d32f2f',
-    };
-
-    const debugContainerStyle: React.CSSProperties = {
-        padding: '10px',
-        fontSize: '12px',
-        backgroundColor: theme === 'dark' ? '#333' : '#eee',
-        color: theme === 'dark' ? '#ccc' : '#555',
-        borderTop: `1px solid ${theme === 'dark' ? '#444' : '#ddd'}`,
-    };
-
-    const editedByStyle: React.CSSProperties = {
-        fontSize: '11px',
-        color: theme === 'dark' ? '#aaa' : '#666',
-        marginTop: '2px',
-        fontStyle: 'italic',
-    };
-
-    const editingIndicatorStyle: React.CSSProperties = {
-        fontSize: '11px',
-        color: theme === 'dark' ? '#ffab40' : '#ff9800',
-        marginTop: '2px',
-        fontStyle: 'italic',
-    };
+    // Determine if we should show edit button
+    const showEditButton = isTextFile(fileName) && messageId && uploadStatus === 'completed';
 
     const getFileIcon = () => {
         if (isImageFile(fileType)) return '🖼️';
@@ -664,39 +555,28 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
         return '📎';
     };
 
-    // Is text file and eligible for editing
-    const canEdit = isTextFile(fileName) &&
-        uploadStatus === 'completed' &&
-        fileUrl &&
-        fileUrl !== '#pending-upload' &&
-        fileUrl !== '' &&
-        (!editLock || editLock.username === username);
-
-    // Determine if we should show edit button
-    const showEditButton = isTextFile(fileName) && messageId && uploadStatus === 'completed';
-
     return (
-        <div style={containerStyle}>
-            <div style={fileInfoStyle}>
-                <div style={fileIconStyle}>{getFileIcon()}</div>
-                <div>
-                    <div style={fileNameStyle}>{fileName}</div>
+        <div className={`file-attachment-container ${theme}`}>
+            <div className={`file-info ${showPreview ? 'preview-visible' : ''} ${theme}`}>
+                <div className="file-icon">{getFileIcon()}</div>
+                <div className="file-details">
+                    <div className={`file-name ${theme}`}>{fileName}</div>
                     {editedBy && !editLock && (
-                        <div style={editedByStyle} title={editedAt ? `Last edited on ${editedAt.toLocaleString()}` : ''}>
+                        <div className={`edited-info ${theme}`} title={editedAt ? `Last edited on ${editedAt.toLocaleString()}` : ''}>
                             Edited by {editedBy}
                         </div>
                     )}
                     {editLock && editLock.username !== username && (
-                        <div style={editingIndicatorStyle}>
+                        <div className={`editing-indicator ${theme}`}>
                             Currently being edited by {editLock.username}
                         </div>
                     )}
                 </div>
-                {fileSize && <div style={fileSizeStyle}>{formatFileSize(fileSize)}</div>}
+                {fileSize && <div className={`file-size ${theme}`}>{formatFileSize(fileSize)}</div>}
 
                 {isImageFile(fileType) ? (
                     <button
-                        style={buttonStyle}
+                        className={`file-button ${theme} ${(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '' || loading) ? 'button-disabled' : ''}`}
                         onClick={() => {
                             if (showPreview) {
                                 hasAttemptedFetchRef.current = false;
@@ -716,7 +596,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 ) : isTextFile(fileName) ? (
                     <>
                         <button
-                            style={buttonStyle}
+                            className={`file-button ${theme} ${(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '' || loading) ? 'button-disabled' : ''}`}
                             onClick={handleOpenFile}
                             disabled={loading || !fileUrl || fileUrl === '#pending-upload' || fileUrl === ''}
                         >
@@ -728,7 +608,7 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                         {/* Edit button for text files */}
                         {showEditButton && (
                             <button
-                                style={canEdit ? editButtonStyle : disabledButtonStyle}
+                                className={`file-button edit-button ${theme} ${!canEdit || editLoading || isEditing ? 'button-disabled' : ''}`}
                                 onClick={requestEditLock}
                                 disabled={!canEdit || editLoading || isEditing}
                                 title={
@@ -744,8 +624,8 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                 ) : (
                     <a
                         href={(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? '#' : getAuthenticatedUrl(fileUrl)}
+                        className={`file-button file-download-link ${theme} ${(!fileUrl || fileUrl === '#pending-upload' || fileUrl === '') ? 'button-disabled' : ''}`}
                         download={fileName}
-                        style={{ ...buttonStyle, textDecoration: 'none' }}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => {
@@ -766,38 +646,35 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
             {showPreview && !isEditing && (
                 <div>
                     {isImageFile(fileType) && !imageError && !loading && imageBlob && (
-                        <div style={{ padding: '8px', textAlign: 'center' }}>
+                        <div className="image-container">
                             <img
                                 src={imageBlob}
                                 alt={fileName}
-                                style={{
-                                    maxWidth: '100%',
-                                    maxHeight: '300px',
-                                    objectFit: 'contain'
-                                }}
+                                className="preview-image"
                             />
                         </div>
                     )}
 
                     {isImageFile(fileType) && loading && (
-                        <div style={{ ...textPreviewStyle, textAlign: 'center' }}>
+                        <div className={`text-preview ${theme} centered-text`}>
                             Loading image...
                         </div>
                     )}
 
                     {isImageFile(fileType) && imageError && (
-                        <div style={errorContainerStyle}>
+                        <div className={`error-container ${theme}`}>
                             <div style={{ marginBottom: '10px' }}>Failed to load image</div>
                             <button
-                                style={{ ...buttonStyle, marginRight: '10px' }}
+                                className={`file-button ${theme}`}
                                 onClick={handleRetry}
+                                style={{ marginRight: '10px' }}
                             >
                                 Try Again
                             </button>
                             <a
                                 href={getAuthenticatedUrl(fileUrl)}
+                                className={`file-button file-download-link ${theme}`}
                                 download={fileName}
-                                style={{ ...buttonStyle, textDecoration: 'none' }}
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
@@ -807,18 +684,18 @@ const FileAttachment: React.FC<FileAttachmentProps> = ({
                     )}
 
                     {isTextFile(fileName) && textContent && (
-                        <div style={textPreviewStyle}>{textContent}</div>
+                        <div className={`text-preview ${theme}`}>{textContent}</div>
                     )}
 
                     {isTextFile(fileName) && loading && (
-                        <div style={{ ...textPreviewStyle, textAlign: 'center' }}>
+                        <div className={`text-preview ${theme} centered-text`}>
                             Loading content...
                         </div>
                     )}
 
                     {/* Debug information for images */}
                     {isImageFile(fileType) && debugInfo && (
-                        <div style={debugContainerStyle}>
+                        <div className={`debug-container ${theme}`}>
                             <strong>Debug Info:</strong> {debugInfo}
                         </div>
                     )}
