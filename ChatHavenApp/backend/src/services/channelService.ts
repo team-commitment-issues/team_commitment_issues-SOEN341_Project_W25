@@ -72,7 +72,7 @@ class ChannelService {
   }
 
   static async respondToAccessRequest(requestId: Types.ObjectId, teamId: Types.ObjectId, decision: 'approved' | 'rejected') {
-    const channelData = await Channel.findOne({ team: teamId, 'accessRequests.requestId': requestId });
+    const channelData = await Channel.findOne({ team: teamId, 'accessRequests.requestId': { $eq: requestId } });
     if (!channelData) {
       throw new Error('Channel not found');
     }
