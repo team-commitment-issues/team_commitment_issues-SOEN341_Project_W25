@@ -2,11 +2,109 @@ import Channel from '../models/Channel';
 import Team from '../models/Team';
 import User from '../models/User';
 import TeamMember from '../models/TeamMember';
-import { Schema, Types } from 'mongoose';
+import { Schema, Types, Mongoose } from 'mongoose';
 import { Message } from '../models/Message';
-import { Role } from '../enums';
+import { Role, TeamRole } from '../enums';
 
 class ChannelService {
+  static async requestChannelAccess(channelName: string, teamId: Types.ObjectId, userId: Types.ObjectId) {
+    const channel = await Channel.findOne({ name: { $eq: channelName }, team: { $eq: teamId } });
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+    const team = await Team.findById(teamId);
+    if (!team) {
+      throw new Error('Team not found');
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const teamMember = await TeamMember.findOne({ user: user, team: team });
+    if (!teamMember) {
+      throw new Error('User is not a member of the team');
+    }
+
+    if (channel.members.includes(teamMember._id as Schema.Types.ObjectId)) {
+      throw new Error('User is already a member of the channel');
+    }
+
+    if (channel.accessRequests.some(request => request.username === user.username)) {
+      throw new Error('Access request already sent');
+    }
+
+    const accessRequest = {
+      requestId: new Types.ObjectId(),
+      username: user.username,
+      teamName: team.name,
+      channelName: channel.name,
+      requestDate: new Date(),
+      status: 'pending' as 'pending'
+    };
+    channel.accessRequests.push(accessRequest);
+    await channel.save();
+    return accessRequest;
+  }
+
+  static async getChannelAccessRequests(teamId: Types.ObjectId) {
+
+    const channelData = await Channel.find({ team: teamId });
+    if (channelData.length === 0) {
+      return [];
+    }
+    const team = await Team.findById(teamId);
+    if (!team) {
+      throw new Error('Team not found');
+    }
+
+    const accessRequests = channelData.flatMap(channel =>
+      channel.accessRequests.filter((request: { status: string }) => request.status === 'pending')
+    );
+    return accessRequests.map((request: { requestId: Types.ObjectId; username: string; teamName: string; channelName: string; requestDate: Date; status: string }) => ({
+      requestId: request.requestId,
+      username: request.username,
+      teamName: request.teamName,
+      channelName: request.channelName,
+      requestDate: request.requestDate,
+      status: request.status
+    }));
+  }
+
+  static async respondToAccessRequest(requestId: Types.ObjectId, teamId: Types.ObjectId, decision: 'approved' | 'rejected') {
+    const channelData = await Channel.findOne({ team: teamId, 'accessRequests.requestId': requestId });
+    if (!channelData) {
+      throw new Error('Channel not found');
+    }
+    const accessRequest = channelData.accessRequests.find(request => request.requestId.equals(requestId));
+    if (!accessRequest) {
+      throw new Error('Access request not found');
+    }
+    if (accessRequest.status !== 'pending') {
+      throw new Error('Access request already processed');
+    }
+    if (decision === 'approved') {
+      const userToAdd = await User.findOne({ username: { $eq: accessRequest.username } });
+      if (!userToAdd) {
+        throw new Error('User not found');
+      }
+      const teamMemberToAdd = await TeamMember.findOne({ user: userToAdd._id, team: teamId });
+      if (!teamMemberToAdd) {
+        throw new Error('User is not a member of the team');
+      }
+      if (channelData.members.includes(teamMemberToAdd._id as Schema.Types.ObjectId)) {
+        throw new Error('User is already a member of the channel');
+      }
+      channelData.members.push(teamMemberToAdd._id as Schema.Types.ObjectId);
+      teamMemberToAdd.channels.push(channelData._id as Schema.Types.ObjectId);
+      await teamMemberToAdd.save();
+      await channelData.save();
+    }
+    accessRequest.status = decision === 'approved' ? 'accepted' : 'rejected';
+    await channelData.save();
+    return accessRequest;
+  }
+
   static async createChannel(
     team: Types.ObjectId,
     channelName: string,
@@ -283,6 +381,31 @@ class ChannelService {
     await channelData.save();
 
     return channelData;
+  }
+
+  static async listAllChannels(role: Role, team: Types.ObjectId, teamRole: TeamRole | null, teamMemberId: Types.ObjectId | null): Promise<any[]> {
+    const channels = await Channel.find({ team: team }).select('name');
+    if (!channels) return [];
+    let channelsWithAccess: Array<{ _id: string; name: string; hasAccess: boolean }> = [];
+    if (teamRole === TeamRole.ADMIN || role === 'SUPER_ADMIN') {
+      channelsWithAccess = channels.map(channel => ({
+        _id: channel._id as string,
+        name: channel.name,
+        hasAccess: true
+      }));
+    } else {
+      const teamMember = await TeamMember.findById(teamMemberId).select('channels');
+      if (!teamMember) {
+        throw new Error('Team member not found');
+      }
+      channelsWithAccess = channels.map(channel => ({
+        _id: channel._id as string,
+        name: channel.name,
+        hasAccess: teamMember.channels.includes(channel._id as Schema.Types.ObjectId)
+      }));
+    }
+
+    return channelsWithAccess;
   }
 }
 

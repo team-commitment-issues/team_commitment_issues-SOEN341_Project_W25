@@ -54,7 +54,7 @@ export const removeUserFromChannel = async (
   } catch (error) {
     throw new Error(
       (error as any).response?.data?.error ||
-        'Failed to remove user from channel. Please try again.'
+      'Failed to remove user from channel. Please try again.'
     );
   }
 };
@@ -119,6 +119,84 @@ export const leaveChannel = async (teamName: string, channelName: string) => {
   } catch (error) {
     throw new Error(
       (error as any).response?.data?.error || 'Failed to leave channel. Please try again.'
+    );
+  }
+};
+
+
+/**
+ * Get all channels in a team, including those the user doesn't have access to
+ * Each channel includes a hasAccess flag
+ */
+export const getAllChannels = async (teamName: string) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `${API_URL}/getAllChannels`,
+      { teamName },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      (error as any).response?.data?.error || 'Failed to fetch all channels. Please try again.'
+    );
+  }
+};
+
+/**
+ * Request access to a channel
+ */
+export const requestChannelAccess = async (teamName: string, channelName: string) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `${API_URL}/requestAccess`,
+      { teamName, channelName },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      (error as any).response?.data?.error || 'Failed to request channel access. Please try again.'
+    );
+  }
+};
+
+/**
+ * Get all pending access requests for channels in a team (admin only)
+ */
+export const getChannelAccessRequests = async (teamName: string) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `${API_URL}/getAccessRequests`,
+      { teamName },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      (error as any).response?.data?.error || 'Failed to fetch access requests. Please try again.'
+    );
+  }
+};
+
+/**
+ * Respond to a channel access request (admin only)
+ */
+export const respondToAccessRequest = async (teamName: string, requestId: string, decision: 'approved' | 'rejected') => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `${API_URL}/respondToAccessRequest`,
+      { teamName, requestId, decision },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      (error as any).response?.data?.error || 'Failed to respond to access request. Please try again.'
     );
   }
 };

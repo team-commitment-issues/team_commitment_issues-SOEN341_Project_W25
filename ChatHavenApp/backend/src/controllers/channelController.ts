@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import ChannelService from '../services/channelService';
 import { Schema, Types } from 'mongoose';
+import { Role, TeamRole } from '../enums';
 
 class ChannelController {
   // **Create Channel**
@@ -163,6 +164,99 @@ class ChannelController {
         res.status(404).json({ error: 'Team not found' });
       } else if ((err as any).message === 'User is not a member of the team') {
         res.status(403).json({ error: 'User is not a member of the team' });
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  }
+
+  static async listAllChannels(req: Request, res: Response): Promise<void> {
+    try {
+      const role = req.user.role;
+      const team = req.team._id as Types.ObjectId;
+      if (role === Role.SUPER_ADMIN) {
+        const channels = await ChannelService.listAllChannels(role, team, null, null);
+        res.status(200).json(channels);
+        return;
+      }
+      const teamRole = req.teamMember.role as TeamRole;
+      const teamMember = req.teamMember._id as Types.ObjectId;
+
+      const channels = await ChannelService.listAllChannels(role, team, teamRole, teamMember);
+      res.status(200).json(channels);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+
+  static async requestChannelAccess(req: Request, res: Response): Promise<void> {
+    try {
+      const team = req.team._id as Types.ObjectId;
+      const user = req.user._id as Types.ObjectId;
+      const channelName = req.body.channelName as string;
+      const result = await ChannelService.requestChannelAccess(channelName, team, user);
+
+      res.status(200).json({
+        message: 'Request sent successfully'
+      });
+    } catch (err) {
+      if ((err as any).message === 'Channel not found') {
+        res.status(404).json({ error: 'Channel not found' });
+      } else if ((err as any).message === 'Team not found') {
+        res.status(404).json({ error: 'Team not found' });
+      } else if ((err as any).message === 'User not found') {
+        res.status(404).json({ error: 'User not found' });
+      } else if ((err as any).message === 'User is not a member of the team') {
+        res.status(403).json({ error: 'User is not a member of the team' });
+      } else if ((err as any).message === 'User is already a member of the channel') {
+        res.status(400).json({ error: 'User is already a member of the channel' });
+      } else if ((err as any).message === 'Access request already sent') {
+        res.status(400).json({ error: 'Access request already sent' });
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  }
+
+  static async getChannelAccessRequests(req: Request, res: Response): Promise<void> {
+    try {
+      const team = req.team._id as Types.ObjectId;
+      const accessRequests = await ChannelService.getChannelAccessRequests(team);
+
+      res.status(200).json(accessRequests);
+    } catch (err) {
+      if ((err as any).message === 'Team not found') {
+        res.status(404).json({ error: 'Team not found' });
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  }
+
+  static async respondToAccessRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const decision = req.body.decision;
+      const team = req.team._id as Types.ObjectId;
+      const requestId = req.body.requestId;
+      console.log('requestId', requestId);
+      const result = await ChannelService.respondToAccessRequest(requestId, team, decision);
+
+      res.status(200).json({
+        message: 'Request responded successfully'
+      });
+    } catch (err) {
+      if ((err as any).message === 'Channel not found') {
+        res.status(404).json({ error: 'Channel not found' });
+      } else if ((err as any).message === 'Access request not found') {
+        res.status(404).json({ error: 'Access request not found' });
+      } else if ((err as any).message === 'Access request already processed') {
+        res.status(400).json({ error: 'Access request already processed' });
+      } else if ((err as any).message === 'User not found') {
+        res.status(404).json({ error: 'User not found' });
+      } else if ((err as any).message === 'User is not a member of the team') {
+        res.status(403).json({ error: 'User is not a member of the team' });
+      } else if ((err as any).message === 'User is already a member of the channel') {
+        res.status(400).json({ error: 'User is already a member of the channel' });
       } else {
         res.status(500).json({ error: 'Internal server error' });
       }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import UserList from '../Components/userList.tsx';
 import TeamList from '../Components/TeamList.tsx';
 import ChannelList from '../Components/ChannelList.tsx';
+import AccessRequestMailbox from '../Components/AccessRequestMailbox.tsx';
 import Messaging from '../Components/Messaging/index.tsx';
 import styles from '../Styles/dashboardStyles.ts';
 import TeamMemberList from '../Components/teamMemberList.tsx';
@@ -11,6 +12,7 @@ import { ContextMenuState } from '../types/shared.ts';
 import StatusSelector from '../Components/UI/StatusSelector.tsx';
 import { useUser } from '../Context/UserContext.tsx';
 import { useChatSelection } from '../Context/ChatSelectionContext.tsx';
+import { getUsersInTeam } from '../Services/dashboardService.ts';
 
 const AdminDashboard: React.FC = () => {
   const { userData } = useUser();
@@ -23,6 +25,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [userTeamRole, setUserTeamRole] = useState<string | null>(null);
 
   const { selection, setSelection } = useChatSelection();
 
@@ -84,7 +87,31 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     setSelection(null);
-  }, [selectedTeam, setSelection]);
+
+    // Fetch user's role in the selected team
+    const fetchUserTeamRole = async () => {
+      if (!selectedTeam || !userData?.username) {
+        setUserTeamRole(null);
+        return;
+      }
+
+      try {
+        const teamMembers = await getUsersInTeam(selectedTeam);
+        const currentUser = teamMembers.find(member => member.username === userData.username);
+
+        if (currentUser) {
+          setUserTeamRole(currentUser.role);
+        } else {
+          setUserTeamRole(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user team role', err);
+        setUserTeamRole(null);
+      }
+    };
+
+    fetchUserTeamRole();
+  }, [selectedTeam, setSelection, userData?.username]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -99,6 +126,9 @@ const AdminDashboard: React.FC = () => {
     }),
     [theme]
   );
+
+  // Check if user has admin role in the current team
+  const isUserAdminInTeam = userTeamRole === 'ADMIN' || userTeamRole === 'SUPER_ADMIN';
 
   return (
     <div style={getStyledComponent(styles.container)}>
@@ -175,6 +205,15 @@ const AdminDashboard: React.FC = () => {
             selection={selection}
             setSelection={setSelection}
           />
+
+          {/* Only show AccessRequestMailbox for users with admin role in current team */}
+          {isUserAdminInTeam && (
+            <AccessRequestMailbox
+              selectedTeam={selectedTeam}
+              refreshState={refreshState}
+              onActionCompleted={handleRefresh}
+            />
+          )}
         </div>
 
         <Messaging

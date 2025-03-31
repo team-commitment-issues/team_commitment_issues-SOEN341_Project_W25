@@ -54,5 +54,30 @@ channelRoutes.post(
   checkChannelPermission(),
   ChannelController.leaveChannel
 );
+channelRoutes.post(
+  '/getAllChannels',
+  authenticate,
+  checkTeamPermission(TeamRole.MEMBER),
+  ChannelController.listAllChannels
+);
+channelRoutes.post(
+  '/requestAccess',
+  authenticate,
+  checkTeamPermission(TeamRole.MEMBER),
+  checkChannelPermission(),
+  ChannelController.requestChannelAccess
+);
+channelRoutes.post(
+  '/getAccessRequests',
+  authenticate,
+  checkTeamPermission(TeamRole.ADMIN),
+  ChannelController.getChannelAccessRequests
+);
+channelRoutes.post(
+  '/respondToAccessRequest',
+  authenticate,
+  checkTeamPermission(TeamRole.ADMIN),
+  ChannelController.respondToAccessRequest
+);
 
 export default channelRoutes;

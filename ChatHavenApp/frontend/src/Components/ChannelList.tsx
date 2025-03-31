@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaLock } from 'react-icons/fa';
 import { IconType } from 'react-icons';
 import styles from '../Styles/dashboardStyles.ts';
-import { getChannels } from '../Services/dashboardService.ts';
-import { deleteChannel, leaveChannel } from '../Services/channelService.ts';
+import { deleteChannel, leaveChannel, requestChannelAccess, getAllChannels } from '../Services/channelService.ts';
 import { useTheme } from '../Context/ThemeContext.tsx';
 import { Selection, ContextMenuState } from '../types/shared.tsx';
 import { useChatSelection } from '../Context/ChatSelectionContext.tsx';
+import { useUser } from '../Context/UserContext.tsx';
+import { getUsersInTeam } from '../Services/dashboardService.ts';
 import ContextMenu from './UI/ContextMenu.tsx';
 
 const TrashIcon: IconType = FaTrash;
+const LockIcon: IconType = FaLock;
 
 interface Channel {
   _id: string;
   name: string;
+  hasAccess: boolean; // New property to track whether user has access
 }
 
 interface ChannelListProps {
@@ -32,14 +35,17 @@ const ChannelList: React.FC<ChannelListProps> = ({
 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [requestStatus, setRequestStatus] = useState<Record<string, string>>({});
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
     y: 0,
     selected: ''
   });
+  const [userTeamRole, setUserTeamRole] = useState<string | null>(null);
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { userData } = useUser();
 
   const chatSelectionContext = useChatSelection();
 
@@ -65,7 +71,12 @@ const ChannelList: React.FC<ChannelListProps> = ({
     }
   };
 
-  const handleSetChannel = (channelName: string) => {
+  const handleSetChannel = (channelName: string, hasAccess: boolean) => {
+    // Allow access if user is admin in the team or has explicit access
+    if (!hasAccess && !isAdminInCurrentTeam) {
+      return;
+    }
+
     if (selection?.type === 'channel' && selection.channelName === channelName) {
       // Deselect if clicking the same channel
       setSelection(null);
@@ -90,12 +101,47 @@ const ChannelList: React.FC<ChannelListProps> = ({
     }
   };
 
+  const handleRequestAccess = async (channelName: string) => {
+    try {
+      if (!selectedTeam || !userData?.username) return;
+
+      setRequestStatus(prev => ({ ...prev, [channelName]: 'pending' }));
+
+      await requestChannelAccess(selectedTeam, channelName);
+
+      setRequestStatus(prev => ({ ...prev, [channelName]: 'requested' }));
+
+      setTimeout(() => {
+        setRequestStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[channelName];
+          return newStatus;
+        });
+      }, 3000);
+    } catch (err) {
+      console.error('Failed to request channel access', err);
+      setRequestStatus(prev => ({ ...prev, [channelName]: 'failed' }));
+
+      setTimeout(() => {
+        setRequestStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[channelName];
+          return newStatus;
+        });
+      }, 3000);
+    }
+  };
+
   const handleLeaveChannel = async () => {
     try {
       if (!selectedTeam || !contextMenu.selected) return;
       await leaveChannel(selectedTeam, contextMenu.selected); // Call the leaveChannel service
       setChannels(prevChannels =>
-        prevChannels.filter(channel => channel.name !== contextMenu.selected)
+        prevChannels.map(channel =>
+          channel.name === contextMenu.selected
+            ? { ...channel, hasAccess: false }
+            : channel
+        )
       );
       if (selection?.type === 'channel' && selection.channelName === contextMenu.selected) {
         setSelection(null);
@@ -106,13 +152,13 @@ const ChannelList: React.FC<ChannelListProps> = ({
     }
   };
 
-  const handleContextMenu = (event: React.MouseEvent, channelName: string) => {
+  const handleContextMenu = (event: React.MouseEvent, channel: Channel) => {
     event.preventDefault();
     setContextMenu({
       visible: true,
       x: event.clientX,
       y: event.clientY,
-      selected: channelName
+      selected: channel.name
     });
   };
 
@@ -124,6 +170,37 @@ const ChannelList: React.FC<ChannelListProps> = ({
     return selection?.type === 'channel' && selection.channelName === channelName;
   };
 
+  // Fetch user's role in the current team
+  useEffect(() => {
+    const fetchUserTeamRole = async () => {
+      if (!selectedTeam || !userData?.username) {
+        setUserTeamRole(null);
+        return;
+      }
+
+      try {
+        const teamMembers = await getUsersInTeam(selectedTeam);
+        const currentUser = teamMembers.find((member: { username: string }) =>
+          member.username === userData.username
+        );
+
+        if (currentUser) {
+          setUserTeamRole(currentUser.role);
+        } else {
+          setUserTeamRole(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user team role', err);
+        setUserTeamRole(null);
+      }
+    };
+
+    fetchUserTeamRole();
+  }, [selectedTeam, userData?.username]);
+
+  // Check if user is admin in current team
+  const isAdminInCurrentTeam = userTeamRole === 'ADMIN' || userTeamRole === 'SUPER_ADMIN';
+
   useEffect(() => {
     const fetchChannels = async () => {
       try {
@@ -132,7 +209,8 @@ const ChannelList: React.FC<ChannelListProps> = ({
           return;
         }
 
-        const channelsList = await getChannels(selectedTeam);
+        // Now using getAllChannels which returns all channels with an access flag
+        const channelsList = await getAllChannels(selectedTeam);
         setChannels(channelsList);
 
         // Verify if current selection is still valid
@@ -151,6 +229,17 @@ const ChannelList: React.FC<ChannelListProps> = ({
   if (!selectedTeam) {
     return null;
   }
+
+  const getContextMenuItems = (channelName: string) => {
+    const selectedChannel = channels.find(c => c.name === channelName);
+    if (!selectedChannel) return [];
+
+    if (selectedChannel.hasAccess) {
+      return [{ label: 'Leave Channel', onClick: handleLeaveChannel }];
+    } else {
+      return []; // No context menu options for locked channels
+    }
+  };
 
   return (
     <div
@@ -186,29 +275,83 @@ const ChannelList: React.FC<ChannelListProps> = ({
                     : '#f0f0f0'
                   : 'transparent',
                 fontWeight: isChannelSelected(channel.name) ? 'bold' : 'normal',
-                ...(theme === 'dark' && styles.listItem['&.dark-mode:hover'])
+                ...(theme === 'dark' && styles.listItem['&.dark-mode:hover']),
+                opacity: channel.hasAccess ? 1 : 0.7,
+                cursor: channel.hasAccess ? 'pointer' : 'default',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}
-              onClick={() => handleSetChannel(channel.name)}
-              onContextMenu={e => handleContextMenu(e, channel.name)}
+              onClick={() => handleSetChannel(channel.name, channel.hasAccess)}
+              onContextMenu={e => handleContextMenu(e, channel)}
             >
-              {channel.name}
-              <button
-                style={{
-                  ...styles.deleteChannelButton,
-                  ...(theme === 'dark' && styles.deleteChannelButton['&.dark-mode'])
-                }}
-                onClick={e => {
-                  e.stopPropagation();
-                  handleDeleteChannel(channel);
-                }}
-              >
-                <TrashIcon
-                  style={{
-                    ...styles.trashIcon,
-                    ...(theme === 'dark' && styles.trashIcon['&.dark-mode'])
-                  }}
-                />
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {!channel.hasAccess && <LockIcon size={12} />}
+                {channel.name}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {!channel.hasAccess && !requestStatus[channel.name] && !isAdminInCurrentTeam && (
+                  <button
+                    style={{
+                      ...styles.actionButton,
+                      ...(theme === 'dark' && styles.actionButton['&.dark-mode']),
+                      fontSize: '10px',
+                      padding: '2px 4px'
+                    }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleRequestAccess(channel.name);
+                    }}
+                  >
+                    Request Access
+                  </button>
+                )}
+
+                {requestStatus[channel.name] && (
+                  <span style={{
+                    fontSize: '10px',
+                    color: requestStatus[channel.name] === 'failed' ? 'red' : 'green'
+                  }}>
+                    {requestStatus[channel.name] === 'pending'
+                      ? 'Sending...'
+                      : requestStatus[channel.name] === 'requested'
+                        ? 'Request Sent!'
+                        : 'Failed'}
+                  </span>
+                )}
+
+                {/* Override access restriction for admins */}
+                {!channel.hasAccess && isAdminInCurrentTeam && (
+                  <span style={{
+                    fontSize: '10px',
+                    fontStyle: 'italic',
+                    color: theme === 'dark' ? '#4CAF50' : '#2e7d32'
+                  }}>
+                    Admin Override
+                  </span>
+                )}
+
+                {/* Only show delete button if user is admin or has access */}
+                {(channel.hasAccess || isAdminInCurrentTeam) && (
+                  <button
+                    style={{
+                      ...styles.deleteChannelButton,
+                      ...(theme === 'dark' && styles.deleteChannelButton['&.dark-mode'])
+                    }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeleteChannel(channel);
+                    }}
+                  >
+                    <TrashIcon
+                      style={{
+                        ...styles.trashIcon,
+                        ...(theme === 'dark' && styles.trashIcon['&.dark-mode'])
+                      }}
+                    />
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -226,7 +369,7 @@ const ChannelList: React.FC<ChannelListProps> = ({
       </button>
       {contextMenu.visible && (
         <ContextMenu
-          items={[{ label: 'Leave Channel', onClick: handleLeaveChannel }]}
+          items={getContextMenuItems(contextMenu.selected)}
           position={{ x: contextMenu.x, y: contextMenu.y }}
           onClose={handleCloseContextMenu}
         />

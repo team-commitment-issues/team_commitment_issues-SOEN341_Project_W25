@@ -1,4 +1,32 @@
-import { Document, Schema, model } from 'mongoose';
+import { Document, Schema, model, Types } from 'mongoose';
+
+const AccessRequest = new Schema({
+  requestId: {
+    type: Types.ObjectId,
+    required: true,
+  },
+  username: {
+    type: String,
+    required: true
+  },
+  teamName: {
+    type: String,
+    required: true
+  },
+  channelName: {
+    type: String,
+    required: true
+  },
+  requestDate: {
+    type: Date,
+    default: Date.now
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'accepted', 'rejected'],
+    default: 'pending'
+  }
+});
 
 /**
  * Interface representing a Channel document in MongoDB.
@@ -35,6 +63,14 @@ interface IChannel extends Document {
    * @see {@link Message}
    */
   messages: Schema.Types.ObjectId[];
+  accessRequests: {
+    requestId: Types.ObjectId;
+    username: string;
+    teamName: string;
+    channelName: string;
+    requestDate: Date;
+    status: 'pending' | 'accepted' | 'rejected';
+  }[];
 }
 
 /**
@@ -68,7 +104,8 @@ const ChannelSchema = new Schema<IChannel>({
       type: Schema.Types.ObjectId,
       ref: 'Message'
     }
-  ]
+  ],
+  accessRequests: [AccessRequest]
 });
 
 /**

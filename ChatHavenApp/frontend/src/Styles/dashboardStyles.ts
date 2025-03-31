@@ -737,6 +737,56 @@ const styles = {
         color: '#fff'
       }
     }
+  },
+  mailboxContainer: {
+    marginTop: '20px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    padding: '10px',
+    backgroundColor: '#fff',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    '&.dark-mode': {
+      backgroundColor: '#2d2d2d',
+      border: '1px solid #444',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+    }
+  },
+  requestsContainer: {
+    maxHeight: '300px',
+    overflowY: 'auto',
+    '&.dark-mode': {
+      backgroundColor: '#2d2d2d'
+    }
+  },
+  requestItem: {
+    padding: '10px',
+    marginBottom: '8px',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
+    backgroundColor: '#f9f9f9',
+    '&.dark-mode': {
+      backgroundColor: '#2c3e50',
+      border: '1px solid #34495e'
+    }
+  },
+  actionButton: {
+    padding: '6px 10px',
+    backgroundColor: '#2196F3',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    transition: 'background-color 0.2s',
+    '&:hover': {
+      backgroundColor: '#0b7dda'
+    },
+    '&.dark-mode': {
+      backgroundColor: '#1976d2',
+      '&:hover': {
+        backgroundColor: '#0d5fa3'
+      }
+    }
   }
 };
 
