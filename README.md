@@ -16,6 +16,8 @@ Key Features (Sprint 1, 2, 3 and 4)
 ✔️ User Presence & Status
 ✔️ Emoji support
 ✔️ Message quoting functionality
+✔️ Media sharing with on site editing (Feature)
+✔️ Auto-Translation of messages (Feature)
 
 Future Sprint features will be added as the project progresses.
 
