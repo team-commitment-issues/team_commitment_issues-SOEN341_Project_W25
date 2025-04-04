@@ -57,7 +57,7 @@ The project scope includes:
 
 - **Fares Alromhin - 40246354** - _FrontEnd_
 - **Kassem Chahrour - 40073432** - _FrontEnd_
-- **Brian Hariri - 40190861** - _FullStack_
+- **Brian Hariri - 40190861** - _Backend_
 - **Omar Khlaiwi - 40227312** - _FrontEnd_
 - **Mohamad Ali Taha - 40200580** - _FullStack_
 - **Samuel Blanchette - 40280883** - _FullStack_
