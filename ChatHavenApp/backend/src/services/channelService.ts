@@ -100,7 +100,7 @@ class ChannelService {
       await teamMemberToAdd.save();
       await channelData.save();
     }
-    accessRequest.status = decision === 'approved' ? 'approved' : 'rejected';
+    accessRequest.status = decision === 'approved' ? 'accepted' : 'rejected';
     await channelData.save();
     return accessRequest;
   }

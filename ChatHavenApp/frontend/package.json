@@ -15,9 +15,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.4.0",
     "react-scripts": "^5.0.1",
-    "whatwg-fetch": "^3.6.20",
-    "jest": "^29.7.0",
-    "node": "18.20.8"
+    "whatwg-fetch": "^3.6.20"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -31,12 +29,6 @@
     "type-check": "tsc --noEmit -p ./config/tsconfig/tsconfig.json",
     "clean": "rimraf build coverage"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -49,7 +41,12 @@
       "last 1 safari version"
     ]
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
+    "@babel/plugin-syntax-flow": "^7.14.5",
+    "@babel/plugin-transform-react-jsx": "^7.14.9",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
