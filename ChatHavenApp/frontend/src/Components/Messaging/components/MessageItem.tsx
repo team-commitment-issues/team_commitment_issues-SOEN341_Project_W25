@@ -83,7 +83,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
             aria-label={`Message from ${message.username}`}
         >
             <div>
-                <strong>{message.username}</strong>
+                <strong>{message.username}</strong>&nbsp;
 
                 {/* Render quoted message if it exists */}
                 {message.quotedMessage && (
