@@ -3,6 +3,7 @@ import { getUserProfile } from '../Services/userService.ts';
 
 interface UserData {
   username: string;
+  preferredLanguage: string;
   // Add other user properties as needed
 }
 
@@ -48,7 +49,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
       // Update state and localStorage
       setUserData({
-        username: profileData.username
+        username: profileData.username,
+        preferredLanguage: profileData.preferredLanguage,
         // Add other properties as needed
       });
 

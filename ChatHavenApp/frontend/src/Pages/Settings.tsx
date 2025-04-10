@@ -82,14 +82,14 @@ const Settings: React.FC = () => {
     };
   }, [navigate, refreshUserData]); // Dependencies remain the same
 
-  const [language, setLanguage] = useState('en');
-  // const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
+  const [language, setLanguage] = useState(userData?.preferredLanguage || 'en');
 
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  console.log(language)
+
+  const handleLanguageChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLanguage = event.target.value;
     setLanguage(selectedLanguage);
-    // localStorage.setItem('language', selectedLanguage);
-    setPreferredLanguage(selectedLanguage).catch(error =>
+    await setPreferredLanguage(selectedLanguage).catch(error =>
       console.error('Error setting preferred language:', error)
     );
   };
