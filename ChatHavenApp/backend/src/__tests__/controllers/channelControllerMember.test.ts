@@ -12,6 +12,12 @@ import TestHelpers from '../testHelpers';
 import Channel from '../../models/Channel';
 import exp from 'constants';
 import { Message } from '../../models/Message';
+import TranslationService from '../../services/translationService';
+
+jest.spyOn(TranslationService, 'translateMessages').mockImplementation((messages, targetLanguage) => {
+  return Promise.resolve(messages);
+});
+
 
 const app = express();
 app.use(express.json());

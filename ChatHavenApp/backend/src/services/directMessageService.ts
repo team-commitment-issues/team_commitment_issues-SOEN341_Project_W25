@@ -4,6 +4,7 @@ import { Schema, Types } from 'mongoose';
 import DMessage, { IDMessage } from '../models/DMessage';
 import { Role } from '../enums';
 import DirectMessage from '../models/DirectMessage';
+import TranslationService from './translationService';
 
 class DirectMessageService {
   /**
@@ -115,7 +116,7 @@ class DirectMessageService {
   /**
    * Gets messages based on criteria for pagination
    */
-  static async getMessagesByCriteria(criteria: any, limit: number): Promise<any[]> {
+  static async getMessagesByCriteria(criteria: any, preferredLanguage: string, limit: number): Promise<any[]> {
     // Get direct message document
     const directMessage = await DirectMessage.findById(criteria.directMessage).exec();
 
@@ -140,7 +141,17 @@ class DirectMessageService {
       .limit(limit)
       .exec();
 
-    return messages;
+    const translatedMessageContents = await TranslationService.translateMessages(
+      messages.map(message => message.text),
+      preferredLanguage
+    );
+    
+    const translatedMessages = messages.map((message, index) => {
+      message.text = translatedMessageContents[index];
+      return message;
+    });
+
+    return translatedMessages;
   }
 }
 

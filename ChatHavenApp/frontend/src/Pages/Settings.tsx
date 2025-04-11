@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash, FaMoon, FaSun } from 'react-icons/fa';
 import { useTheme } from '../Context/ThemeContext.tsx';
 import { updatePassword, updateUsername as authUpdateUsername } from '../Services/authService.ts';
 import { useUser } from '../Context/UserContext.tsx';
+import { setPreferredLanguage } from '../Services/userService.ts';
 
 const languages = {
   en: 'English',
@@ -81,12 +82,16 @@ const Settings: React.FC = () => {
     };
   }, [navigate, refreshUserData]); // Dependencies remain the same
 
-  const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
+  const [language, setLanguage] = useState(userData?.preferredLanguage || 'en');
 
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  console.log(language)
+
+  const handleLanguageChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedLanguage = event.target.value;
     setLanguage(selectedLanguage);
-    localStorage.setItem('language', selectedLanguage);
+    await setPreferredLanguage(selectedLanguage).catch(error =>
+      console.error('Error setting preferred language:', error)
+    );
   };
 
   const validatePassword = (password: string, oldPassword: string, confirmPass: string) => {

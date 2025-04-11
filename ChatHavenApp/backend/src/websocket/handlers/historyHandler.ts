@@ -66,6 +66,7 @@ export const handleFetchHistory = async (
             // Get messages with pagination
             messages = await ChannelService.getMessagesByCriteria(
                 messagesQuery,
+                user.preferredLanguage || 'en',
                 actualLimit + 1 // Fetch one extra to determine if there are more
             );
 
@@ -89,6 +90,7 @@ export const handleFetchHistory = async (
             // Get messages with pagination
             messages = await DirectMessageService.getMessagesByCriteria(
                 messagesQuery,
+                user.preferredLanguage || 'en',
                 actualLimit + 1 // Fetch one extra to determine if there are more
             );
 

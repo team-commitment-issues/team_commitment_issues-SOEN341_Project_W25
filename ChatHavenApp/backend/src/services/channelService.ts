@@ -5,6 +5,7 @@ import TeamMember from '../models/TeamMember';
 import { Schema, Types, Mongoose } from 'mongoose';
 import { Message } from '../models/Message';
 import { Role, TeamRole } from '../enums';
+import TranslationService from './translationService';
 
 class ChannelService {
   static async requestChannelAccess(channelName: string, teamId: Types.ObjectId, userId: Types.ObjectId) {
@@ -325,7 +326,7 @@ class ChannelService {
     }
   }
 
-  static async getMessagesByCriteria(criteria: any, limit: number): Promise<any[]> {
+  static async getMessagesByCriteria(criteria: any, preferredLanguage: string, limit: number): Promise<any[]> {
     const channel = await Channel.findOne({ _id: criteria.channel }).exec();
 
     if (!channel) {
@@ -346,7 +347,17 @@ class ChannelService {
       .limit(limit)
       .exec();
 
-    return messages;
+    const translatedMessageContents = await TranslationService.translateMessages(
+      messages.map(message => message.text),
+      preferredLanguage
+    );
+    
+    const translatedMessages = messages.map((message, index) => {
+      message.text = translatedMessageContents[index];
+      return message;
+    });
+
+    return translatedMessages;
   }
 
   static async leaveChannel(
