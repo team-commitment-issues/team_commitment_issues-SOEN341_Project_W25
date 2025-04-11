@@ -634,7 +634,9 @@ export function useMessages(selection: Selection | null, username: string) {
                 });
             }
         }
-    }, [isDuplicate, messages, selection, username, wsService]);
+        
+        fetchMessages(); // Fetch messages after processing incoming message
+    }, [isDuplicate, messages, selection, username, wsService, fetchMessages]);
 
     // Process message acknowledgment
     const processMessageAck = useCallback((data: any) => {
